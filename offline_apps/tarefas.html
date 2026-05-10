@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!--<link rel="stylesheet" href="style.css">-->
+  <style>
+  body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f4f4f4;
+}
+
+.app {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  width: 300px;
+  text-align: center;
+}
+
+button {
+  margin: 10px;
+}
+
+#task-list {
+  margin-top: 20px;
+}
+
+#report {
+  margin-top: 10px;
+  background: #eee;
+  padding: 10px;
+}
+
+  </style>
+  <title>PWA Tarefas</title>
+</head>
+<body>
+  <div class="app">
+    <h1>Tarefas Modulares</h1>
+    <div>
+      <input type="text" id="task-input" placeholder="Nova tarefa">
+      <button id="add-task-btn">Adicionar</button>
+    </div>
+    <div id="task-list"></div>
+
+    <h2>Gerar Relatório</h2>
+    <button id="generate-report-btn">Gerar Relatório</button>
+    <pre id="report"></pre>
+  </div>
+  
+  <!--<script src="app.js"></script>-->
+  <script>
+  let db;
+
+// Inicializando IndexedDB
+function initDB() {
+  const request = indexedDB.open('taskDB', 1);
+
+  request.onupgradeneeded = function (event) {
+    db = event.target.result;
+    const objectStore = db.createObjectStore('tasks', { keyPath: 'id', autoIncrement: true });
+    objectStore.createIndex('status', 'status', { unique: false });
+  };
+
+  request.onsuccess = function (event) {
+    db = event.target.result;
+    loadTasks();
+  };
+
+  request.onerror = function () {
+    console.error('Erro ao abrir o IndexedDB');
+  };
+}
+
+// Adiciona tarefa
+function addTask(task) {
+  const transaction = db.transaction(['tasks'], 'readwrite');
+  const store = transaction.objectStore('tasks');
+  const taskData = {
+    name: task,
+    status: 'pendente',
+    created: new Date()
+  };
+  store.add(taskData);
+  loadTasks();
+}
+
+// Carrega as tarefas
+function loadTasks() {
+  const taskList = document.getElementById('task-list');
+  taskList.innerHTML = '';
+
+  const transaction = db.transaction(['tasks'], 'readonly');
+  const store = transaction.objectStore('tasks');
+
+  const request = store.openCursor();
+  request.onsuccess = function (event) {
+    const cursor = event.target.result;
+    if (cursor) {
+      const task = cursor.value;
+      const div = document.createElement('div');
+      div.innerHTML = `
+        <span>${task.name} - ${task.status}</span>
+        <button onclick="markAsCompleted(${task.id})">Completar</button>
+        <button onclick="deleteTask(${task.id})">Excluir</button>
+      `;
+      taskList.appendChild(div);
+      cursor.continue();
+    }
+  };
+}
+
+// Marca tarefa como completa
+function markAsCompleted(id) {
+  const transaction = db.transaction(['tasks'], 'readwrite');
+  const store = transaction.objectStore('tasks');
+  
+  const request = store.get(id);
+  request.onsuccess = function () {
+    const task = request.result;
+    task.status = 'completa';
+    store.put(task);
+    loadTasks();
+  };
+}
+
+// Exclui tarefa
+function deleteTask(id) {
+  const transaction = db.transaction(['tasks'], 'readwrite');
+  const store = transaction.objectStore('tasks');
+  store.delete(id);
+  loadTasks();
+}
+
+// Gera relatório
+function generateReport() {
+  const transaction = db.transaction(['tasks'], 'readonly');
+  const store = transaction.objectStore('tasks');
+  const request = store.getAll();
+
+  request.onsuccess = function () {
+    const tasks = request.result;
+    let report = 'Relatório de Tarefas:\n\n';
+    tasks.forEach(task => {
+      report += `Tarefa: ${task.name}\nStatus: ${task.status}\n\n`;
+    });
+    document.getElementById('report').textContent = report;
+  };
+}
+
+// Inicialização
+document.getElementById('add-task-btn').onclick = () => {
+  const task = document.getElementById('task-input').value;
+  if (task) {
+    addTask(task);
+    document.getElementById('task-input').value = '';
+  }
+};
+
+document.getElementById('generate-report-btn').onclick = generateReport;
+
+initDB();
+
+
+  </script>
+  
+</body>
+</html>

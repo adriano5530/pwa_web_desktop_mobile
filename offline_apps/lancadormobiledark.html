@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lançador em Grade</title>
+  <style>
+    @font-face {
+      font-family: 'PixelLCD';
+      src: local('Courier New'), monospace;
+    }
+
+    body {
+      background: #292929;
+      color: #fff;
+      font-family: 'PixelLCD', monospace;
+      width: 100%;
+      min-height: 100vh;
+      font-size: 1.6rem;
+      letter-spacing: 2px;
+      filter: grayscale(100%) contrast(1.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    #relogio {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    #hora {
+      font-size: 2.5rem;
+    }
+
+    #data {
+      font-size: 1.4rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 15px;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    .app {
+      background: #3a3a3a;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      text-decoration: none;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: background 0.2s;
+    }
+
+    .app:hover {
+      background: #505050;
+    }
+
+    .app span {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="relogio">
+    <div id="hora">--:--</div>
+    <div id="data">--/--/--</div>
+  </div>
+
+  <div class="grid">
+    <!-- Comunicação -->
+    <a class="app" href="whatsapp://send?text=Olá"><span>📲</span>WhatsApp</a>
+    <a class="app" href="facetime://"><span>📞</span>FaceTime</a>
+    <a class="app" href="mailto:"><span>✉️</span>Mail</a>
+    <a class="app" href="sms://"><span>💬</span>Mensagens</a>
+    <a class="app" href="tel:+5511999999999"><span>📞</span>Ligar</a>
+    <a class="app" href="tg://resolve?domain=SeuUsuario"><span>💬</span>Telegram</a>
+    <a class="app" href="skype:echo123?call"><span>📞</span>Skype</a>
+    <a class="app" href="sgnl://signal.me/#p/+55119999"><span>🔒</span>Signal</a>
+
+    <!-- Mapas -->
+    <a class="app" href="maps://"><span>🗺️</span>Apple Maps</a>
+    <a class="app" href="comgooglemaps://"><span>🗺️</span>Google Maps</a>
+    <a class="app" href="waze://"><span>🧭</span>Waze</a>
+
+    <!-- Mídia -->
+    <a class="app" href="music://"><span>🎵</span>Apple Music</a>
+    <a class="app" href="spotify://"><span>🎵</span>Spotify</a>
+    <a class="app" href="youtube://"><span>📺</span>YouTube</a>
+    <a class="app" href="podcast://"><span>🎙️</span>Podcasts</a>
+    <a class="app" href="photos-redirect://"><span>🖼️</span>Galeria</a>
+
+    <!-- Navegação -->
+    <a class="app" href="http://"><span>🌐</span>Safari</a>
+    <a class="app" href="googlechrome://example.com"><span>🌍</span>Chrome</a>
+    <a class="app" href="brave://"><span>🦁</span>Brave</a>
+    <a class="app" href="google://"><span>🔎</span>Google</a>
+
+    <!-- Utilitários -->
+    <a class="app" href="App-Prefs:"><span>⚙️</span>Ajustes</a>
+    <a class="app" href="calshow://"><span>🗓️</span>Calendário</a>
+    <a class="app" href="mobilenotes://"><span>📝</span>Notas</a>
+    <a class="app" href="clock-alarm://"><span>⏰</span>Relógio</a>
+    <a class="app" href="camera://"><span>📷</span>Câmera</a>
+    <a class="app" href="calculator://"><span>🧮</span>Calculadora</a>
+  </div>
+
+  <script>
+    const horaDiv = document.getElementById('hora');
+    const dataDiv = document.getElementById('data');
+    let mostrarPontos = true;
+
+    function atualizarRelogio() {
+      const agora = new Date();
+      const horas = String(agora.getHours()).padStart(2, '0');
+      const minutos = String(agora.getMinutes()).padStart(2, '0');
+      const dia = String(agora.getDate()).padStart(2, '0');
+      const mes = String(agora.getMonth() + 1).padStart(2, '0');
+      const ano = String(agora.getFullYear()).slice(-2);
+      const separador = mostrarPontos ? ':' : ' ';
+
+      horaDiv.textContent = `${horas}${separador}${minutos}`;
+      dataDiv.textContent = `${dia}/${mes}/${ano}`;
+      mostrarPontos = !mostrarPontos;
+    }
+
+    setInterval(atualizarRelogio, 1000);
+    atualizarRelogio();
+  </script>
+</body>
+</html>
+

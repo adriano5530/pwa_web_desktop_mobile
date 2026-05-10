@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base64 Encoder/Decoder</title>
+    <style type="text/css">
+         body, h1, html {
+		height: 20px;
+
+		background-color: #dce2e4;
+		background: #eee url(data:image/png;base64,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);
+		color: #000;
+
+		padding: 0 5px;
+		line-height: 20px;
+		font-size: 13px;
+		font-weight: bold;
+
+		box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.5) inset;
+		text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+	}
+	
+/* gradients */
+.bottom-gradient {
+	position:relative;
+	height:0;
+	border-top:1px solid #ddd;
+	border-bottom:1px solid #fff;
+	z-index:-99;
+	clear:both;
+	margin:0;
+}
+.bottom-gradient.between-rows {
+	margin: -15px 0 15px 0;
+}
+.bottom-gradient .container {
+	height: 0;
+}
+.bottom-gradient span {
+    border: medium none;
+    display: block;
+    height: 80px;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    top: -80px;
+    z-index: -100;
+}	
+.bottom-gradient .left {
+	background:no-repeat url(../images/combined_gradient.png) 0 0;
+	background:-webkit-radial-gradient(bottom right,circle,rgba(0,0,0,0.06),rgba(0,0,0,0) 80px);
+	background:-moz-radial-gradient(bottom right,rgba(0,0,0,0.06),rgba(0,0,0,0) 80px);
+	width:80px;
+	left:0;
+}
+
+.bottom-gradient .center {
+	background:no-repeat url(../images/combined_gradient.png) -114px 0;
+	background:-webkit-radial-gradient(bottom left,circle,rgba(0,0,0,0.06),rgba(0,0,0,0) 80px);
+	background:-moz-radial-gradient(bottom left,rgba(0,0,0,0.06),rgba(0,0,0,0) 80px);
+	width:80px;
+	right:0;
+}
+
+.bottom-gradient .right {
+	position:relative;
+	margin-left:80px;
+	margin-right:80px;
+	top:-80px;
+	background:url(../images/gradient.png);
+	background:-webkit-linear-gradient(bottom,rgba(0,0,0,0.06),rgba(0,0,0,0) 80px);
+	background:-moz-linear-gradient(bottom,rgba(0,0,0,0.06),rgba(0,0,0,0) 80px);
+}
+
+.dark .bottom-gradient {
+	border-top: 1px solid #000;
+	border-bottom: 1px solid #2c2c2c;
+	z-index: 0;
+}
+.dark .bottom-gradient span {
+	display: none;
+}
+
+
+.title {
+  text-align: center;
+}
+
+.input{
+display: grid;
+justify-content: center;
+margin-bottom: 35px;
+text-align: justify;
+padding-left: 15px;
+padding-right: 15px;
+}
+	
+	.custom-btn {
+  width: 170px;
+  height: 40px;
+  color: #4c4c4c;
+  border-radius: 5px;
+  padding: 10px 25px;
+  font-family: 'Lato', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  font-style: normal;
+  text-shadow: 0px 1px 0px #fff;
+  text-decoration: none;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  display: inline-block;
+  box-shadow: inset 0px 1px 0px rgba(255,255,255,1),0px 1px 3px rgba(0,0,0,0.3);
+  outline: none;
+  border: 1px solid #ba6;
+}
+.custom-btn:active{
+  -webkit-transform: translateY(2px);
+  transform: translateY(2px);
+}
+
+/* 5 */
+.button {
+  backface-visibility: hidden;
+  position: relative;
+  cursor: pointer;
+  display: inline-block;
+  white-space: nowrap;
+  border-color: #7c7c7c;
+  background: linear-gradient(180deg,#e6e6e6 0%,rgba(0, 0, 0, 0.25) 49%, rgba(38, 38, 38, 0.6) 51%,rgba(0, 0, 0, 0.25) 100%);
+  border-radius: 5px;
+  margin-bottom: 25px;
+}
+	</style>
+</head>
+<body>
+    <h1>Base64 Encoder/Decoder</h1>
+ <div class="bottom-gradient">
+    <span class="left"></span>
+    <span class="center"></span>
+    <span class="right"></span>
+  </div>
+    <input type="file" id="fileInput">
+    <button class="custom-btn button" id="encodeButton">Codificar em Base64</button>
+    <button class="custom-btn button" id="decodeButton">Decodificar de Base64</button>
+
+    <div id="resultContainer"></div>
+ <div class="bottom-gradient">
+    <span class="left"></span>
+    <span class="center"></span>
+    <span class="right"></span>
+  </div>
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const encodeButton = document.getElementById('encodeButton');
+        const decodeButton = document.getElementById('decodeButton');
+        const resultContainer = document.getElementById('resultContainer');
+
+        fileInput.addEventListener('change', () => {
+            const selectedFile = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                const encodedImage = event.target.result.split(',')[1];
+                resultContainer.innerHTML = `
+                    <p>Imagem Carregada:</p>
+                    <img src="${event.target.result}" style="max-width: 300px;">
+                    <p>Base64:</p>
+                    <textarea id="base64TextArea" style="width: 100%; height: 100px;">${encodedImage}</textarea>
+                `;
+            };
+
+            reader.readAsDataURL(selectedFile);
+        });
+
+        encodeButton.addEventListener('click', () => {
+            const base64TextArea = document.getElementById('base64TextArea');
+            const decodedImage = new Image();
+            decodedImage.src = 'data:image/png;base64,' + base64TextArea.value;
+            resultContainer.innerHTML = `
+                <p>Decodificado:</p>
+                <img src="${decodedImage.src}" style="max-width: 300px;">
+            `;
+        });
+
+        decodeButton.addEventListener('click', () => {
+            const base64TextArea = document.getElementById('base64TextArea');
+            const imageSource = 'data:image/png;base64,' + base64TextArea.value;
+            const decodedImage = new Image();
+            decodedImage.src = imageSource;
+            resultContainer.innerHTML = `
+                <p>Codificado:</p>
+                <img src="${imageSource}" style="max-width: 300px;">
+            `;
+        });
+    </script>
+</body>
+</html>

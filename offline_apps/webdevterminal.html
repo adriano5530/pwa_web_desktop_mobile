@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Terminal</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 5px;
+      background: black;
+      color: white;
+      font-family: consolas, monospace;
+      font-size: 15px;
+      overflow: auto;
+    }
+
+    .terminaltext pre,
+    .terminaltext code,
+    .terminaltypesection p {
+      margin: 0;
+    }
+
+    .terminaltypesection {
+      display: flex;
+      align-items: center;
+    }
+
+    .terminaltypesection input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: white;
+      font: inherit;
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="terminaltext"><pre>Simulador de Terminal [Version 1.0]</pre></div>
+  <!--<div class="terminaltext"><pre>(c) Nano_Tech Software.</pre></div>-->
+  <div class="terminaltext"><pre></pre></div>
+
+  <div class="terminaltypesection active">
+    <p>C:\Users\you\></p>
+    <input type="text" autofocus>
+  </div>
+
+  <script>
+const body = document.body;
+
+function printLine(text) {
+  const div = document.createElement("div");
+  div.className = "terminaltext";
+  // Usamos JSON.stringify para objetos aparecerem bonitos, senão vira "[object Object]"
+  const content = typeof text === 'object' ? JSON.stringify(text, null, 2) : text;
+  div.innerHTML = `<pre>${content}</pre>`;
+  body.insertBefore(div, document.querySelector(".terminaltypesection"));
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+function newPrompt() {
+  const section = document.createElement("div");
+  section.className = "terminaltypesection active";
+  section.innerHTML = `<p>JS Console></p><input type="text" autofocus>`;
+  body.appendChild(section);
+  
+  const input = section.querySelector("input");
+  input.focus();
+  listenInput(input, section);
+}
+
+function listenInput(input, section) {
+  input.addEventListener("keyup", e => {
+    if (e.key === "Enter") {
+      const cmd = input.value;
+      input.setAttribute("readonly", true);
+      section.classList.remove("active");
+
+      if (cmd.trim() === "cls") {
+        document.querySelectorAll(".terminaltext, .terminaltypesection").forEach(e => e.remove());
+      } else if (cmd.trim() !== "") {
+        try {
+          // A MÁGICA ACONTECE AQUI:
+          // O eval executa o que foi digitado e retorna o resultado
+          const result = eval(cmd);
+          printLine(result !== undefined ? result : "undefined");
+        } catch (err) {
+          // Se o código JS estiver errado, ele mostra o erro em vermelho
+          printLine(`Error: ${err.message}`);
+        }
+      }
+
+      newPrompt();
+    }
+  });
+}
+
+listenInput(document.querySelector("input"), document.querySelector(".terminaltypesection"));
+  </script>
+</body>
+</html>
+

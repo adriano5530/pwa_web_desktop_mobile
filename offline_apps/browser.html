@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Navegador Simulado</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background-color: #1e1e1e;
+      color: #ccc;
+    }
+    #tabs {
+      display: flex;
+      background: #2a2a2a;
+      padding: 0 4px;
+      overflow-x: auto;
+      border-bottom: 1px solid #444;
+    }
+    .tab {
+      display: flex;
+      align-items: center;
+      background: #3a3a3a;
+      color: #ddd;
+      border-radius: 8px 8px 0 0;
+      margin: 4px 4px 0 0;
+      padding: 6px 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+      max-width: 200px;
+    }
+    .tab.active {
+      background: #1e1e1e;
+      color: white;
+      box-shadow: inset 0 -2px 0 #4285f4;
+    }
+    .tab:hover {
+      background: #444;
+    }
+    .tab span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px;
+      background: #2b2b2b;
+      border-bottom: 1px solid #444;
+    }
+    #controls input {
+      flex: 1;
+      padding: 8px;
+      background: #1e1e1e;
+      border: 1px solid #555;
+      color: white;
+      font-size: 15px;
+      border-radius: 6px;
+    }
+    #controls button {
+      background: #333;
+      color: #ccc;
+      border: 1px solid #555;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #controls button:hover {
+      background: #444;
+      color: white;
+    }
+    #browser-frame {
+      width: 100%;
+      height: calc(100vh - 112px); /* altura das abas + controles */
+      border: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="tabs"></div>
+
+  <div id="controls">
+    <button onclick="voltar()">⬅</button>
+    <button onclick="avancar()">➡</button>
+    <input type="text" id="url-bar" placeholder="Digite a URL...">
+    <button onclick="go()">Ir</button>
+    <button onclick="novaAba()">+ Aba</button>
+    <button onclick="abrirExterno()" title="Abrir em nova aba real">🔗</button>
+<script>
+function abrirExterno() {
+  const url = document.getElementById("url-bar").value;
+  window.open(url, '_blank');
+}
+</script>
+  </div>
+
+  <iframe id="browser-frame"></iframe>
+
+  <script>
+    let abas = [];
+    let abaAtiva = -1;
+
+    function novaAba(url = "https://google.com/?igu=1") {
+      abas.push({ url, historico: [url], indice: 0 });
+      abaAtiva = abas.length - 1;
+      atualizarAbas();
+      carregarPagina(url, false);
+    }
+
+    function atualizarAbas() {
+      const container = document.getElementById("tabs");
+      container.innerHTML = "";
+      abas.forEach((aba, i) => {
+        const tab = document.createElement("div");
+        tab.className = "tab" + (i === abaAtiva ? " active" : "");
+
+        const title = document.createElement("span");
+        title.innerText = aba.url.replace(/^https?:\/\//, "").slice(0, 20);
+        title.style.flex = "1";
+        title.onclick = () => {
+          abaAtiva = i;
+          document.getElementById("url-bar").value = aba.url;
+          carregarPagina(aba.url, false);
+          atualizarAbas();
+        };
+
+        const closeBtn = document.createElement("span");
+        closeBtn.innerText = " ❌";
+        closeBtn.style.marginLeft = "8px";
+        closeBtn.style.cursor = "pointer";
+        closeBtn.onclick = (e) => {
+          e.stopPropagation();
+          fecharAba(i);
+        };
+
+        tab.appendChild(title);
+        tab.appendChild(closeBtn);
+        container.appendChild(tab);
+      });
+    }
+
+    function fecharAba(indice) {
+      abas.splice(indice, 1);
+      if (abaAtiva >= indice) abaAtiva--;
+      if (abas.length === 0) {
+        novaAba();
+      } else {
+        abaAtiva = Math.max(0, abaAtiva);
+        const aba = abas[abaAtiva];
+        carregarPagina(aba.url, false);
+      }
+      atualizarAbas();
+    }
+
+    function go() {
+      const urlInput = document.getElementById("url-bar").value;
+      const url = urlInput.startsWith("http") ? urlInput : "https://" + urlInput;
+      if (abaAtiva >= 0) {
+        carregarPagina(url, true);
+        atualizarAbas();
+      }
+    }
+
+    function voltar() {
+      if (abaAtiva >= 0) {
+        const aba = abas[abaAtiva];
+        if (aba.indice > 0) {
+          aba.indice--;
+          aba.url = aba.historico[aba.indice];
+          carregarPagina(aba.url, false);
+          atualizarAbas();
+        }
+      }
+    }
+
+    function avancar() {
+      if (abaAtiva >= 0) {
+        const aba = abas[abaAtiva];
+        if (aba.indice < aba.historico.length - 1) {
+          aba.indice++;
+          aba.url = aba.historico[aba.indice];
+          carregarPagina(aba.url, false);
+          atualizarAbas();
+        }
+      }
+    }
+
+ function carregarPagina(url, registrar = true) {
+  const iframe = document.getElementById("browser-frame");
+  const urlBar = document.getElementById("url-bar");
+
+  // 1. Tenta o carregamento direto primeiro
+  iframe.src = url;
+  urlBar.value = url;
+  console.log("Tentando conexão direta: " + url);
+
+  // 2. Registra no histórico se necessário
+  if (registrar && abaAtiva >= 0) {
+    const aba = abas[abaAtiva];
+    aba.historico = aba.historico.slice(0, aba.indice + 1);
+    aba.historico.push(url);
+    aba.indice++;
+    aba.url = url;
+  }
+
+  // 3. Verificação de Bloqueio (Lógica Client-side)
+  // Aguardamos 1.5s para ver se o site bloqueou o iframe
+  setTimeout(() => {
+    try {
+      // Se conseguirmos acessar o conteúdo, o site permitiu (mesma origem ou sem bloqueio)
+      if (iframe.contentWindow.location.href === "about:blank") {
+        throw new Error("Página em branco");
+      }
+    } catch (e) {
+      /* Se cair aqui (Erro de Cross-Origin), significa que o site carregou 
+         OU que ele bloqueou via cabeçalho (X-Frame-Options).
+         Como não podemos ler o erro real, verificamos se o iframe parece "vazio"
+      */
+      console.warn("Possível bloqueio detectado ou restrição de segurança. Tentando Proxy...");
+      
+      // 4. Fallback para o Servidor Proxy (apenas se o direto falhar ou parecer vazio)
+      // Você pode comentar a linha abaixo até que seu servidor esteja pronto
+      // const proxyUrl = "https://proxy-server-0muc.onrender.com/proxy?url=" + encodeURIComponent(url);
+      // iframe.src = proxyUrl;
+    }
+  }, 1500);
+}
+
+    novaAba("https://google.com/?igu=1");
+  </script>
+
+</body>
+</html>
+

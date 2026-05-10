@@ -1,0 +1,19 @@
+# Arquivo específico
+indextract.html
+windowkernel.html
+windowkernel2.html
+
+
+# Arquivos tipicamente ignorados
+node_modules/
+dist/
+build/
+.env
+.DS_Store
+Thumbs.db
+*.log
+*.mhtml
+*.old
+.vscode/
+.idea/
+

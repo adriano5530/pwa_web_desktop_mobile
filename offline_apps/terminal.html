@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Terminal</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 5px;
+      background: black;
+      color: white;
+      font-family: consolas, monospace;
+      font-size: 15px;
+      overflow: auto;
+    }
+
+    .terminaltext pre,
+    .terminaltext code,
+    .terminaltypesection p {
+      margin: 0;
+    }
+
+    .terminaltypesection {
+      display: flex;
+      align-items: center;
+    }
+
+    .terminaltypesection input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: white;
+      font: inherit;
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="terminaltext"><pre>Simulador de Terminal [Version 1.0]</pre></div>
+  <!--<div class="terminaltext"><pre>(c) Nano_Tech Software.</pre></div>-->
+  <div class="terminaltext"><pre></pre></div>
+
+  <div class="terminaltypesection active">
+    <p>C:\Users\you\></p>
+    <input type="text" autofocus>
+  </div>
+
+  <script>
+    const body = document.body;
+
+    function printLine(text) {
+      const div = document.createElement("div");
+      div.className = "terminaltext";
+      div.innerHTML = `<pre>${text}</pre>`;
+      body.insertBefore(div, document.querySelector(".terminaltypesection"));
+    }
+
+    function newPrompt() {
+      const section = document.createElement("div");
+      section.className = "terminaltypesection active";
+
+      const p = document.createElement("p");
+      p.textContent = "C:\\Users\\you\\>";
+      section.appendChild(p);
+
+      const input = document.createElement("input");
+      input.type = "text";
+      section.appendChild(input);
+
+      body.appendChild(section);
+      input.focus();
+      listenInput(input, section);
+    }
+
+    function listenInput(input, section) {
+      input.addEventListener("keyup", e => {
+        if (e.key === "Enter") {
+          input.setAttribute("readonly", true);
+          section.classList.remove("active");
+
+          const cmd = input.value.trim().toLowerCase();
+
+          if (cmd === "help") {
+            printLine("CLS     Clears the screen.");
+            printLine("DATE    Displays the date.");
+            printLine("DIR     Lists directories.");
+            printLine("ECHO    Prints text.");
+            printLine("TITLE   Sets title (no efeito visual aqui).");
+          } else if (cmd === "dir") {
+            printLine("Directory of C:\\Users\\you\\");
+            ["Desktop", "Documents", "Downloads", "Pictures", "Music", "Videos", "secret.txt"]
+              .forEach(name => printLine("<DIR>     " + name));
+          } else if (cmd === "cls") {
+            [...document.querySelectorAll(".terminaltext, .terminaltypesection")].forEach(e => e.remove());
+          } else if (cmd.startsWith("echo ")) {
+            printLine(cmd.slice(5));
+          } else if (cmd === "date") {
+            const d = new Date();
+            printLine("The current date is: " + (d.getMonth()+1) + "/" + d.getDate() + "/" + d.getFullYear());
+          } else {
+            if (cmd !== "") printLine('Unknown command. Type "help".');
+          }
+
+          newPrompt();
+        }
+      });
+    }
+
+    listenInput(document.querySelector("input"), document.querySelector(".terminaltypesection"));
+  </script>
+</body>
+</html>
+

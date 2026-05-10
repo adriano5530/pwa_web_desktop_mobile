@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Player de Mídia</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #121212;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      background: #1e1e1e;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    input[type="file"] {
+      color: white;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    video, img {
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    .hint {
+      text-align: center;
+      color: #aaa;
+      font-size: 1.2em;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div><strong>🎬 Player de Mídia</strong></div>
+    <input type="file" id="fileInput" accept="video/*,image/*">
+  </header>
+
+  <main>
+    <div id="preview" class="hint">Selecione um vídeo ou imagem local</div>
+  </main>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const preview = document.getElementById('preview');
+
+    fileInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const url = URL.createObjectURL(file);
+      preview.innerHTML = ""; // limpa o conteúdo atual
+
+      if (file.type.startsWith("video/")) {
+        const video = document.createElement("video");
+        video.src = url;
+        video.controls = true;
+        video.autoplay = true;
+        preview.appendChild(video);
+      } else if (file.type.startsWith("image/")) {
+        const img = document.createElement("img");
+        img.src = url;
+        preview.appendChild(img);
+      } else {
+        preview.innerHTML = "<div class='hint'>Formato não suportado.</div>";
+      }
+    });
+  </script>
+
+</body>
+</html>
+

@@ -1,0 +1,19 @@
+{
+  "name": "Lançador Minimalista",
+  "short_name": "Lanc. Minimal",
+  "start_url": "https://adrianotadss67.github.io/lancadorminimal/",
+  "display": "standalone",
+  "theme_color": "#1e1e1e",
+  "background_color": "#1e1e1e",
+  "description": "Um lançador minimalista",
+  "packageId": "com.adrianotadss67.lancador",
+  "host": "adrianotadss67.github.io",
+  "launcherName": "LancadorMinimalista",
+  "versionCode": 1,
+  "versionName": "1.0.0",
+  "iconUrl": "https://adrianotadss67.github.io/lancadorminimal/icon-512.png",
+  "maskableIconUrl": "https://adrianotadss67.github.io/lancadorminimal/icon-192.png",
+  "signing": {
+    "use": "none"
+  }
+}

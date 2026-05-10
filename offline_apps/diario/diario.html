@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#4CAF50">
+  <link rel="icon" href="diary-icon.png">
+  <link rel="manifest" href="manifest.json">
+  <title>CrNts</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f4;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .container {
+      width: 100%;
+      max-width: 900px;
+      text-align: center;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+      margin: 10px 0;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      color: #fff;
+      background: #4CAF50;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    .entries {
+      margin-top: 20px;
+      text-align: left;
+    }
+    .entry {
+      background: #fff;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .decrypted-text {
+      margin-top: 10px;
+      padding: 10px;
+      background: #e8f5e9;
+      border: 1px solid #c8e6c9;
+      border-radius: 5px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  </style>
+  <script src="crypto-js.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>CrNts</h1>
+    <textarea id="diaryEntry" placeholder="Digite sua entrada..."></textarea>
+    <input type="password" id="encryptionKey" placeholder="Senha" />
+    <button onclick="saveEntry()">Salvar</button>
+    <button onclick="exportEntries()">Exportar Entradas</button>
+    <input type="file" id="importFile" style="display:none" onchange="importEntries(this.files[0])" />
+    <button onclick="document.getElementById('importFile').click()">Importar Entradas</button>
+    <div class="entries" id="entries"></div>
+  </div>
+
+  <script>
+    const ENTRIES_KEY = 'diaryEntries';
+
+    // Carregar entradas existentes
+    window.onload = function() {
+      displayEntries();
+    };
+
+    function saveEntry() {
+      const text = document.getElementById('diaryEntry').value;
+      const key = document.getElementById('encryptionKey').value;
+
+      if (!text || !key) {
+        alert('Por favor, preencha a entrada e a senha de criptografia.');
+        return;
+      }
+
+      // Criptografar texto
+      const encrypted = CryptoJS.AES.encrypt(text, key).toString();
+
+      // Salvar no localStorage
+      const entries = JSON.parse(localStorage.getItem(ENTRIES_KEY)) || [];
+      entries.push(encrypted);
+      localStorage.setItem(ENTRIES_KEY, JSON.stringify(entries));
+
+      document.getElementById('diaryEntry').value = '';
+      alert('Entrada salva com sucesso!');
+
+      displayEntries();
+    }
+
+    function displayEntries() {
+      const entriesContainer = document.getElementById('entries');
+      const entries = JSON.parse(localStorage.getItem(ENTRIES_KEY)) || [];
+      entriesContainer.innerHTML = '';
+
+      entries.forEach((entry, index) => {
+        const entryDiv = document.createElement('div');
+        entryDiv.className = 'entry';
+        entryDiv.innerHTML = `
+          <p><strong>Entrada ${index + 1}</strong></p>
+          <textarea readonly>${entry}</textarea>
+          <input type="password" placeholder="Digite a senha para abrir ou deletar" />
+          <button onclick="decryptEntry(${index}, this.previousElementSibling.value, this.parentElement)">Abrir</button>
+          <button onclick="deleteEntry(${index}, this.previousElementSibling.previousElementSibling.value)">Deletar</button>
+        `;
+        entriesContainer.appendChild(entryDiv);
+      });
+    }
+
+    function decryptEntry(index, key, parentElement) {
+      const entries = JSON.parse(localStorage.getItem(ENTRIES_KEY)) || [];
+      const encrypted = entries[index];
+
+      try {
+        const decrypted = CryptoJS.AES.decrypt(encrypted, key).toString(CryptoJS.enc.Utf8);
+        if (!decrypted) throw new Error('Senha incorreta');
+
+        // Criar o textarea editável
+        const decryptedDiv = document.createElement('div');
+        decryptedDiv.className = 'decrypted-text';
+
+        const editableTextarea = document.createElement('textarea');
+        editableTextarea.value = decrypted;
+        editableTextarea.style.width = '100%';
+        decryptedDiv.appendChild(editableTextarea);
+
+        // Botão para salvar edição
+        const saveButton = document.createElement('button');
+        saveButton.textContent = 'Salvar Edição';
+        saveButton.style.marginTop = '10px';
+        saveButton.onclick = () => {
+          saveEditedEntry(index, editableTextarea.value, key);
+        };
+        decryptedDiv.appendChild(saveButton);
+
+        // Botão para copiar texto
+        const copyButton = document.createElement('button');
+        copyButton.textContent = 'Copiar';
+        copyButton.style.marginTop = '10px';
+        copyButton.onclick = () => {
+          navigator.clipboard.writeText(editableTextarea.value).then(() => {
+            alert('Texto copiado para a área de transferência!');
+          });
+        };
+        decryptedDiv.appendChild(copyButton);
+
+        parentElement.appendChild(decryptedDiv);
+      } catch (e) {
+        alert('Falha na abertura. Verifique a senha.');
+      }
+    }
+
+    function saveEditedEntry(index, newText, key) {
+      const entries = JSON.parse(localStorage.getItem(ENTRIES_KEY)) || [];
+      const encrypted = CryptoJS.AES.encrypt(newText, key).toString();
+
+      // Substituir a entrada antiga pela nova criptografada
+      entries[index] = encrypted;
+      localStorage.setItem(ENTRIES_KEY, JSON.stringify(entries));
+
+      alert('Entrada editada e salva com sucesso!');
+      displayEntries(); // Atualiza a exibição
+    }
+
+    function deleteEntry(index, key) {
+      const entries = JSON.parse(localStorage.getItem(ENTRIES_KEY)) || [];
+      const encrypted = entries[index];
+
+      try {
+        const decrypted = CryptoJS.AES.decrypt(encrypted, key).toString(CryptoJS.enc.Utf8);
+        if (!decrypted) throw new Error('Senha incorreta');
+
+        if (confirm('Tem certeza que deseja deletar esta entrada?')) {
+          entries.splice(index, 1);
+          localStorage.setItem(ENTRIES_KEY, JSON.stringify(entries));
+          alert('Entrada deletada com sucesso!');
+          displayEntries();
+        }
+      } catch (e) {
+        alert('Falha na verificação. Verifique a senha.');
+      }
+    }
+
+    function exportEntries() {
+      const entries = JSON.parse(localStorage.getItem(ENTRIES_KEY)) || [];
+      const blob = new Blob([JSON.stringify(entries)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'diary_entries.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importEntries(file) {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        try {
+          const importedEntries = JSON.parse(event.target.result);
+          const currentEntries = JSON.parse(localStorage.getItem(ENTRIES_KEY)) || [];
+          localStorage.setItem(ENTRIES_KEY, JSON.stringify([...currentEntries, ...importedEntries]));
+          alert('Entradas importadas com sucesso!');
+          displayEntries();
+        } catch (e) {
+          alert('Erro ao importar entradas. Verifique o arquivo.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // Registrar o service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./service-worker.js').then(() => {
+        console.log('Service Worker registrado com sucesso!');
+      }).catch((error) => {
+        console.error('Falha ao registrar o Service Worker:', error);
+      });
+    }
+  </script>
+</body>
+</html>

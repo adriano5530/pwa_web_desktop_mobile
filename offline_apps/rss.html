@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Leitor RSS Local</title>
+  <style>
+    body { font-family: monospace; background: #000; color: #0f0; padding: 1em; }
+    h1, h2 { color: #0f0; }
+    .feed { margin-bottom: 2em; border-bottom: 1px dashed #0f0; padding-bottom: 1em; }
+    .item { margin: 0.5em 0; }
+    a { color: #0ff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    input, button {
+      background: #000;
+      border: 1px solid #0f0;
+      color: #0f0;
+      padding: 5px;
+      font-family: monospace;
+    }
+    button:hover {
+      background: #0f0;
+      color: #000;
+      cursor: pointer;
+    }
+    .feed-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .remove-btn {
+      font-size: 0.9em;
+      color: #f00;
+      border-color: #f00;
+    }
+    .remove-btn:hover {
+      background: #f00;
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+  <h1>📡 Leitor RSS</h1>
+
+  <div>
+    <input type="text" id="feedInput" placeholder="Cole a URL do feed RSS" size="40">
+    <button onclick="addFeed()">Adicionar Feed</button>
+  </div>
+
+  <div id="feeds" style="margin-top: 2em;"></div>
+
+  <script>
+    const feedContainer = document.getElementById("feeds");
+    const feedInput = document.getElementById("feedInput");
+    const proxy = "https://api.allorigins.win/get?url=";
+
+    function getFeeds() {
+      return JSON.parse(localStorage.getItem("rssFeeds") || "[]");
+    }
+
+    function saveFeeds(feeds) {
+      localStorage.setItem("rssFeeds", JSON.stringify(feeds));
+    }
+
+    function removeFeed(url) {
+      const feeds = getFeeds().filter(f => f !== url);
+      saveFeeds(feeds);
+      loadAllFeeds();
+    }
+
+    function loadAllFeeds() {
+      feedContainer.innerHTML = "";
+      const feeds = getFeeds();
+      if (feeds.length === 0) {
+        feedContainer.innerHTML = "<p>Nenhum feed adicionado ainda.</p>";
+      } else {
+        feeds.forEach(loadFeed);
+      }
+    }
+
+    function addFeed() {
+      const url = feedInput.value.trim();
+      if (!url) return;
+      const feeds = getFeeds();
+      if (!feeds.includes(url)) {
+        feeds.push(url);
+        saveFeeds(feeds);
+        loadAllFeeds(); // recarrega todos para aparecer corretamente com botão
+      }
+      feedInput.value = "";
+    }
+
+    function loadFeed(url) {
+      fetch(proxy + encodeURIComponent(url))
+        .then(res => res.json())
+        .then(data => {
+          const parser = new DOMParser();
+          const xml = parser.parseFromString(data.contents, "text/xml");
+          const channelTitle = xml.querySelector("channel > title")?.textContent || "Feed Desconhecido";
+          const items = xml.querySelectorAll("item");
+
+          const feedDiv = document.createElement("div");
+          feedDiv.className = "feed";
+
+          const header = document.createElement("div");
+          header.className = "feed-header";
+          header.innerHTML = `<h2>${channelTitle}</h2>`;
+
+          const removeButton = document.createElement("button");
+          removeButton.className = "remove-btn";
+          removeButton.textContent = "🗑️ Remover";
+          removeButton.onclick = () => removeFeed(url);
+
+          header.appendChild(removeButton);
+          feedDiv.appendChild(header);
+
+          items.forEach((item, i) => {
+            if (i >= 5) return;
+            const title = item.querySelector("title")?.textContent;
+            const link = item.querySelector("link")?.textContent;
+            const el = document.createElement("div");
+            el.className = "item";
+            el.innerHTML = `<a href="${link}" target="_blank">➤ ${title}</a>`;
+            feedDiv.appendChild(el);
+          });
+
+          feedContainer.appendChild(feedDiv);
+        })
+        .catch(err => {
+          console.error("Erro ao carregar feed:", url, err);
+          const feedDiv = document.createElement("div");
+          feedDiv.className = "feed";
+          feedDiv.innerHTML = `<h2>Erro ao carregar: ${url}</h2>`;
+          const removeButton = document.createElement("button");
+          removeButton.className = "remove-btn";
+          removeButton.textContent = "🗑️ Remover";
+          removeButton.onclick = () => removeFeed(url);
+          feedDiv.appendChild(removeButton);
+          feedContainer.appendChild(feedDiv);
+        });
+    }
+
+    loadAllFeeds();
+  </script>
+</body>
+</html>

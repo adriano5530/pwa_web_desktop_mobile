@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>bloco-notas-offline-editor</title>
+<link rel="manifest" id="dynamic-manifest">
+<style>
+  :root{--bg:#ffffff;--text:#000000}
+  [data-theme="dark"]{--bg:#0f1115;--text:#c8ccd4}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,monospace}
+  header{display:flex;align-items:center;gap:12px;background:transparent;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.04)}
+  h1{margin:0;font-size:18px}
+  .menu{position:relative}
+  .menu > button{background:#111217;color:var(--text);border:none;padding:8px 12px;border-radius:6px;cursor:pointer}
+  .menu-content{display:none;position:absolute;left:0;top:38px;background:var(--bg);color:var(--text);box-shadow:0 6px 18px rgba(2,6,23,0.6);border-radius:6px;overflow:hidden;min-width:200px;z-index:10}
+  .menu-content.show{display:block}
+  .menu-content a{display:block;padding:8px 12px;text-decoration:none;color:var(--text);cursor:pointer}
+  .menu-content a:hover{background:rgba(255,255,255,0.08)}
+  main{padding:18px;display:flex;flex-direction:column;gap:12px;align-items:center}
+  .editor-wrap{width:100%;max-width:1100px;display:grid;gap:12px;align-items:start}
+  .panel{background:transparent;border-radius:8px;border:1px solid rgba(255,255,255,0.04);padding:8px;min-height:420px;box-sizing:border-box;width:100%}
+  .fallback-editor{position:relative;height:420px;display:flex;flex-direction:column}
+  .fallback-textarea{position:absolute;inset:0;background:transparent;color:transparent;caret-color:var(--text);border:none;padding:12px;font-family:monospace;font-size:13px;resize:none;outline:none;overflow:auto;white-space:pre;z-index:2}
+  .fallback-highlight{position:absolute;inset:0;padding:12px;pointer-events:none;font-family:monospace;font-size:13px;white-space:pre-wrap;word-break:break-word;overflow:auto;z-index:1;border-radius:6px}
+  #status{height:20px;color:#6fcf97;min-height:20px;text-align:center;font-size:14px}
+  .tok-comment{color:#5c6370;font-style:italic}
+  .tok-keyword{color:#c678dd}
+  .tok-string{color:#98c379}
+  .tok-number{color:#d19a66}
+  .tok-fn{color:#61aeee}
+  .tok-attr{color:#e6c07b}
+  .tok-tag{color:#e06c75}
+  .tok-plain{color:var(--text)}
+  @media (max-width:900px){
+    .fallback-textarea,.fallback-highlight{font-size:12px}
+  }
+  .top-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .btn{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:6px 10px;border-radius:6px;color:var(--text);cursor:pointer}
+</style>
+</head>
+<body>
+<header>
+  <h1>📝 bloco-notas-offline-editor</h1>
+  <div class="top-right">
+    <div class="menu">
+      <button id="menuBtn" aria-haspopup="true">📂 Arquivo ▾</button>
+      <div class="menu-content" id="menuContent" role="menu">
+        <a onclick="salvarNota()">💾 Salvar</a>
+        <a onclick="apagarNota()">🧹 Apagar</a>
+        <a onclick="exportarTXT()">⬇️ Exportar .txt</a>
+        <a onclick="exportarHTML()">⬇️ Exportar .html</a>
+        <a onclick="document.getElementById('arquivoInput').click()">📄 Abrir .txt</a>
+        <a onclick="alternarTema()">🌓 Alternar Tema</a>
+      </div>
+    </div>
+    <button class="btn" onclick="mostrarSobre()">❔</button>
+  </div>
+</header>
+
+<main>
+  <div class="editor-wrap">
+    <div class="panel">
+      <div id="fallback" class="fallback-editor">
+        <div id="fallback-highlight" class="fallback-highlight" aria-hidden="true"></div>
+        <textarea id="fallback-text" class="fallback-textarea" spellcheck="false" placeholder="Escreva ou cole código aqui..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="arquivoInput" accept=".txt,.js,.ts,.jsx,.tsx,.html,.css,.json,.py,.java,.c,.cpp,.cs,.rs" style="display:none" />
+  <div id="status"></div>
+</main>
+
+<script>
+const fileInput = document.getElementById('arquivoInput');
+const status = document.getElementById('status');
+const fallbackText = document.getElementById('fallback-text');
+const fallbackHighlight = document.getElementById('fallback-highlight');
+const menuBtn = document.getElementById('menuBtn');
+const menuContent = document.getElementById('menuContent');
+
+menuBtn.addEventListener('click', ()=>{
+  menuContent.classList.toggle('show');
+});
+document.addEventListener('click',(e)=>{
+  if(!menuBtn.contains(e.target) && !menuContent.contains(e.target)){
+    menuContent.classList.remove('show');
+  }
+});
+
+const LANGS = { js:'javascript', jsx:'javascript', ts:'javascript', tsx:'javascript', html:'html', htm:'html', css:'css', json:'json', py:'python', java:'java', c:'c', cpp:'cpp', cs:'csharp', rs:'rust' };
+
+function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function highlightCode(code, ext){
+  let out = escapeHtml(code);
+  if(/^(js|javascript|java|c|cpp|rust)$/.test(ext)) {
+    out = out.replace(/(\/\*[\s\S]*?\*\/|\/\/[^\n]*\n?)/g, m=>`<span class="tok-comment">${escapeHtml(m)}</span>`);
+  } else if(ext==='python') {
+    out = out.replace(/(#.*?$)/gm, m=>`<span class="tok-comment">${escapeHtml(m)}</span>`);
+  }
+  out = out.replace(/(`(?:\\.|[^`])*`)/g, m=>`<span class="tok-string">${escapeHtml(m)}</span>`);
+  out = out.replace(/(["'])(?:\\.|[^\\])*?\1/g, m=>`<span class="tok-string">${escapeHtml(m)}</span>`);
+  out = out.replace(/\b(\d+(\.\d+)?)\b/g, `<span class="tok-number">$1</span>`);
+  const kw = "\\b(function|const|let|var|if|else|for|while|return|class|import|from|def|async|await|new|switch|case|break|continue|try|catch|finally|true|false|null)\\b";
+  out = out.replace(new RegExp(kw,'g'), `<span class="tok-keyword">$1</span>`);
+  out = out.replace(/(&lt;\/?[a-zA-Z0-9\-\:]+)([^&]*?)&gt;/g, (m,p,rest)=> {
+    const attrs = rest.replace(/([a-zA-Z-:]+)(\s*=\s*)(".*?"|'.*?'|[^\s"'>]+)/g, `<span class="tok-attr">$1</span>$2<span class="tok-string">$3</span>`);
+    return `<span class="tok-tag">${p}</span>${attrs}&gt;`;
+  });
+  return out;
+}
+
+fallbackText.addEventListener('scroll', ()=>{
+  fallbackHighlight.scrollTop = fallbackText.scrollTop;
+  fallbackHighlight.scrollLeft = fallbackText.scrollLeft;
+});
+fallbackText.addEventListener('input', ()=>{
+  const txt = fallbackText.value;
+  localStorage.setItem('minhaNota', txt);
+  fallbackHighlight.innerHTML = highlightCode(txt, fallbackText.dataset.lang || '');
+});
+window.addEventListener('load', ()=>{
+  const s = localStorage.getItem('minhaNota');
+  if(s) fallbackText.value = s;
+  const savedLang = localStorage.getItem('lang') || '';
+  fallbackText.dataset.lang = savedLang;
+  fallbackHighlight.innerHTML = highlightCode(fallbackText.value, savedLang);
+  const t = localStorage.getItem('tema') || 'dark';
+  document.body.setAttribute('data-theme', t);
+});
+fileInput.addEventListener('change', (ev)=>{
+  const f = ev.target.files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    const txt = e.target.result;
+    fallbackText.value = txt;
+    const ext = (f.name.split('.').pop()||'').toLowerCase();
+    const mapped = LANGS[ext] || ext || '';
+    fallbackText.dataset.lang = mapped;
+    localStorage.setItem('minhaNota', txt);
+    if(mapped) localStorage.setItem('lang', mapped);
+    fallbackHighlight.innerHTML = highlightCode(txt, mapped);
+    mostrarStatus('📄 Arquivo carregado: ' + f.name);
+  };
+  reader.readAsText(f);
+});
+function salvarNota(){ localStorage.setItem('minhaNota', fallbackText.value); mostrarStatus('✅ Nota salva!'); }
+function apagarNota(){ if(confirm('Apagar tudo?')){ fallbackText.value=''; fallbackHighlight.innerHTML=''; localStorage.removeItem('minhaNota'); mostrarStatus('🧹 Apagado'); } }
+function exportarTXT(){
+  const blob = new Blob([fallbackText.value], {type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'minha-nota.txt'; a.click();
+  URL.revokeObjectURL(url);
+  mostrarStatus('⬇️ Exportado .txt');
+}
+function exportarHTML(){
+  const content = fallbackText.value;
+  const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>exported-note</title>
+  <style>body{background:#0f1115;color:#c8ccd4;font-family:monospace;padding:20px}pre{white-space:pre-wrap;word-break:break-word;font-size:13px}</style></head><body><pre>${escapeHtml(content)}</pre></body></html>`;
+  const blob = new Blob([html], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'minha-nota.html'; a.click();
+  URL.revokeObjectURL(url);
+  mostrarStatus('⬇️ Exportado .html');
+}
+function alternarTema(){
+  const atual = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.body.setAttribute('data-theme', atual);
+  localStorage.setItem('tema', atual);
+  mostrarStatus('Tema alterado');
+}
+function mostrarStatus(msg){ status.textContent = msg; setTimeout(()=>{ if(status.textContent===msg) status.textContent=''; },2500); }
+function mostrarSobre(){ alert('Editor totalmente offline.\nSalva localmente e exporta .txt/.html.'); }
+
+// atalhos teclado
+fallbackText.addEventListener('keydown', (e)=>{
+  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); salvarNota(); }
+  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='o'){ e.preventDefault(); document.getElementById('arquivoInput').click(); }
+});
+
+// manifest + service worker
+const manifestObj = { name:"Bloco de Notas Offline", short_name:"NotasOffline", start_url:".", display:"standalone", background_color:"#0f1115", theme_color:"#0f1115", icons:[] };
+const blobManifest = new Blob([JSON.stringify(manifestObj)], {type:'application/json'});
+document.getElementById('dynamic-manifest').setAttribute('href', URL.createObjectURL(blobManifest));
+
+if('serviceWorker' in navigator){
+  const swCode = `
+  const CACHE_NAME = 'bloco-notas-offline-cache-v1';
+  const urlsToCache = ['./'];
+  self.addEventListener('install', e => e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(urlsToCache))));
+  self.addEventListener('fetch', event => {
+    event.respondWith(caches.match(event.request).then(resp => resp || fetch(event.request).then(net => {
+      if(net && net.status===200){ caches.open(CACHE_NAME).then(c=>c.put(event.request, net.clone())); }
+      return net;
+    }).catch(()=>resp))));
+  });
+  self.addEventListener('activate', e => e.waitUntil(caches.keys().then(keys=>Promise.all(keys.map(k=>k!==CACHE_NAME&&caches.delete(k))))));
+  `;
+  const swBlob = new Blob([swCode], {type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(swBlob));
+}
+</script>
+</body>
+</html>

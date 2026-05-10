@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  web-desktop:
+    image: firstname/web-desktop:latest
+    container_name: web-desktop
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+

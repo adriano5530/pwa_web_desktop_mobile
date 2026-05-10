@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#1e1e1e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Desktop Web"> 
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('DOMContentLoaded', function () {
+        navigator.serviceWorker.register('service-worker.js')
+          .then(function (registration) {
+            console.log('Service Worker registrado com sucesso:', registration.scope);
+          })
+          .catch(function (error) {
+            console.log('Falha ao registrar o Service Worker:', error);
+          });
+      });
+    }
+  </script>
+  <title>Desktop Web</title>
+  <style>
+      * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+ 
+    
+    body {
+    min-height: 200vh;
+      /* força o dobro da altura da tela */
+      ;
+    background: #1e1e1e;
+    font-family: Arial, sans-serif;
+    color: white;
+    transition: background 0.5s ease;
+    background-size: cover;
+    background-position: center;
+    overflow: hidden;
+   }
+
+body.fundo-imagem {
+  background: url("images/trigo.jpg") no-repeat center center;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+
+ /* Dock Estilo macOS */
+.taskbar {
+  position: fixed;
+  bottom: 10px; /* Flutua sobre o desktop */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 99%;
+  height: 50px;
+  background: rgba(20, 20, 20, 0.3);
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  z-index: 10000;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+}
+    
+    
+      
+      
+   #searchInput {
+     width: 100%;
+     padding: 6px 8px;
+     margin-bottom: 8px;
+     font-size: 14px;
+     border: 1px solid #ccc;
+     border-radius: 4px;
+   }
+   
+     .menu.show {
+      display: block;
+    }
+
+    .menu a {
+      display: block;
+      padding: 10px;
+      color: white;
+      text-decoration: none;
+    }
+
+    .menu a:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+ /* Efeito de Vidro Apple-Style */
+.window {
+  position: absolute;
+  width: 400px;
+  height: 550px;
+  background: rgba(255, 255, 255, 0.08); /* Fundo sutil */
+  backdrop-filter: blur(30px) saturate(210%); /* Blur profundo e saturação vibrante */
+  -webkit-backdrop-filter: blur(30px) saturate(210%);
+  
+  /* Borda de 'Corte de Vidro' */
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.4); /* Luz incidindo de cima */
+  border-left: 1px solid rgba(255, 255, 255, 0.25);
+  
+  border-radius: 10px; /* Cantos mais orgânicos */
+  display: none;
+  resize: both;
+  overflow: hidden;
+  z-index: 10;
+  
+  /* Sombra com 'Ambient Occlusion' */
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1); 
+}
+   
+   .window::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  /* Gradiente que simula reflexo de luz na curvatura do vidro */
+  background: linear-gradient(
+    135deg, 
+    rgba(255, 255, 255, 0.12) 0%, 
+    rgba(255, 255, 255, 0.03) 40%, 
+    transparent 100%
+  );
+  pointer-events: none; /* Garante que você ainda possa clicar nos itens abaixo */
+  z-index: 0;
+}
+    
+    
+   /* Barra de Título Integrada */
+.titlebar {
+  height: 35px;
+  background: rgba(255, 255, 255, 0.05); /* Mescla-se ao corpo da janela */
+  backdrop-filter: blur(5px);
+  padding: 0 16px;
+  cursor: move;
+  color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+    
+    
+   .titlebar .window-buttons button {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 18px;
+      padding: 5px;
+      margin-left: 5px;
+      cursor: pointer;
+    }
+
+    .titlebar .window-buttons {
+      display: flex;
+      gap: 5px;
+    }
+    
+    .window.ativa {
+    user-select: none;
+}
+
+    iframe {
+      width: 100%;
+      height: calc(100% - 30px);
+      border: none;
+    }
+
+    .window .resizer {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      bottom: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.1);
+      cursor: nwse-resize;
+      z-index: 5;
+      touch-action: none;
+      border-top-left-radius: 5px;
+    }
+    
+    
+/* Botão Iniciar Estilo Apple */
+.start-button {
+  height: 40px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: white;
+  padding: 0 15px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  position: relative; /* Remove o fixed anterior para ficar dentro do dock */
+  bottom: auto;
+  left: auto;
+}
+
+.start-button:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.05);
+}
+
+    
+    .button {
+      height: 30px;
+      background-color: #706f6f;
+      border: none;
+      color: white;
+      padding: 5px 10px;
+      cursor: pointer;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    
+    button[title="Ocultar este atalho"]:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+
+    .menu {
+      position: fixed;
+      background: rgba(12, 12, 12, 0.6);
+      backdrop-filter: blur(15px) saturate(160%);
+      -webkit-backdrop-filter: blur(15px) saturate(160%);
+      bottom: 65px;
+      left: 10px;
+      width: 350px;
+      /*max-height: 75vh;*/
+      max-height: 50%;
+      padding: 10px;
+      display: none;
+      border-radius: 8px;
+      z-index: 100;
+      overflow-y: auto;
+      box-shadow:
+        inset 0 0 0.5px rgba(255, 255, 255, 0.4),
+        0 0 30px rgba(255, 255, 255, 0.05);
+      /* Adiciona a barra de rolagem quando necessário */
+    }
+    
+    
+      
+    .taskbar-window-btn {
+      margin-left: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .taskbar-window-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .desktop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 50px;
+      /* Altura da taskbar */
+      padding: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+
+    
+   .shortcut {
+      width: 80px;
+      text-align: center;
+      cursor: pointer;
+      color: white;
+    }
+
+    .shortcut img {
+      width: 48px;
+      height: 48px;
+    }
+    
+    .shortcut-taskbar {
+      width: 60px;
+      text-align: center;
+      cursor: pointer;
+      color: white;
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #ad-google {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      width: 300px;
+      max-width: 90%;
+      z-index: 9999;
+      background: white;
+      border-radius: 6px;
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.4);
+      overflow: hidden;
+    }
+
+    .zoom-control {
+      margin-left: auto;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .zoom-control input[type="range"] {
+      width: 120px;
+    }
+    
+    .sepia-filter {
+    filter: sepia(1);
+    }
+    
+    .grey-filter {
+    filter: grayscale(1) invert(1);
+   }
+   
+#iframe-relogio {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 400px;
+  height: 400px;
+  transform: translate(-50%, -50%);
+  border: none;
+  background: transparent;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.calendario {
+  right: 10%;
+  padding: 1rem; 
+  background: #222; 
+  color: #fff; 
+  border-radius: 8px;
+}
+
+.snap-preview {
+  position: fixed;
+  background: rgba(0, 120, 215, 0.2);
+  border: 2px solid rgba(0, 120, 215, 0.4);
+  backdrop-filter: blur(5px);
+  z-index: 9999;
+  display: none;
+  transition: all 0.2s ease-in-out;
+  pointer-events: none; /* Não atrapalha cliques */
+  border-radius: 8px;
+}
+
+ 
+  </style>
+   <!-- Script do Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4818539305804157"
+    crossorigin="anonymous"></script>
+  <!-- Exemplo  -->
+  <meta name="google-site-verification" content="abc123XYZ">
+</head>
+<body class="fullscreen" onload="onLoad()">
+<div id="snapPreview" class="snap-preview"></div>
+ <!--<div id="welcome"
+    style="position:absolute;bottom:50px;left:10px;background: #f5f5f5;color: #333;padding:10px;border-radius:8px;z-index:-110">
+    <h3>Bem-vindo ao Web Desktop</h3>
+    <p>Este é um ambiente simulado de desktop no navegador, feito em HTML, CSS e JS. Explore aplicativos como
+      calculadora, player de mídia e navegador web!</p>
+  </div>-->
+   <div id="desktop" class="desktop">
+  <!-- <iframe src="offline_apps/relogio.html" id="iframe-relogio" pointer-events: none; z-index: 0;"></iframe>-->
+    <!--<div class="shortcut" onclick="openWindow('https://google.com/?igu=1', 'Google 🇬')">
+      <img src="images/google.png" alt="Google">
+      <span>🇬 Google</span>
+    </div>-->
+    <div class="shortcut" onclick="openWindow('offline_apps/documentos/documentos.html', 'Word-Like 📄')">
+     <!--<img src="images/word.png" alt="Word">-->
+      <span>📄 Word-Like</span>
+    </div>
+    <div class="shortcut" data-id="player" onclick="openWindow('offline_apps/player.html', 'Player 🎞️')">
+      <span>🎞️ Player</span>
+    </div>
+    <div class="shortcut" data-id="rss" onclick="openWindow('offline_apps/rss.html', 'RSS 📡')">
+      <span>📡 RSS</span>
+    </div>
+    <div class="shortcut" data-id="matinal" onclick="openWindow('offline_apps/rotina.html', 'Matinal 🌄')">
+      <span>🌄 Rotina Matinal</span>
+    </div>
+    <div class="shortcut" data-id="tarefas" onclick="openWindow('offline_apps/tarefas.html', 'Tarefas ✔️')">
+      <span>✔️ Tarefas</span>
+    </div><br>
+    <div class="shortcut" data-id="calcdata" onclick="openWindow('offline_apps/calcdata.html', 'Calc. de Datas 🗓️')">
+      <span>🗓️ Cal. de Datas</span>
+    </div>
+    <div class="shortcut" data-id="porcentagem" onclick="openWindow('offline_apps/porcentagem.html', 'Calc. de Porcentagem 🔣')">
+      <span>🔣 Cal. de Porcentagem</span>
+    </div>
+    <!-- Anúncio -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4818539305804157"
+     crossorigin="anonymous"></script>
+  </div>
+
+  <!-- Barra de tarefas -->
+  <div class="taskbar">
+    <!--<button onclick="toggleMenu()">🪟 Iniciar</button>-->
+        <button class="start-button" onclick="toggleMenu()">☰ Iniciar</button>
+    <div class="shortcut-taskbar" onclick="openWindow('offline_apps/filemanager.html', 'Files 🗂️')">
+      <span>🗂️ Files</span>
+    </div>
+    <div class="zoom-control">
+      <label for="zoomSlider">Zoom:</label>
+      <input id="zoomSlider" type="range" min="50" max="150" value="100">
+    </div>
+   <!-- <div class="calendario">
+  <h3 id="data-atual"></h3>
+  <label>📅 Calendário</label><br>
+  <input id="calendario" class="form-control" type="date" />
+</div>-->
+
+  </div>
+  
+   <div class="menu" id="startMenu">
+  <input type="text" id="searchInput" placeholder="Pesquisar apps...">
+  
+
+
+
+    <strong>🌐 Web Apps (PWAs and Others):</strong>
+    <!--<a href="#" data-id="google" onclick="openWindow('https://google.com/?igu=1', 'Google 🔍')">🔍 Google</a>-->
+    <!--<a href="#" data-id="duck" onclick="openWindow('https://lite.duckduckgo.com/lite/', 'Duck Duck Go 🦆🔍')">🦆🔍 Duck Duck Go</a>-->
+
+    <a href="#" data-id="stedit" onclick="openWindow('https://stedit.app', 'Smart Text Editor 🗒️')">🗒️ Smart Text Editor</a>
+    <a href="#" data-id="ether" onclick="openWindow('https://ethercalc.net/jpr8lzsc7boj', 'EtherCalc 📊')">📊 EtherCalc</a>
+   <!-- <a href="#" data-id="ng" onclick="openWindow('https://ngexcel-demo.netlify.app', 'NG Excel Demo 📊')">📊 NG Excel Demo</a>-->
+   <!-- <a href="#" data-id="space" onclick="openWindow('http://viewer.spacedesk.net/', 'SpaceDesk 🖥️')">🖥️ SpaceDesk</a>-->
+   <!-- <a href="#" data-id="snapdrop" onclick="openWindow('https://onedoes.github.io/snapdrop/', 'Snapdrop 📡')">📡 Snapdrop</a>-->
+    <a href="#" data-id="calend" onclick="openWindow('https://www.topster.pt/calendario/zeitrechner.php', 'Intervalo preciso ⏱️')">⏱️ Intervalo Preciso</a>
+    <a href="#" data-id="iscan" onclick="openWindow('https://icanscan.com/pt/', 'Scanner 🖼️')">🖼️ Scanner</a>
+    <a href="#" data-id="crop" onclick="openWindow('https://imageresizer.com/crop-image', 'Recortar Imagem 🖼️')">🖼️ Recortar Imagem</a>
+    <a href="#" data-id="paintjs" onclick="openWindow('https://paint.js.org', 'Paint js 🎨')">🎨 Paint js</a>
+    <a href="#" data-id="photopea" onclick="openWindow('https://www.photopea.com/', 'Photopea 🎨')">🎨 Photopea</a>
+    <a href="#" data-id="svgedit" onclick="openWindow('https://editor.method.ac/', 'SVG Editor 📐')">📐 SVG Editor</a>
+    <a href="#" data-id="codedit" onclick="openWindow('https://onecompiler.com/html', 'Code Editor 💻')">💻 Code Editor</a>
+    <a href="#" data-id="photopea" onclick="openWindow('https://www.onlineocr.net/pt/', 'Online OCR 🖼️➡️📃')">🖼️➡️📃 Online OCR</a>
+    <a href="#" data-id="screensender" onclick="openWindow('https://screenmirroring.app/sender', 'Enviar Tela 🖵')">🖵 Enviar Tela</a>
+    <a href="#" data-id="screenreceiver" onclick="openWindow('https://screenmirroring.app/receiver', 'Receber Tela 🖵')">🖵 Receber Tela</a>
+    <a href="#" data-id="plutotv" onclick="openWindow('https://pluto.tv/br/live-tv', 'Pluto TV 📺')">📺 Pluto TV</a>
+    <a href="#" data-id="jsr5" onclick="openWindow('https://lrq3000.github.io/javascript-racer/v5.game.html', 'JS R 5 🚗')">🚗 JS R 5</a>
+    <a href="#" data-id="vaporboy" onclick="openWindow('https://vaporboy.net/', 'VaporBoy 🎮')">🎮 VaporBoy</a>
+    <a href="#" data-id="pwanes" onclick="openWindow('https://pwa-nes.vercel.app/', 'PwaNes 🎮')">🎮 PwaNes</a>
+    <a href="#" data-id="bird" onclick="openWindow('https://nebezb.com/floppybird/', 'FloppyBird 🐦')">🐦 FloppyBird</a>
+    <a href="#" data-id="tower" onclick="openWindow('https://www.towergame.app/', 'TowerGame 🌇')">🌇 TowerGame</a>
+    <strong>💽 Local File System HTML with JS Apps:</strong>
+    <a href="#" onclick="openWindow('offline_apps/browser.html', 'Browser 🌎')">🌎 Browser</a>
+    <a href="#" onclick="openWindow('offline_apps/openmaps.html', 'Open Maps 🗺️')">🗺️ Open Maps</a>
+    <a href="#" onclick="openWindow('offline_apps/googlemaps.html', 'Google Maps 🧭')">🧭 Google Maps</a>
+    <a href="#" onclick="openWindow('offline_apps/iaoff/webllm-chat.html', 'IA 🤖')">
+	🤖 IA
+	<span style="display:none;">Suporte a interfaces de chat e automação.</span>
+</a>
+    <a href="#" data-id="clima" onclick="openWindow('offline_apps/clima.html', 'Clima 🌦️')">🌦️ Clima</a>
+    <a href="#" data-id="motof3" onclick="openWindow('offline_apps/motof3.html', 'MotoFone F3 📱')">📱 MotoFone F3</a>
+    <a href="#" onclick="openWindow('offline_apps/camera.html', 'Camera 📸')">
+	📸 Camera
+	 <span style="display:none;">Acesse sua camera sem precisar sair da interface.</span>
+</a>
+    <a href="#" onclick="openWindow('offline_apps/documentos/documentos.html', 'Word-Like 📄')">
+	📄 Word-Like
+	<span style="display:none;">Edição de textos e documentos com formatação dinâmica.</span>
+</a>
+    <a href="#" onclick="openWindow('offline_apps/planilhas.html', 'Excel-Like 📊')">
+	📊 Excel-Like
+	<span style="display:none;">Gestão de planilhas.</span>
+</a>
+    <a href="#" onclick="openWindow('offline_apps/slides/slides.html', 'Slides 📽️')">📽️ Slides</a>
+    <a href="#" onclick="openWindow('offline_apps/multileitor/multileitor.html', 'Leitor de PDF, ePub e md 📄')">📄 Leitor de PDF, ePub e md</a>
+    <a href="#" onclick="openWindow('offline_apps/bloco-notas-offline-editor.html', 'Bloco de Notas 📄')">📄 Bloco de Notas</a>
+    <a href="#" onclick="openWindow('offline_apps/editorsemantico.html', 'Editor Semântico 📄')">📄 Editor Semântico</a>
+    <a href="#" onclick="openWindow('offline_apps/recortaimagem.html', 'Recortador Offline de Imagem 🖼️')">🖼️ Recortador Offline de Imagem </a>
+    <a href="#" data-id="paintoff" onclick="openWindow('offline_apps/whiteboard/index.html', 'Paint 🖌️')">🖌️ Paint Offline</a>
+    <a href="#" data-id="diario" onclick="openWindow('offline_apps/diario/diario.html', 'Diario 📓')">📓 Diário</a>
+    <a href="#" onclick="openWindow('offline_apps/calculadora.html', 'Calculadora')">
+    🖩 Calculadora
+    <span style="display:none;">Ferramenta de cálculo para produtividade rápida.</span>
+</a>
+
+    <a href="#" data-id="youtube" onclick="openWindow('offline_apps/youtube-wrapper.html', 'Youtube 📺')">📺 Youtube</a>
+    <a href="#" data-id="iptv" onclick="openWindow('offline_apps/iptv.html', 'IPTV 📺')">📺 IPTV</a>
+    <a href="#" data-id="terminal" onclick="openWindow('offline_apps/terminal.html', 'Terminal 👨🏽‍💻')">👨🏽‍💻 Terminal</a>
+    <a href="#" data-id="console" onclick="openWindow('offline_apps/webdevterminal.html', 'Console Dev Web 👨🏽‍💻')">👨🏽‍💻 Console Dev Web</a>
+    <a href="#" onclick="openWindow('offline_apps/base64.html', 'Base64 🧑🏽‍💻')">🧑🏽‍💻 Base64</a>
+    <a href="#" onclick="openWindow('offline_apps/gravador.html', 'Gravador 🎤')">🎤 Gravador</a>
+    <!--<a href="#" onclick="openWindow('offline_apps/spacedesk/spacedesk.html', 'SpaceDesk Local 🖥️')">🖥️ Space_Desk Local</a>-->
+<hr>
+    <strong>➕ Adicionar novo atalho:</strong>
+<form id="addShortcutForm" style="margin-top:8px;">
+  <input type="text" id="shortcutName" placeholder="Nome do atalho" required style="width:60%; padding:4px;"/>
+  <input type="url" id="shortcutURL" placeholder="URL do atalho" required style="width:35%; padding:4px;"/>
+  <button type="submit" class="button" style="padding:5px 10px;">Adicionar</button>
+</form>
+
+<hr>
+<strong>💾 Exportar / Importar atalhos</strong><br>
+<button id="exportBtn" class="button" style="margin-top:5px;">Exportar atalhos (JSON)</button><br><br>
+<label for="importInput" style="cursor:pointer; text-decoration: underline; color: #ccc; padding:4px;">
+  📂 Importar atalhos (JSON)
+</label>
+<input type="file" id="importInput" accept=".json" style="display:none; padding:4px;">
+<button id="mostrarTodosBtn" class="button">👁️ Mostrar todos os atalhos ocultos</button>
+<hr>
+    <strong>📱 Apps Nativos:</strong>
+    <a href="App-Prefs:">⚙️ Ajustes (iOS)</a>
+    <a href="calshow://">🗓️ Calendário</a>
+    <a href="mobilenotes://">📝 Notas</a>
+    <a href="clock-alarm://">⏰ Relógio</a>
+    <a href="camera://">📷 Câmera</a>
+    <a href="calculator://">🧮 Calculadora</a>
+    <a href="http://">🌐 Safari</a>
+    <a href="googlechrome://example.com">🌍 Chrome</a>
+    <a href="brave://">🦁 Brave</a>
+    <a href="google://">🔎 Google</a>
+    <a href="whatsapp://send?text=Olá" target="_blank">📲 WhatsApp</a>
+    <a href="facetime://">📞 FaceTime</a>
+    <a href="mailto:">✉️ Mail</a>
+    <a href="maps://">🗺️ Apple Maps</a>
+    <a href="comgooglemaps://">🗺️ Google Maps</a>
+    <a href="waze://">🧭 Waze</a>
+    <a href="music://">🎵 Apple Music</a>
+    <a href="spotify://">🎵 Spotify</a>
+    <a href="youtube://">📺 YouTube</a>
+    <a href="podcast://">🎙️ Podcasts</a>
+    <a href="photos-redirect://">🖼️ Galeria</a>
+    <a href="sms://">💬 Mensagens</a>
+    <a href="tg://resolve?domain=SeuUsuario">💬 Telegram</a>
+    <a href="sgnl://signal.me/#p/+55119999">🔒 Signal</a>
+     <button class="button" onclick="toggleTouchpad()">🖱️ Ativar/Desativar Touchpad</button>
+    <!-- <button class="button" onclick="iniciarTouchpad()">🖱️ Touchpad</button>-->
+    <script src="offline_apps/touchpad.js"></script><br>
+    <button class="button" onclick="alternarFundo()">🌄 Alternar Fundo</button>
+    <button class="button" onclick="toggleSepia()">🟤 Modo Sépia</button>
+    <script src="offline_apps/sepia-toggle.js"></script>
+    <button class="button" onclick="toggleGrey()">⚫ Modo P&B Negativo</button>
+    <script src="offline_apps/grey-toggle.js"></script>
+    <div>
+    <button class="button" onclick="toggleHUD()">🕶️ Alternar Modo HUD/Holográfico</button>
+    <script src="offline_apps/hud-toggle.js"></script>
+    </div>
+    <button onclick="alternarMenuCentro()" class="button">Alternar Menu: Centro/Esquerda</button>
+    <strong>📢 Público:</strong>
+    <a href="#" onclick="openWindow('public/privacidade.html', 'Privacidade')">🔏 Privacidade</a>
+    <a href="#" onclick="openWindow('public/sobre.html', 'Sobre')">📖 Sobre</a>
+  </div>
+
+  <script>
+  
+      function onLoad(){
+    openWindow("public/sobre.html", "Sobre");
+    }
+      
+    function toggleMenu() {
+      let menu = document.getElementById('startMenu');
+      menu.classList.toggle('show');
+    }
+
+    function openWindow(url, title) {
+      let win = document.createElement('div');
+      win.classList.add('window');
+      win.style.top = Math.random() * 50 + '%';
+      win.style.left = Math.random() * 50 + '%';
+      win.style.zIndex = ++zIndexAtual;
+
+      win.addEventListener("mousedown", () => trazerParaFrente(win));
+      win.addEventListener("touchstart", () => trazerParaFrente(win));
+
+
+      let titlebar = document.createElement('div');
+      titlebar.classList.add('titlebar');
+      titlebar.innerHTML = `
+                <span class="window-title">${title}</span>
+                <div class="window-buttons">
+                    <button onclick="minimizeWindow(this)">➖</button>
+                    <button onclick="maximizeWindow(this)">🔳</button>
+                    <button onclick="closeWindow(this)">✖️</button>
+                </div>`;
+      titlebar.addEventListener('mousedown', dragMouseDown);
+      titlebar.addEventListener('touchstart', dragMouseDown, { passive: false });
+
+      titlebar.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('mousedown', e => e.stopPropagation());
+        btn.addEventListener('touchstart', e => e.stopPropagation());
+      });
+      
+      applySepiaToElement(win);
+      applyGreyToElement(win);
+
+      let iframe = document.createElement('iframe');
+      iframe.src = url;
+      
+      // Detectar erro de carregamento (limitado por segurança, mas ajuda)
+  iframe.onerror = function() {
+    alert("Este site pode ter restrições de segurança para abrir em janelas. Tentando abrir em nova aba...");
+    window.open(url, '_blank');
+  };
+
+      win.appendChild(titlebar);
+      win.appendChild(iframe);
+      document.body.appendChild(win);
+      let resizer = document.createElement('div');
+      resizer.classList.add('resizer');
+      win.appendChild(resizer);
+      initResizer(win);
+      win.style.display = 'block';
+      
+      
+    }
+
+
+    let zIndexAtual = 10;
+
+    function trazerParaFrente(window) {
+      zIndexAtual++;
+      window.style.zIndex = zIndexAtual;
+
+      document.querySelectorAll('.window').forEach(j => j.classList.remove('ativa'));
+      window.classList.add('ativa');
+
+    }
+
+
+    function closeWindow(btn) {
+      btn.closest('.window').remove();
+    }
+
+    let minimizedWindows = [];
+
+    function minimizeWindow(btn) {
+      const win = btn.closest('.window');
+      win.style.display = 'none';
+
+      const title = win.querySelector('.window-title').innerText;
+      const taskButton = document.createElement('button');
+      taskButton.innerText = title;
+      taskButton.classList.add('taskbar-window-btn');
+      taskButton.onclick = () => {
+        win.style.display = 'block';
+        taskButton.remove();
+        minimizedWindows = minimizedWindows.filter(w => w.win !== win);
+      };
+
+      document.querySelector('.taskbar').appendChild(taskButton);
+      minimizedWindows.push({ win, button: taskButton });
+    }
+
+
+    function maximizeWindow(btn) {
+      let win = btn.closest('.window');
+      if (win.style.width !== '100vw') {
+        win.style.width = '100vw';
+        win.style.height = '100vh';
+        win.style.top = '0';
+        win.style.left = '0';
+      } else {
+        win.style.width = '400px';
+        win.style.height = '300px';
+        win.style.top = '20%';
+        win.style.left = '30%';
+      }
+    }
+
+    function dragMouseDown(e) {
+      e.preventDefault();
+      let win = e.currentTarget.parentElement;
+      let pos3 = e.clientX || e.touches?.[0].clientX;
+      let pos4 = e.clientY || e.touches?.[0].clientY;
+
+      document.onmouseup = document.ontouchend = closeDragElement;
+      document.onmousemove = document.ontouchmove = elementDrag;
+
+      function elementDrag(e) {
+        e.preventDefault();
+        let clientX = e.clientX || e.touches?.[0].clientX;
+        let clientY = e.clientY || e.touches?.[0].clientY;
+        win.style.top = (win.offsetTop - (pos4 - clientY)) + "px";
+        win.style.left = (win.offsetLeft - (pos3 - clientX)) + "px";
+        pos3 = clientX;
+        pos4 = clientY;
+      }
+
+      function closeDragElement() {
+        document.onmouseup = null;
+        document.onmousemove = null;
+        document.ontouchend = null;
+        document.ontouchmove = null;
+      }
+    }
+
+    function initResizer(win) {
+      const resizer = win.querySelector('.resizer');
+      let startX, startY, startWidth, startHeight;
+
+      function dragStart(e) {
+        e.preventDefault();
+        startX = e.clientX || e.touches?.[0].clientX;
+        startY = e.clientY || e.touches?.[0].clientY;
+        startWidth = parseInt(document.defaultView.getComputedStyle(win).width, 10);
+        startHeight = parseInt(document.defaultView.getComputedStyle(win).height, 10);
+
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', stopDrag);
+        document.addEventListener('touchmove', drag, { passive: false });
+        document.addEventListener('touchend', stopDrag);
+      }
+
+      function drag(e) {
+        e.preventDefault();
+        const clientX = e.clientX || e.touches?.[0].clientX;
+        const clientY = e.clientY || e.touches?.[0].clientY;
+        win.style.width = startWidth + (clientX - startX) + 'px';
+        win.style.height = startHeight + (clientY - startY) + 'px';
+      }
+
+      function stopDrag() {
+        document.removeEventListener('mousemove', drag);
+        document.removeEventListener('mouseup', stopDrag);
+        document.removeEventListener('touchmove', drag);
+        document.removeEventListener('touchend', stopDrag);
+      }
+
+      resizer.addEventListener('mousedown', dragStart);
+      resizer.addEventListener('touchstart', dragStart, { passive: false });
+    }
+
+
+  document.addEventListener('keydown', e => {
+  const windows = document.querySelectorAll('.window');
+  if (windows.length === 0) return;
+
+  // Pegamos a janela que está com o maior z-index (ativa)
+  const todasWin = Array.from(windows);
+  const ultimaWin = todasWin.reduce((prev, curr) => 
+    (parseInt(prev.style.zIndex) > parseInt(curr.style.zIndex)) ? prev : curr
+  );
+
+  const taskbarHeight = 60;
+  const preview = document.getElementById('snapPreview');
+
+  if (e.metaKey || e.ctrlKey) {
+    let targetCoords = null;
+
+    if (e.key === 'ArrowLeft') {
+      targetCoords = { width: '51vw', height: `calc(195vh - ${taskbarHeight}px)`, top: '0', left: '0' };
+    } 
+    else if (e.key === 'ArrowRight') {
+      targetCoords = { width: '51vw', height: `calc(195vh - ${taskbarHeight}px)`, top: '0', left: '50vw' };
+    } 
+    else if (e.key === 'ArrowUp') {
+      targetCoords = { width: '100vw', height: `calc(100vh - ${taskbarHeight}px)`, top: '0', left: '0' };
+    } 
+    else if (e.key === 'ArrowDown') {
+      targetCoords = { width: '400px', height: '550px', top: '20%', left: '30%' };
+    }
+
+    if (targetCoords) {
+      e.preventDefault();
+      
+      // Mostrar o "Ghost"
+      preview.style.display = 'block';
+      preview.style.width = targetCoords.width;
+      preview.style.height = targetCoords.height;
+      preview.style.top = targetCoords.top;
+      preview.style.left = targetCoords.left;
+      preview.style.opacity = '1';
+
+      // Mover a janela real após um pequeno delay e esconder o ghost
+      setTimeout(() => {
+        Object.assign(ultimaWin.style, targetCoords);
+        preview.style.opacity = '0';
+        setTimeout(() => { preview.style.display = 'none'; }, 200);
+      }, 150);
+    }
+  }
+});
+    
+    // Aguarda carregar o DOM antes de aplicar o filtro
+document.addEventListener('DOMContentLoaded', function() {
+  
+  var searchInput = document.getElementById('searchInput');
+  // Evento 'input' dispara sempre que o usuário digita no campo
+  searchInput.addEventListener('input', function() {
+    var filter = searchInput.value.toLowerCase();             // Texto do filtro em caixa baixa
+    var apps = document.querySelectorAll('#startMenu a');     // Seleciona todos os links dentro do menu
+
+    apps.forEach(function(appLink) {
+      var text = appLink.textContent.toLowerCase();          // Texto interno do link
+      // Verifica se o nome do app contém o filtro
+      if (text.includes(filter)) {
+        appLink.style.display = '';  // Exibe o link se corresponder
+      } else {
+        appLink.style.display = 'none'; // Oculta se não corresponder
+      }
+    });
+  });
+  aplicarOcultos();
+  adicionarBotaoOcultar();
+});
+
+function adicionarBotaoOcultar() {
+  document.querySelectorAll('[data-id]').forEach(el => {
+    if (!el.classList.contains('tem-botao-ocultar')) {
+      const btn = document.createElement('button');
+      btn.innerText = ' ✖️';
+      btn.title = 'Ocultar este atalho';
+      btn.style.marginLeft = '5px';
+      btn.style.fontSize = '12px';
+      btn.style.background = 'rgba(255,255,255,0.1)';
+      btn.style.color = 'white';
+      btn.style.border = 'none';
+      btn.style.cursor = 'pointer';
+
+      btn.onclick = e => {
+        e.stopPropagation();
+        const id = el.getAttribute('data-id');
+        if (id) {
+          atalhosOcultos.add(id);
+          salvarAtalhos();
+          el.style.display = 'none';
+        }
+      };
+
+      el.appendChild(btn);
+      el.classList.add('tem-botao-ocultar');
+    }
+  });
+}
+
+
+    // Controle de zoom via slider
+    const zoomSlider = document.getElementById('zoomSlider');
+    zoomSlider.addEventListener('input', () => {
+      const zoom = zoomSlider.value;
+      setGlobalZoom(zoom);
+    });
+
+    
+   function setGlobalZoom(percent) {
+      localStorage.setItem('desktopZoom', percent);
+      document.body.style.zoom = percent + '%';
+    }
+
+
+    
+    
+const desktop = document.getElementById('desktop');
+const startMenu = document.getElementById('startMenu');
+const addShortcutForm = document.getElementById('addShortcutForm');
+
+let dadosDesktop = JSON.parse(localStorage.getItem('desktopData')) || {
+  atalhosExtras: [],
+  ocultos: []
+};
+
+let atalhosExtras = dadosDesktop.atalhosExtras;
+let atalhosOcultos = new Set(dadosDesktop.ocultos); // armazenará atalhos do usuário
+
+// Função para criar elemento atalho (desktop e menu)
+function criarAtalho({name, url}) {
+  // Evita duplicação no desktop
+  if ([...document.querySelectorAll('.shortcut')].some(el => el.textContent.includes(name))) return;
+
+  // Atalho no desktop
+  const atalhoDesktop = document.createElement('div');
+  atalhoDesktop.className = 'shortcut';
+  atalhoDesktop.title = name;
+  atalhoDesktop.onclick = () => openWindow(url, name);
+  atalhoDesktop.innerHTML = `<span>🔗 ${name}</span>`;
+  desktop.appendChild(atalhoDesktop);
+
+  // Atalho no menu iniciar
+  const linkMenu = document.createElement('a');
+  linkMenu.href = "#";
+  linkMenu.textContent = `🔗 ${name}`;
+  linkMenu.onclick = e => {
+    e.preventDefault();
+    openWindow(url, name);
+    toggleMenu();
+  };
+  startMenu.insertBefore(linkMenu, addShortcutForm);
+}
+
+
+// Salvar atalhos no localStorage
+function salvarAtalhos() {
+  localStorage.setItem('desktopData', JSON.stringify({
+    atalhosExtras,
+    ocultos: [...atalhosOcultos]
+  }));
+}
+
+
+// Carregar atalhos do localStorage
+function carregarAtalhos() {
+  const dados = localStorage.getItem('desktopData');
+  if (dados) {
+    const obj = JSON.parse(dados);
+    atalhosExtras = obj.atalhosExtras || [];
+    atalhosOcultos = new Set(obj.ocultos || []);
+    atalhosExtras.forEach(criarAtalho);
+    aplicarOcultos();
+    adicionarBotaoOcultar();
+  }
+}
+
+
+function aplicarOcultos() {
+  atalhosOcultos.forEach(id => {
+    document.querySelectorAll(`[data-id="${id}"]`).forEach(el => el.style.display = 'none');
+  });
+}
+
+// Lidar com submissão do formulário
+addShortcutForm.addEventListener('submit', e => {
+  e.preventDefault();
+  const name = document.getElementById('shortcutName').value.trim();
+  const url = document.getElementById('shortcutURL').value.trim();
+
+  if (!name || !url) return alert('Preencha nome e URL.');
+
+  // Verifica se URL é válida (pode ser melhorado)
+  try {
+    new URL(url);
+  } catch {
+    return alert('URL inválida.');
+  }
+
+  const novoAtalho = { name, url };
+  
+  if (atalhosExtras.some(a => a.name === name && a.url === url)) {
+  return alert('Este atalho já foi adicionado.');
+  }
+  
+  atalhosExtras.push(novoAtalho);
+  salvarAtalhos();
+  criarAtalho(novoAtalho);
+
+  // limpa formulário
+  addShortcutForm.reset();
+});
+  
+
+window.addEventListener('DOMContentLoaded', () => {
+  carregarAtalhos();
+
+  const savedZoom = localStorage.getItem('desktopZoom') || 100;
+  document.getElementById('zoomSlider').value = savedZoom;
+  setGlobalZoom(savedZoom);
+});
+
+
+const exportBtn = document.getElementById('exportBtn');
+const importInput = document.getElementById('importInput');
+
+// Exportar atalhos para JSON e baixar arquivo
+exportBtn.addEventListener('click', () => {
+  const dataStr = JSON.stringify({
+    atalhosExtras,
+    ocultos: [...atalhosOcultos]
+  }, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'atalhos.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
+
+// Importar atalhos a partir do arquivo JSON
+importInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+reader.onload = e => {
+  try {
+    const dados = JSON.parse(e.target.result);
+    if (!dados || typeof dados !== 'object') throw new Error('JSON inválido.');
+
+    atalhosExtras = Array.isArray(dados.atalhosExtras) ? dados.atalhosExtras : [];
+    atalhosOcultos = new Set(Array.isArray(dados.ocultos) ? dados.ocultos : []);
+
+    salvarAtalhos();
+
+    // Limpar atalhos extras da UI
+    document.querySelectorAll('.shortcut').forEach(el => {
+      if (el.textContent.startsWith('🔗')) el.remove();
+    });
+    document.querySelectorAll('#startMenu a').forEach(el => {
+      if (el.textContent.startsWith('🔗')) el.remove();
+    });
+
+    // Renderizar novamente
+    atalhosExtras.forEach(criarAtalho);
+    aplicarOcultos();
+    adicionarBotaoOcultar();
+
+    alert('Configurações restauradas com sucesso!');
+  } catch (err) {
+    alert('Erro ao importar: ' + err.message);
+  }
+};
+  reader.readAsText(file);
+});
+
+document.getElementById('mostrarTodosBtn').addEventListener('click', () => {
+  atalhosOcultos.clear();
+  salvarAtalhos();
+  document.querySelectorAll('[data-id]').forEach(el => {
+    el.style.display = '';
+  });
+});
+
+
+
+
+  
+  </script>
+  
+  <script>
+  // Exibe a data atual em texto
+  const hoje = new Date();
+  const opcoes = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  document.getElementById('data-atual').innerText = hoje.toLocaleDateString('pt-BR', opcoes);
+</script>
+
+<script>
+  function alternarFundo() {
+    document.body.classList.toggle("fundo-imagem");
+  }
+</script>
+
+<script>
+  let menuCentralizado = false;
+
+  function alternarMenuCentro() {
+    const menu = document.querySelector('.menu');
+    const startButton = document.querySelector('.start-button');
+
+    if (!menuCentralizado) {
+      menu.style.left = '50%';
+      menu.style.transform = 'translateX(-50%)';
+      startButton.style.left = '50%';
+      startButton.style.transform = 'translateX(-50%)';
+      startButton.style.position = 'fixed';
+      menuCentralizado = true;
+    } else {
+      menu.style.left = '10px';
+      menu.style.transform = 'none';
+      startButton.style.left = '10px';
+      startButton.style.transform = 'none';
+      startButton.style.position = 'fixed';
+      menuCentralizado = false;
+    }
+  }
+</script>
+
+  
+</body>
+</html>
+

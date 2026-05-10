@@ -1,0 +1,49 @@
+<div id="voice-recorder" style="padding: 1rem; align-items: center; background: #1e1e1e; color: white; font-family: sans-serif; border-radius: 1rem; width: 300px;">
+  <h2>🎤 Gravador de Voz</h2>
+  <button id="start">▶️ Gravar</button>
+  <button id="stop" disabled>⏹️ Parar</button>
+  <audio id="audio" controls style="display:none; margin-top:1rem;"></audio>
+</div>
+
+<script>
+  let mediaRecorder;
+  let audioChunks = [];
+
+  const startBtn = document.getElementById('start');
+  const stopBtn = document.getElementById('stop');
+  const audioEl = document.getElementById('audio');
+
+  startBtn.onclick = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = e => {
+      if (e.data.size > 0) audioChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(audioChunks, { type: 'audio/webm' });
+      const audioURL = URL.createObjectURL(blob);
+      audioEl.src = audioURL;
+      audioEl.style.display = 'block';
+
+      // opcional: download automático
+      const a = document.createElement('a');
+      a.href = audioURL;
+      a.download = 'gravacao.webm';
+      a.textContent = '⬇️ Baixar gravação';
+      audioEl.insertAdjacentElement('afterend', a);
+    };
+
+    mediaRecorder.start();
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+  };
+
+  stopBtn.onclick = () => {
+    mediaRecorder.stop();
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+  };
+</script>

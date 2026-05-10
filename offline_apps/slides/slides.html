@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Slides - Editor Profissional</title>
+  
+  <script src="jsbib/tinymce.min.js"></script>
+  <script src="jsbib/FileSaver.min.js"></script>
+  
+  <style>
+    :root {
+      --bg-color: #1e1e1e;
+      --sidebar-bg: #252525;
+      --accent-color: #4285f4;
+      --border-color: #444;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #toolbar-top {
+      background: #2a2a2a;
+      padding: 10px 15px;
+      display: flex;
+      gap: 12px;
+      border-bottom: 1px solid var(--border-color);
+      align-items: center;
+    }
+
+    #toolbar-top button {
+      background: #3a3a3a;
+      border: 1px solid #555;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    #toolbar-top button:hover { background: #4a4a4a; }
+
+    #main-container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Sidebar de Miniaturas */
+    #sidebar {
+      width: 220px;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--border-color);
+      overflow-y: auto;
+      padding: 15px;
+      position: relative;
+    }
+
+    .thumb {
+      width: 100%;
+      height: 110px;
+      background: white;
+      border: 3px solid transparent;
+      margin-bottom: 15px;
+      cursor: grab;
+      color: #000;
+      font-size: 8px;
+      overflow: hidden;
+      position: relative;
+      border-radius: 6px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      user-select: none;
+      touch-action: none; /* Crucial para o Drag no Mobile */
+    }
+
+    .thumb.active { border-color: var(--accent-color); }
+
+    /* Estilos de Arraste */
+    .thumb.dragging {
+      opacity: 0.6;
+      cursor: grabbing;
+      position: fixed;
+      z-index: 9999;
+      pointer-events: none;
+      box-shadow: 0 12px 24px rgba(0,0,0,0.5);
+      transform: scale(1.05);
+    }
+
+    .placeholder {
+      width: 100%;
+      height: 110px;
+      background: rgba(66, 133, 244, 0.1);
+      border: 2px dashed var(--accent-color);
+      margin-bottom: 15px;
+      border-radius: 6px;
+    }
+
+    #editor-container {
+      flex: 1;
+      background: var(--bg-color);
+    }
+
+    .tox-tinymce { border: none !important; height: 100% !important; }
+  </style>
+</head>
+<body>
+
+  <input type="file" id="fileInput" accept=".html,.txt" style="display:none" onchange="loadFile(event)">
+
+  <div id="toolbar-top">
+    <button onclick="addSlide()">➕ Novo Slide</button>
+    <button onclick="deleteSlide()" style="border-color: #852222;">🗑️ Excluir</button>
+    <button onclick="toggleFullscreen()">📺 Apresentar</button>
+  </div>
+
+  <div id="main-container">
+    <div id="sidebar">
+      </div>
+    <div id="editor-container">
+      <textarea id="editor"></textarea>
+    </div>
+  </div>
+
+  <script>
+    let slides = [{ content: "<h1 style='text-align: center;'>Bem-vindo aos Slides</h1><p style='text-align: center;'>Edite este conteúdo...</p>" }];
+    let currentSlideIndex = 0;
+    
+    // Objeto para controle de Drag & Drop
+    const dnd = { srcIndex: null, el: null, placeholder: null, offsetY: 0 };
+
+    tinymce.init({
+      selector: '#editor',
+      height: "100%",
+      menubar: 'file edit view insert format tools table help',
+      menu: {
+        file: { title: 'Arquivo', items: 'newslide openfile savehtml savetxt | print' }
+      },
+      plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code help wordcount',
+      toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat',
+      skin: "oxide-dark",
+      content_css: "dark",
+      setup: (editor) => {
+        editor.ui.registry.addMenuItem("newslide", { text: "➕ Novo Slide", onAction: () => addSlide() });
+        editor.ui.registry.addMenuItem("openfile", { text: "📂 Abrir...", onAction: () => document.getElementById("fileInput").click() });
+        editor.ui.registry.addMenuItem("savehtml", { text: "🌐 Salvar HTML", onAction: () => saveContent("html") });
+        
+        editor.on("input change Undo Redo", () => {
+          slides[currentSlideIndex].content = editor.getContent();
+          updateThumbsVisual();
+        });
+      }
+    });
+
+    function addSlide() {
+      slides.push({ content: "<h1>Novo Slide</h1>" });
+      currentSlideIndex = slides.length - 1;
+      renderUI();
+    }
+
+    function deleteSlide() {
+      if (slides.length <= 1) return;
+      slides.splice(currentSlideIndex, 1);
+      currentSlideIndex = Math.max(0, currentSlideIndex - 1);
+      renderUI();
+    }
+
+    function renderUI() {
+      updateThumbsList();
+      tinymce.get("editor").setContent(slides[currentSlideIndex].content);
+    }
+
+    function updateThumbsList() {
+      const sidebar = document.getElementById("sidebar");
+      sidebar.innerHTML = "";
+      slides.forEach((s, i) => {
+        const div = document.createElement("div");
+        div.className = `thumb ${i === currentSlideIndex ? 'active' : ''}`;
+        div.innerHTML = s.content;
+        div.onpointerdown = (e) => initDrag(e, div, i);
+        sidebar.appendChild(div);
+      });
+    }
+
+    function updateThumbsVisual() {
+      const activeThumb = document.querySelector('.thumb.active');
+      if(activeThumb) activeThumb.innerHTML = slides[currentSlideIndex].content;
+    }
+
+    // --- Lógica de Drag & Drop Unificada ---
+    function initDrag(e, el, index) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+      dnd.srcIndex = index;
+      dnd.el = el;
+      dnd.offsetY = e.clientY - el.getBoundingClientRect().top;
+
+      dnd.placeholder = document.createElement("div");
+      dnd.placeholder.className = "placeholder";
+
+      window.onpointermove = doDrag;
+      window.onpointerup = stopDrag;
+      el.setPointerCapture(e.pointerId);
+    }
+
+    function doDrag(e) {
+      if (dnd.srcIndex === null) return;
+      const sidebar = document.getElementById("sidebar");
+
+      if (!dnd.el.classList.contains('dragging')) {
+        dnd.el.classList.add('dragging');
+        dnd.el.style.width = (sidebar.clientWidth - 30) + "px";
+        sidebar.insertBefore(dnd.placeholder, dnd.el);
+      }
+
+      dnd.el.style.top = (e.clientY - dnd.offsetY) + "px";
+      dnd.el.style.left = sidebar.getBoundingClientRect().left + 15 + "px";
+
+      const siblings = [...sidebar.querySelectorAll('.thumb:not(.dragging)')];
+      let nextEl = siblings.find(sib => {
+        return e.clientY <= sib.getBoundingClientRect().top + sib.offsetHeight / 2;
+      });
+      sidebar.insertBefore(dnd.placeholder, nextEl);
+    }
+
+    function stopDrag(e) {
+      if (dnd.srcIndex === null) return;
+      const sidebar = document.getElementById("sidebar");
+
+      if (dnd.el.classList.contains('dragging')) {
+        const nodes = [...sidebar.querySelectorAll('.thumb, .placeholder')];
+        let newIndex = nodes.indexOf(dnd.placeholder);
+        if (newIndex > dnd.srcIndex) newIndex--;
+
+        const [movedItem] = slides.splice(dnd.srcIndex, 1);
+        slides.splice(newIndex, 0, movedItem);
+        currentSlideIndex = newIndex;
+      } else {
+        // Foi apenas um clique
+        currentSlideIndex = dnd.srcIndex;
+      }
+
+      dnd.el.classList.remove('dragging');
+      dnd.el.style = "";
+      if(dnd.placeholder.parentNode) dnd.placeholder.parentNode.removeChild(dnd.placeholder);
+      
+      window.onpointermove = null;
+      window.onpointerup = null;
+      dnd.srcIndex = null;
+      renderUI();
+    }
+
+    // --- Arquivos e Utilitários ---
+    function saveContent(type) {
+      const fullHtml = slides.map(s => `<section>${s.content}</section>`).join("");
+      const blob = new Blob([fullHtml], { type: "text/html;charset=utf-8" });
+      saveAs(blob, `apresentacao.${type}`);
+    }
+
+    function loadFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        tinymce.get("editor").setContent(e.target.result);
+        slides[currentSlideIndex].content = e.target.result;
+        updateThumbsVisual();
+      };
+      reader.readAsText(file);
+    }
+
+    function toggleFullscreen() {
+      const container = document.getElementById("editor-container");
+      if (container.requestFullscreen) container.requestFullscreen();
+    }
+
+    window.onload = () => setTimeout(renderUI, 500);
+  </script>
+</body>
+</html>

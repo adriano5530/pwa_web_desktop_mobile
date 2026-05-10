@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Câmera | AdDev</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 1rem;
+      background: #222;
+      color: white;
+      text-align: center;
+    }
+    video {
+      width: 320px;
+      height: 240px;
+      background: black;
+      border-radius: 8px;
+      object-fit: cover;
+      user-select: none;
+    }
+    button {
+      margin: 0.5rem 0.25rem;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      user-select: none;
+    }
+    #toggleCameraBtn {
+      background: #007bff;
+      color: white;
+    }
+    #takePhotoBtn {
+      background: #28a745;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h1>Câmera</h1>
+  <video id="cameraStream" autoplay playsinline muted></video>
+  <div>
+    <button id="toggleCameraBtn">Alternar Câmera</button>
+    <button id="takePhotoBtn">Tirar Foto</button>
+  </div>
+  <script>
+    const videoElement = document.getElementById("cameraStream");
+    const toggleBtn = document.getElementById("toggleCameraBtn");
+    const takePhotoBtn = document.getElementById("takePhotoBtn");
+
+    let currentFacingMode = "environment";
+    let currentStream = null;
+
+    async function setupCamera() {
+      if (currentStream) {
+        currentStream.getTracks().forEach((track) => track.stop());
+      }
+      try {
+        currentStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: currentFacingMode },
+          audio: false,
+        });
+        videoElement.srcObject = currentStream;
+      } catch (err) {
+        alert("Erro ao acessar câmera: " + err.message);
+      }
+    }
+
+    toggleBtn.onclick = () => {
+      currentFacingMode =
+        currentFacingMode === "environment" ? "user" : "environment";
+      setupCamera();
+    };
+
+    takePhotoBtn.onclick = () => {
+      if (!videoElement.videoWidth || !videoElement.videoHeight) {
+        alert("Vídeo não está pronto para captura.");
+        return;
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = videoElement.videoWidth;
+      canvas.height = videoElement.videoHeight;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+      // Gerar base64 da imagem
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+
+      // Pegar array atual no localStorage ou criar vazio
+      let fotos = JSON.parse(localStorage.getItem("cameraPhotos") || "[]");
+
+      // Adicionar nova foto com timestamp para nome
+      fotos.push({
+        name: `foto_${new Date().toISOString().replace(/[:.]/g, "-")}.jpeg`,
+        dataUrl,
+      });
+
+      // Salvar de volta no localStorage
+      localStorage.setItem("cameraPhotos", JSON.stringify(fotos));
+
+      alert("Foto salva no armazenamento local! Vá ao gerenciador para importar.");
+    };
+
+    window.addEventListener("DOMContentLoaded", setupCamera);
+  </script>
+</body>
+</html>
+

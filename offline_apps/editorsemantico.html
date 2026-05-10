@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editor Semântico</title>
+
+<meta name="theme-color" content="#1e1e1e">
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #1e1e1e;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+header {
+  padding: 10px;
+  background: rgba(255,255,255,0.08);
+  display: flex;
+  gap: 8px;
+}
+
+header button {
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.blocks {
+  padding: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.block {
+  background: rgba(255,255,255,0.15);
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.preview {
+  flex: 1;
+  padding: 12px;
+  background: rgba(0,0,0,0.4);
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+.preview:focus {
+  outline: 2px solid rgba(255,255,255,0.3);
+}
+
+.actions {
+  padding: 10px;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.actions button {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:active {
+  transform: scale(0.95);
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <button onclick="setIntent('message')">✉️ Mensagem</button>
+  <button onclick="setIntent('note')">📝 Nota</button>
+  <button onclick="setIntent('task')">✔️ Tarefa</button>
+</header>
+
+<div class="blocks" id="blocks"></div>
+
+<div class="preview" id="preview" contenteditable="true"></div>
+
+<div class="actions">
+  <div>
+    <button onmousedown="event.preventDefault(); refine('simplify')">Simplificar</button>
+    <button onmousedown="event.preventDefault(); refine('formalize')">Formalizar</button>
+  </div>
+  <div>
+    <button onmousedown="event.preventDefault(); shareText()">Compartilhar</button>
+    <button onmousedown="event.preventDefault(); clearDraft()">Limpar</button>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = "semantic_editor_draft";
+
+let intent = null;
+let blocksState = [];
+
+const blockMap = {
+  message: ["Saudação", "Contexto", "Pedido", "Conclusão"],
+  note: ["Ideia", "Detalhe", "Exemplo"],
+  task: ["O que fazer", "Prazo", "Observações"]
+};
+
+/* ---------- Draft ---------- */
+
+function saveDraft() {
+  const data = {
+    intent,
+    blocksState,
+    text: preview.innerText
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function loadDraft() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) {
+    preview.innerText = "Escolha uma intenção para começar.";
+    return;
+  }
+
+  try {
+    const data = JSON.parse(raw);
+    intent = data.intent;
+    blocksState = data.blocksState || [];
+    preview.innerText = data.text || "";
+    renderBlocks();
+  } catch {
+    preview.innerText = "Escolha uma intenção para começar.";
+  }
+}
+
+function clearDraft() {
+  if (!confirm("Limpar rascunho atual?")) return;
+  localStorage.removeItem(STORAGE_KEY);
+  intent = null;
+  blocksState = [];
+  blocks.innerHTML = "";
+  preview.innerText = "Escolha uma intenção para começar.";
+}
+
+/* ---------- Intent / Blocks ---------- */
+
+function setIntent(i) {
+  intent = i;
+  blocksState = [];
+  renderBlocks();
+  preview.innerText = "";
+  saveDraft();
+}
+
+function renderBlocks() {
+  blocks.innerHTML = "";
+  if (!intent) return;
+
+  blockMap[intent].forEach(b => {
+    const div = document.createElement("div");
+    div.className = "block";
+    div.innerText = b;
+    div.onclick = () => addBlock(b);
+    blocks.appendChild(div);
+  });
+}
+
+function addBlock(block) {
+  blocksState.push(block);
+  if (preview.innerText.trim()) {
+    preview.innerText += " • " + block;
+  } else {
+    preview.innerText = block;
+  }
+  flashPreview();
+  saveDraft();
+}
+
+/* ---------- Refinements ---------- */
+
+function refine(type) {
+  const base = preview.innerText.trim();
+  if (!base) {
+    alert("Adicione blocos ou texto antes de refinar.");
+    return;
+  }
+
+  if (type === "formalize") {
+    preview.innerText =
+      "Prezados,\n\n" +
+      base +
+      "\n\nRespeitosamente.";
+  }
+
+  if (type === "simplify") {
+    preview.innerText = base
+      .replace(/•/g, ".")
+      .replace(/\s+/g, " ");
+  }
+
+  flashPreview();
+  saveDraft();
+}
+
+/* ---------- Share / Export ---------- */
+
+async function shareText() {
+  const text = preview.innerText.trim();
+  if (!text) {
+    alert("Nada para compartilhar.");
+    return;
+  }
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        text
+      });
+    } catch {}
+  } else {
+    await navigator.clipboard.writeText(text);
+    alert("Texto copiado para a área de transferência.");
+  }
+}
+
+/* ---------- UX ---------- */
+
+function flashPreview() {
+  preview.style.background = "rgba(255,255,255,0.1)";
+  setTimeout(() => {
+    preview.style.background = "rgba(0,0,0,0.4)";
+  }, 150);
+}
+
+/* ---------- Init ---------- */
+
+const preview = document.getElementById("preview");
+const blocks = document.getElementById("blocks");
+
+preview.addEventListener("input", saveDraft);
+
+loadDraft();
+</script>
+
+</body>
+</html>
+

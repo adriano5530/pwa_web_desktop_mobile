@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+   <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#e0dede">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="white">
+  <meta name="apple-mobile-web-app-title" content="Multi Leitor"> 
+  <title>Leitor — PDF, ePub & Markdown</title>
+  <script src="jslib/marked.min.js"></script>
+  <script src="jslib/jszip.min.js"></script>
+  <script src="jslib/epub.min.js"></script>
+  <script src="jslib/pdf.min.js"></script>
+  <style>
+    :root{
+      --bg:#0b0f14; --fg:#e6edf3; --muted:#9fb0c3; --accent:#7cc4ff; --card:#0f141b; --border:#1e2937;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--fg);}
+    header{position:sticky;top:0;z-index:10;background:rgba(11,15,20,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+    .toolbar{display:flex;gap:.5rem;align-items:center;padding:.75rem;flex-wrap:wrap}
+    .toolbar input[type="text"]{flex:1;min-width:180px;background:var(--card);color:var(--fg);border:1px solid var(--border);border-radius:.75rem;padding:.6rem .8rem}
+    .btn{background:var(--card);color:var(--fg);border:1px solid var(--border);padding:.55rem .8rem;border-radius:.75rem;cursor:pointer}
+    .btn:hover{border-color:var(--accent)}
+    .sep{width:1px;height:34px;background:var(--border);margin:0 .25rem}
+    #viewer{display:grid;grid-template-rows:auto 1fr;min-height:100dvh}
+    #canvasContainer{position:relative;overflow:auto;background:#0a0e13;padding: 20px; flex-grow: 1;}
+    
+    #pdfCanvas{display:block;margin:0 auto;background:#111;border-radius:.75rem}
+    #mdViewer{max-width: 800px; margin: 0 auto; line-height: 1.6; color: var(--fg); display: none;}
+    #epubViewer { width: 100%; height: 80vh; display: none; background: #fff; border-radius: .75rem; color: #000; }
+
+    .status{padding:.4rem .75rem;color:var(--muted);font-size:.9rem}
+    footer{padding:.75rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--card)}
+    .pages{display:flex;align-items:center;gap:.5rem}
+    input[type="number"]{width:5rem;background:var(--bg);color:var(--fg);border:1px solid var(--border);border-radius:.5rem;padding:.4rem .5rem}
+    .hidden{display:none}
+  </style>
+</head>
+<body>
+  <div id="viewer">
+    <header>
+      <div class="toolbar">
+        <input id="urlInput" type="text" placeholder="Link de PDF, ePub ou MD" />
+        <button id="openUrl" class="btn">Abrir</button>
+        <div class="sep"></div>
+        <label class="btn" for="fileInput">Arquivo Local</label>
+        <input id="fileInput" type="file" accept=".pdf,.epub,.md" class="hidden" />
+        <div class="sep"></div>
+        <div id="pdfControls" style="display:flex; gap:0.5rem">
+            <button id="zoomOut" class="btn">−</button>
+            <button id="zoomIn" class="btn">＋</button>
+        </div>
+      </div>
+    </header>
+
+    <div id="canvasContainer">
+      <canvas id="pdfCanvas"></canvas>
+      <div id="mdViewer"></div>
+      <div id="epubViewer"></div>
+    </div>
+
+    <footer id="mainFooter">
+      <div class="pages">
+        <button id="prev" class="btn">◀</button>
+        <span id="pageLabel">Página</span>
+        <input id="pageNumber" type="number" min="1" value="1" />
+        <span id="pageCount">/ 0</span>
+        <button id="next" class="btn">▶</button>
+      </div>
+      <div class="status" id="status">Pronto</div>
+    </footer>
+  </div>
+
+  <script>
+    if (window['pdfjsLib']) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'jslib/pdf.worker.min.js';
+    }
+
+    const state = {
+      pdfDoc: null, pageNum: 1, pageCount: 0, scale: 1.25,
+      isMarkdown: false, isEpub: false, rendition: null, book: null
+    };
+
+    const elements = {
+        urlInput: document.getElementById('urlInput'),
+        canvas: document.getElementById('pdfCanvas'),
+        mdViewer: document.getElementById('mdViewer'),
+        epubViewer: document.getElementById('epubViewer'),
+        pdfControls: document.getElementById('pdfControls'),
+        mainFooter: document.getElementById('mainFooter'),
+        statusEl: document.getElementById('status')
+    };
+
+    function setStatus(msg){ elements.statusEl.textContent = msg; }
+
+    async function openFile(url, fileName = "") {
+        const ext = (fileName || url).split('.').pop().toLowerCase();
+        
+        // Reset de estados (Corrigido //)
+        state.isMarkdown = false;
+        state.isEpub = false;
+        if (state.book) { state.book.destroy(); state.book = null; }
+        
+        if (ext === 'md') {
+            state.isMarkdown = true;
+            toggleViewMode('md');
+            loadMarkdown(url);
+        } else if (ext === 'epub') {
+            state.isEpub = true;
+            toggleViewMode('epub');
+            loadEpub(url);
+        } else {
+            toggleViewMode('pdf');
+            loadPdfFromUrl(url);
+        }
+    }
+
+    function toggleViewMode(mode) {
+        elements.canvas.style.display = mode === 'pdf' ? 'block' : 'none';
+        elements.mdViewer.style.display = mode === 'md' ? 'block' : 'none';
+        elements.epubViewer.style.display = mode === 'epub' ? 'block' : 'none';
+        elements.mainFooter.style.visibility = (mode === 'md') ? 'hidden' : 'visible';
+        elements.pdfControls.style.opacity = mode === 'pdf' ? '1' : '0.3';
+    }
+
+    async function loadMarkdown(url) {
+        setStatus('Carregando Markdown...');
+        const res = await fetch(url);
+        const text = await res.text();
+        elements.mdViewer.innerHTML = marked.parse(text);
+        setStatus('Markdown renderizado');
+    }
+
+    async function loadPdfFromUrl(url){
+      try {
+        setStatus('Carregando PDF...');
+        state.pdfDoc = await pdfjsLib.getDocument({ url }).promise;
+        state.pageNum = 1;
+        state.pageCount = state.pdfDoc.numPages;
+        document.getElementById('pageCount').textContent = '/ ' + state.pageCount;
+        renderPage();
+        setStatus('PDF carregado');
+      } catch(err) { setStatus('Erro PDF: ' + err.message); }
+    }
+
+    async function renderPage(){
+      const page = await state.pdfDoc.getPage(state.pageNum);
+      const viewport = page.getViewport({ scale: state.scale });
+      elements.canvas.width = viewport.width;
+      elements.canvas.height = viewport.height;
+      await page.render({ canvasContext: elements.canvas.getContext('2d'), viewport }).promise;
+    }
+
+async function loadEpub(url) {
+    try {
+        setStatus('Carregando EPUB...');
+        
+        // Limpeza absoluta antes de carregar
+        if (state.book) {
+            state.book.destroy();
+        }
+        elements.epubViewer.innerHTML = ''; // Limpa o container
+
+        state.book = ePub(url);
+        
+        // Aguarda o livro estar pronto antes de renderizar
+        await state.book.ready;
+
+        state.rendition = state.book.renderTo("epubViewer", {
+            width: "100%",
+            height: "100%",
+            flow: "paginated",
+            manager: "default"
+        });
+
+        // Tenta exibir o livro
+        await state.rendition.display();
+        
+        setStatus('EPUB renderizado');
+        
+        // Ajuste para o tema dark: injeta CSS dentro do iframe do livro
+        state.rendition.themes.default({
+            body: {
+                background: "#0b0f14 !important",
+                color: "#e6edf3 !important"
+            }
+        });
+
+    } catch (err) {
+        console.error(err);
+        setStatus('Erro EPUB: ' + err.message);
+    }
+}
+
+    /*async function loadEpub(url) {
+        try {
+            setStatus('Carregando EPUB...');
+            state.book = ePub(url);
+            state.rendition = state.book.renderTo("epubViewer", { width: "100%", height: "100%", flow: "paginated" });
+            state.rendition.display();
+            setStatus('EPUB carregado');
+        } catch (err) { setStatus('Erro EPUB: ' + err.message); }
+    }*/
+    
+    
+
+    // Navegação unificada
+    document.getElementById('next').onclick = () => {
+        if (state.isEpub) state.rendition.next();
+        else if (state.pageNum < state.pageCount) { state.pageNum++; renderPage(); }
+    };
+
+    document.getElementById('prev').onclick = () => {
+        if (state.isEpub) state.rendition.prev();
+        else if (state.pageNum > 1) { state.pageNum--; renderPage(); }
+    };
+
+    document.getElementById('openUrl').onclick = () => openFile(elements.urlInput.value.trim());
+    document.getElementById('fileInput').onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) openFile(URL.createObjectURL(file), file.name);
+    };
+  </script>
+  <script>
+  
+  /* Registro especificio pra pwa interno em pasta de outro */    
+    if ('serviceWorker' in navigator) {
+       navigator.serviceWorker.register('service-worker.js', { scope: './' });
+    }
+
+  
+  </script>
+</body>
+</html>

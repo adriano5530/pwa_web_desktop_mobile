@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <meta name="theme-color" content="#111" />
+  <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+  <title>Lancador Minimalista</title>
+  <style>
+        @font-face {
+      font-family: 'PixelLCD';
+      src: local('Courier New'), monospace;
+    }
+    body {
+      background: #111;
+      color: #fff;
+      font-family: 'PixelLCD', monospace;
+      font-size: 1.8rem;
+      line-height: 1.6;
+      letter-spacing: 3px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      filter: grayscale(100%) contrast(1.5);
+      image-rendering: pixelated;
+      user-select: none;
+    }
+    #hora, #data, #usuario { margin: 10px 0; }
+    a {
+      display: block;
+      color: #fff;
+      text-decoration: none;
+      margin: 5px 0;
+      transition: transform 0.1s, background-color 0.2s;
+      padding: 3px 8px;
+      border-radius: 3px;
+    }
+    a:hover { text-decoration: underline; }
+    a:active {
+      transform: scale(0.97);
+      background-color: #222;
+    }
+    section {
+      margin: 20px 0 10px;
+      width: 100%;
+      max-width: 360px;
+    }
+    h2 {
+      font-size: 1.4rem;
+      margin-bottom: 5px;
+      border-bottom: 1px dashed #444;
+      padding-bottom: 4px;
+    }
+    .hidden { display: none !important; }
+    button, input, select {
+      margin: 10px 0;
+      font-family: inherit;
+      font-size: 1.4rem;
+      background: none;
+      border: 1px dashed #666;
+      color: #fff;
+      padding: 5px 12px;
+      cursor: pointer;
+    }
+    button:hover { background-color: #222; }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 20px;
+      max-width: 360px;
+      width: 100%;
+    }
+    #menuToggle {
+      margin-bottom: 10px;
+    }
+    #menuContainer {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+      max-width: 360px;
+    }
+    #menuContainer.visible {
+      display: flex;
+    }
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #222;
+      color: #fff;
+      padding: 10px 20px;
+      border: 1px dashed #888;
+      border-radius: 6px;
+      font-size: 1.4rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s;
+    }
+    #toast.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="hora">--:--</div>
+  <div id="data">--/--/--</div>
+  
+<div id="usuario" style="opacity: 0.5;"></div>
+
+  <button id="menuToggle">☰ Menu</button>
+  <div id="menuContainer">
+    <button id="share" class="hidden">🔗 Compartilhar esta página</button>
+    <button id="restaurar">🔄 Mostrar todos os atalhos</button>
+    <button id="exportar">📤 Exportar configurações</button>
+    <input id="importar" type="file" accept=".json" style="display:none" />
+    <button onclick="document.getElementById('importar').click()">📥 Importar configurações</button>
+    <button onclick="salvarNoGunDB()">☁️ Sincronizar com a nuvem</button>
+    <button onclick="alternarFormulario()">➕ Adicionar atalho</button>
+  </div>
+
+  <div id="status" style="margin-top: 10px; font-size: 1.2rem; opacity: 0.7;"></div>
+  
+  <form id="formAtalho" class="hidden" onsubmit="return adicionarAtalho()">
+    <input type="text" id="nomeAtalho" placeholder="Nome do atalho" required />
+    <input type="url" id="urlAtalho" placeholder="URL do atalho" required />
+    <select id="plataformaAtalho" required>
+      <option value="android ios">Android e iOS</option>
+      <option value="android">Somente Android</option>
+      <option value="ios">Somente iOS</option>
+    </select>
+    <button type="submit">Salvar</button>
+  </form>
+  
+   <section id="personalizados">
+    <h2>Atalhos Personalizados</h2>
+    <!-- Conteúdo inserido via JS -->
+  </section>
+
+<section>
+    <h2>Comunicação</h2>
+    <a href="whatsapp://send?text=Olá" data-plataforma="android ios">📲 WhatsApp</a>
+    <a href="facetime://" data-plataforma="ios">📞 FaceTime</a>
+    <a href="mailto:" data-plataforma="android ios">✉️ Mail</a>
+    <a href="sms://" data-plataforma="android ios">💬 Mensagens</a>
+    <a href="tel:+5511999999999" data-plataforma="android ios">📞 Ligar</a>
+    <a href="tg://resolve?domain=SeuUsuario" data-plataforma="android ios">💬 Telegram</a>
+    <a href="skype:echo123?call" data-plataforma="android ios">📞 Skype</a>
+    <a href="sgnl://signal.me/#p/+55119999" data-plataforma="android ios">🔒 Signal</a>
+  </section>
+
+  <section>
+    <h2>Mapas</h2>
+    <a href="maps://" data-plataforma="ios">🗺️ Apple Maps</a>
+    <a href="comgooglemaps://" data-plataforma="ios">🗺️ Google Maps (iOS)</a>
+    <a href="geo:0,0?q=" data-plataforma="android">🗺️ Google Maps (Android)</a>
+    <a href="waze://" data-plataforma="android ios">🧭 Waze</a>
+  </section>
+
+  <section>
+    <h2>Mídia</h2>
+    <a href="music://" data-plataforma="ios">🎵 Apple Music</a>
+    <a href="spotify://" data-plataforma="android ios">🎵 Spotify</a>
+    <a href="youtube://" data-plataforma="android ios">📺 YouTube</a>
+    <a href="podcast://" data-plataforma="ios">🎙️ Podcasts</a>
+    <a href="photos-redirect://" data-plataforma="ios">🖼️ Galeria</a>
+  </section>
+
+  <section>
+    <h2>Navegação</h2>
+    <a href="http://" data-plataforma="android ios">🌐 Safari/Browser</a>
+    <a href="googlechrome://example.com" data-plataforma="android ios">🌍 Chrome</a>
+    <a href="brave://" data-plataforma="android">🦁 Brave</a>
+    <a href="google://" data-plataforma="ios">🔎 Google (iOS)</a>
+  </section>
+
+  <section>
+    <h2>Utilitários</h2>
+    <a href="App-Prefs:" data-plataforma="ios">⚙️ Ajustes (iOS)</a>
+    <a href="calshow://" data-plataforma="ios">🗓️ Calendário</a>
+    <a href="mobilenotes://" data-plataforma="ios">📝 Notas</a>
+    <a href="clock-alarm://" data-plataforma="ios">⏰ Relógio</a>
+    <a href="camera://" data-plataforma="ios">📷 Câmera</a>
+    <a href="calculator://" data-plataforma="ios">🧮 Calculadora</a>
+  </section>
+
+
+  <script>
+    document.getElementById('menuToggle').addEventListener('click', () => {
+      const menu = document.getElementById('menuContainer');
+      menu.classList.toggle('visible');
+    });
+
+     const gun = Gun('https://gun-manhattan.herokuapp.com/gun');
+    const userID = localStorage.getItem('userID') || prompt("Informe seu ID para sincronizar:");
+    if (userID) localStorage.setItem('userID', userID);
+    const configRef = gun.get('lancador').get(userID);
+    document.getElementById('usuario').textContent = '🆔 ' + userID;
+
+
+    const links = document.querySelectorAll('a');
+    const statusDiv = document.getElementById('status');
+    const toast = document.getElementById('toast');
+    const horaDiv = document.getElementById('hora');
+    const dataDiv = document.getElementById('data');
+    const shareBtn = document.getElementById('share');
+    const restoreBtn = document.getElementById('restaurar');
+    const personalizados = document.getElementById('personalizados');
+
+    function atualizarRelogio() {
+      const agora = new Date();
+      const horas = String(agora.getHours()).padStart(2, '0');
+      const minutos = String(agora.getMinutes()).padStart(2, '0');
+      const dia = String(agora.getDate()).padStart(2, '0');
+      const mes = String(agora.getMonth() + 1).padStart(2, '0');
+      const ano = String(agora.getFullYear()).slice(-2);
+      const separador = ':';
+      horaDiv.textContent = `${horas}${separador}${minutos}`;
+      dataDiv.textContent = `${dia}/${mes}/${ano}`;
+    }
+    setInterval(atualizarRelogio, 1000);
+    atualizarRelogio();
+    
+    function mostrarToast(msg, tempo = 2000) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), tempo);
+    }
+    
+     function detectarPlataforma() {
+      const ua = navigator.userAgent;
+      if (/Android/i.test(ua)) return 'android';
+      if (/iPhone|iPad|iPod/i.test(ua)) return 'ios';
+      return 'web';
+    }
+
+   function aplicarCompatibilidadePorPlataforma() {
+      const plataforma = detectarPlataforma();
+      document.querySelectorAll('a[data-plataforma]').forEach(link => {
+        const plataformas = link.dataset.plataforma.split(' ');
+        if (!plataformas.includes(plataforma)) {
+          link.classList.add('hidden');
+        }
+      });
+    }
+
+    function aplicarConfiguracoesLocais() {
+      document.querySelectorAll('a').forEach(link => {
+        const href = link.getAttribute('href');
+        if (localStorage.getItem('oculto_' + href)) {
+          link.classList.add('hidden');
+        } else {
+          link.classList.remove('hidden');
+        }
+      });
+    }
+
+  function alternarFormulario() {
+      document.getElementById('formAtalho').classList.toggle('hidden');
+    }
+
+    function adicionarAtalho() {
+      const nome = document.getElementById('nomeAtalho').value.trim();
+      const url = document.getElementById('urlAtalho').value.trim();
+      const plataforma = document.getElementById('plataformaAtalho').value;
+      const novo = { nome, url, plataforma };
+
+      const lista = JSON.parse(localStorage.getItem('custom_atalhos') || '[]');
+      lista.push(novo);
+      localStorage.setItem('custom_atalhos', JSON.stringify(lista));
+      renderizarAtalhosPersonalizados();
+      document.getElementById('formAtalho').reset();
+      document.getElementById('formAtalho').classList.add('hidden');
+      salvarNoGunDB();
+      return false;
+    }
+
+   function renderizarAtalhosPersonalizados() {
+      const plataformaAtual = detectarPlataforma();
+      const lista = JSON.parse(localStorage.getItem('custom_atalhos') || '[]');
+      personalizados.innerHTML = '<h2>Atalhos Personalizados</h2>';
+      lista.forEach(({ nome, url, plataforma }) => {
+        if (!plataforma.includes(plataformaAtual)) return;
+        const link = document.createElement('a');
+        link.href = url;
+        link.textContent = nome;
+        link.dataset.plataforma = plataforma;
+        personalizados.appendChild(link);
+      });
+      aplicarConfiguracoesLocais();
+    }
+
+    aplicarCompatibilidadePorPlataforma();
+    aplicarConfiguracoesLocais();
+    renderizarAtalhosPersonalizados();
+
+    links.forEach(link => {
+      const href = link.getAttribute('href');
+      let pressTimer;
+      link.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        localStorage.setItem('oculto_' + href, '1');
+        aplicarConfiguracoesLocais();
+      });
+      link.addEventListener('touchstart', () => {
+        pressTimer = setTimeout(() => {
+          localStorage.setItem('oculto_' + href, '1');
+          aplicarConfiguracoesLocais();
+        }, 800);
+      });
+      link.addEventListener('touchend', () => clearTimeout(pressTimer));
+    });
+
+    restoreBtn.addEventListener('click', () => {
+  // Limpa localStorage dos atalhos ocultos
+  const chavesParaRemover = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const chave = localStorage.key(i);
+    if (chave.startsWith('oculto_')) {
+      chavesParaRemover.push(chave);
+    }
+  }
+  chavesParaRemover.forEach(k => localStorage.removeItem(k));
+
+  aplicarConfiguracoesLocais();
+  salvarNoGunDB();
+  mostrarToast('🔄 Atalhos restaurados');
+});
+
+
+    if (navigator.share) {
+      shareBtn.classList.remove('hidden');
+      shareBtn.addEventListener('click', () => {
+        navigator.share({ title: 'Lançador Minimalista', url: window.location.href });
+      });
+    }
+
+     document.getElementById('exportar').addEventListener('click', () => {
+      const dados = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const chave = localStorage.key(i);
+        if (chave.startsWith('oculto_') || chave.startsWith('favorito_') || chave === 'custom_atalhos') {
+          dados[chave] = localStorage.getItem(chave);
+        }
+      }
+      const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'configuracoes-lancador.html';
+      a.click();
+      mostrarToast('📤 Configurações exportadas');
+    });
+
+    document.getElementById('importar').addEventListener('change', function () {
+      const file = this.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          const dados = JSON.parse(e.target.result);
+          if (confirm("Deseja substituir suas configurações atuais?")) {
+            Object.keys(dados).forEach(k => localStorage.setItem(k, dados[k]));
+            aplicarConfiguracoesLocais();
+            renderizarAtalhosPersonalizados();
+            salvarNoGunDB();
+            mostrarToast('📥 Configurações importadas');
+          }
+        } catch {
+          mostrarToast('❌ Erro ao importar arquivo');
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    
+    if (userID) localStorage.setItem('userID', userID);
+    
+     function salvarNoGunDB() {
+      const dados = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const chave = localStorage.key(i);
+        if (chave.startsWith('oculto_') || chave.startsWith('favorito_') || chave === 'custom_atalhos') {
+          dados[chave] = localStorage.getItem(chave);
+        }
+      }
+      configRef.put(dados);
+      mostrarToast('☁️ Configurações sincronizadas!');
+    }
+
+    configRef.once(data => {
+      if (data) {
+        Object.keys(data).forEach(k => {
+          if (data[k]) localStorage.setItem(k, data[k]);
+        });
+      }
+      aplicarCompatibilidadePorPlataforma();
+      aplicarConfiguracoesLocais();
+      renderizarAtalhosPersonalizados();
+      statusDiv.textContent = '✅ Configurações sincronizadas';
+    });
+
+    
+    
+  </script>
+  
+  <script>
+  
+  /* Registro especificio pra pwa interno em pasta de outro */    
+    if ('serviceWorker' in navigator) {
+       navigator.serviceWorker.register('service-worker.js', { scope: './' });
+    }
+
+  
+  </script>
+  
+</body>
+</html>
+

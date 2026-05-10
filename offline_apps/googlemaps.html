@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Google Maps</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; }
+    #map { height: 100vh; width: 100%; display: flex; justify-content: center; align-items: center; }
+    iframe { width: 100%; height: 100%; border: none; }
+  </style>
+</head>
+<body>
+
+<div id="map">
+  <p>Obtendo localização...</p>
+</div>
+
+<script>
+  function exibirGoogleMaps(lat, lon) {
+    const zoom = 15; // nível de zoom ideal para visualizar ruas
+    const url = `https://maps.google.com/maps?q=${lat},${lon}&z=${zoom}&output=embed`;
+
+    const iframe = document.createElement("iframe");
+    iframe.src = url;
+
+    const mapDiv = document.getElementById("map");
+    mapDiv.innerHTML = "";
+    mapDiv.appendChild(iframe);
+  }
+
+  function obterLocalizacao() {
+    if (!navigator.geolocation) {
+      document.getElementById("map").innerText = "Geolocalização não suportada.";
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(pos => {
+      const { latitude, longitude } = pos.coords;
+      exibirGoogleMaps(latitude, longitude);
+    }, err => {
+      document.getElementById("map").innerText = "Permissão de localização negada ou erro ao obter posição.";
+    }, {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    });
+  }
+
+  obterLocalizacao();
+</script>
+
+</body>
+</html>
+

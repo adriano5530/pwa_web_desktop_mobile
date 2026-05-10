@@ -1,0 +1,419 @@
+<html>
+<head>
+  <!--<link rel="stylesheet" href="style.css">-->
+  <style>
+head {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 0 0.6em;
+
+    background-color: rgba(0,0,0,0.30);
+    border-bottom-right-radius: 10px;
+}
+head h5 {
+    color: white;
+    font-family: sans-serif;
+    font-size: 1.2em;
+    margin: 1em;
+}
+head a {
+    color: white;
+}
+
+body {
+    width: 226px;
+    margin: 8% 20%;
+    padding-bottom: 12px;
+    background-color: #d9e4f1;
+    border: solid 1px gray;
+}
+
+.menu {
+    border-bottom: solid 1px gray;
+    font-size: 16px;
+    padding: 2px 4px;
+
+    background: linear-gradient(#f3f6fa 0%, #f3f6fa 34%, #D7E2EF 38%, #D7E2EF 100%);
+}
+.menu span {
+    text-decoration: underline;
+}
+
+.display {
+    position: relative;
+    width: 86%;
+    margin: 15px 0 3px 14px;
+    border: solid 1px gray;
+    border-radius: 3px;
+
+    background: linear-gradient(#e5effb 0%, #E2EAF3 60%, #f5f8fd 80%, white 100%);
+    box-shadow: 0px -1px 14px white inset;
+}
+
+.display div {
+    color: black;
+    text-align: right;
+}
+
+.outer-div {
+    width:92%;
+    margin-left:auto;
+    margin-right:auto;
+    text-align:right;
+    overflow:hidden;
+    white-space: nowrap;
+  }
+.inner-div {
+    float:right;
+}
+
+.sm-text {
+    font-size: 11px;
+    letter-spacing: 2px;
+    min-height: 16px;
+    padding-top: 3px;
+    margin: 0;
+}
+.lg-text {
+    font-size: 20px;
+    padding-left: 10px;
+    margin: 0;
+}
+.m-icon {
+    position: absolute;
+    left: 4px;
+    bottom: 8px;
+    display: none;
+}
+.error {
+    min-height: 12px;
+    font-size: 10px;
+    line-height: 8px;
+    padding-right: 8px;
+}
+
+.keyboard {
+    width: 100%;
+    margin: 0 0 0 14px;
+}
+.keyboard-bot {
+    margin-left: 3px;
+}
+
+button {
+    width: 37px;
+    height: 29px;
+    margin: 2px 0;
+    border: 1px solid rgba(0,0,0,.4);
+    border-radius: 2px;
+    
+    background: linear-gradient(#F0F6FB 0%, #E2EAF3 49%, #D5E0ED 50%, #D7E2EF 100%);
+    box-shadow: 0px -1px 6px white inset;
+}
+button:hover {
+	background: linear-gradient(#FFE3B5 50%, #FCBF5D 50%);
+	box-shadow: 1px 1px 2px #ffb76b,0px -1px 5px white inset;
+	border-color: #FCBF5D;
+}
+.btn-white {
+    font-size: 14px;
+    background: linear-gradient(#f2f5f9 0%, #f2f5f9 49%, #eef2f7 50%, #eef2f7 100%);
+    box-shadow: 1.6px 1.6px 0px white inset, -1.6px -1.6px 0px white inset;
+}
+
+.btn-wide {
+    width: 77px;
+}
+.btn-tall {
+    position: absolute;
+    left: -1px;
+    height: 63px;
+}
+
+.bot-left {
+    display: inline-block;
+    width: 70%;
+    margin-left: 11px;
+}
+.bot-right {
+    position: relative;
+    display: inline-block;
+    vertical-align: top;
+    width: 20%;
+}
+
+  </style>
+</head>
+
+<body>
+  <div class="menu"><span>V</span>iew&nbsp;&nbsp; <span>E</span>dit&nbsp;&nbsp; <span>H</span>elp</div>
+  <div class="display">
+    <div class="outer-div">
+      <div class="inner-div sm-text"></div>
+    </div>
+    <div class="outer-div">
+      <div class="inner-div lg-text">0</div>
+    </div>
+    <div class="error"></div>
+    <div class="m-icon">M</div>
+  </div>
+  <div class="keyboard">
+    <button value="mc">MC</button>
+    <button value="mr">MR</button>
+    <button value="ms">MS</button>
+    <button value="mPlus">M+</button>
+    <button value="mMinus">M-</button>
+
+    <button value="backspace">&#9664;--</button>
+    <button value="ce">CE</button>
+    <button value="c">C</button>
+    <button value="sign">+-</button>
+    <button value="sqrt">&radic;</button>
+
+    <button class="btn-white" value="7">7</button>
+    <button class="btn-white" value="8">8</button>
+    <button class="btn-white" value="9">9</button>
+    <button value="/">/</button>
+    <button value="%">%</button>
+
+    <button class="btn-white" value="4">4</button>
+    <button class="btn-white" value="5">5</button>
+    <button class="btn-white" value="6">6</button>
+    <button value="*">*</button>
+    <button value="reciprocal">1/x</button>
+  </div>
+  <div class="keyboard-bot">
+    <div class="bot-left">
+      <button class="btn-white" value="1">1</button>
+      <button class="btn-white" value="2">2</button>
+      <button class="btn-white" value="3">3</button>
+      <button value="-">-</button>
+
+      <button class="btn-wide btn-white" value="0">0</button>
+      <button class="btn-white" value=".">.</button>
+      <button value="+">+</button>
+    </div>
+    <div class="bot-right">
+      <button class="btn-tall" value="=">=</button>
+    </div>
+  </div>
+  <!--<script src="script.js"></script>-->
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    let numKeyReset = false;
+    let lgQueue = "0";
+    let smQueue = "";
+    let query = "";
+    let memory = "";
+
+    const numRegEx = /^[0-9.]$/;
+    const operRegEx = /[+\-*/%]/;
+
+    const lgText = document.querySelector(".lg-text");
+    const smText = document.querySelector(".sm-text");
+    const errorDisplay = document.querySelector(".error");
+    const mIcon = document.querySelector(".m-icon");
+
+    function evalStr(str) {
+        str = str + "";
+        str = str.replace(/^\-/, '0-');
+        str = str.replace(/\-\-/, '+');
+
+        let result;
+        try {
+            result = eval(str) + "";
+        } catch (e) {
+            errorDisplay.innerHTML = "Erro de sintaxe";
+            return "0";
+        }
+
+        if (result.includes("Infinity")) {
+            errorDisplay.innerHTML = "Não é possível dividir por zero";
+            return "0";
+        }
+        if (result.includes("NaN")) {
+            errorDisplay.innerHTML = "Entrada inválida";
+            return "0";
+        }
+
+        if (result.length > 12) {
+            result = Number(result).toFixed(12);
+        }
+
+        return result;
+    }
+
+    function sync() {
+        lgText.innerHTML = lgQueue;
+        smText.innerHTML = smQueue;
+    }
+
+    function clear() {
+        lgQueue = "0";
+        smQueue = "";
+        query = "";
+        errorDisplay.innerHTML = "";
+    }
+
+    document.querySelectorAll("button").forEach(button => {
+        button.addEventListener("click", () => {
+            const key = button.value;
+
+            // Números
+            if (numRegEx.test(key)) {
+                if (numKeyReset) {
+                    clear();
+                    numKeyReset = false;
+                }
+
+                if (lgQueue[0] === "0" && lgQueue.length === 1) {
+                    if (query.length !== 0) {
+                        lgQueue = key;
+                        query += key;
+                    } else {
+                        lgQueue = key;
+                        query = key;
+                    }
+                } else {
+                    lgQueue += key;
+                    query += key;
+                }
+                sync();
+            }
+
+            numKeyReset = false;
+
+            // Operadores
+            if (operRegEx.test(key)) {
+                if (operRegEx.test(query[query.length - 1])) {
+                    smQueue = smQueue.slice(0, -1) + key;
+                    query = query.slice(0, -1) + key;
+                    lgQueue = lgText.innerHTML;
+                } else {
+                    smQueue += lgQueue;
+
+                    if (operRegEx.test(query)) {
+                        query = lgQueue = evalStr(smQueue);
+                    }
+
+                    smQueue += key;
+                    query += key;
+                }
+                sync();
+                lgQueue = "";
+            }
+
+            // Igual
+            if (key === "=") {
+                smQueue = "";
+                lgQueue = evalStr(query);
+                query = lgQueue;
+                sync();
+                numKeyReset = true;
+            }
+
+            // Funções especiais
+            if (key === "backspace") {
+                if (lgQueue.length > 1) {
+                    lgQueue = lgQueue.slice(0, -1);
+                } else {
+                    lgQueue = "0";
+                }
+                query = query.slice(0, -1);
+                sync();
+            }
+
+            if (key === "sign") {
+                if (lgQueue.length !== 0) {
+                    const temp = query.slice(0, -lgQueue.length);
+                    if (lgQueue[0] !== '-') {
+                        lgQueue = '-' + lgQueue;
+                    } else {
+                        lgQueue = lgQueue.slice(1);
+                    }
+                    query = temp + lgQueue;
+                    sync();
+                }
+            }
+
+            if (key === "reciprocal") {
+                const temp = query.slice(0, -lgQueue.length);
+                lgQueue = evalStr("1/" + lgQueue);
+                query = temp + lgQueue;
+                sync();
+            }
+
+            if (key === "sqrt") {
+                const temp = query.slice(0, -lgQueue.length);
+                lgQueue = evalStr(Math.sqrt(lgQueue));
+                query = temp + lgQueue;
+                sync();
+            }
+
+            // Memória
+            if (key === "ms") {
+                memory = lgQueue;
+                numKeyReset = true;
+                mIcon.style.display = "block";
+            }
+
+            if (key === "mc") {
+                memory = "";
+                mIcon.style.display = "none";
+            }
+
+            if (key === "mr") {
+                const temp = query.slice(0, -lgQueue.length);
+                lgQueue = memory;
+                query = temp + memory;
+                sync();
+                numKeyReset = true;
+            }
+
+            if (key === "mPlus") {
+                if (memory.length === 0) {
+                    memory = lgQueue;
+                    mIcon.style.display = "block";
+                } else {
+                    memory = evalStr(memory + "+" + lgQueue);
+                }
+                numKeyReset = true;
+            }
+
+            if (key === "mMinus") {
+                if (memory.length === 0) {
+                    memory = "-" + lgQueue;
+                    mIcon.style.display = "block";
+                } else {
+                    memory = evalStr(memory + "-" + lgQueue);
+                }
+                numKeyReset = true;
+            }
+
+            if (memory === "0") {
+                memory = "";
+                mIcon.style.display = "none";
+            }
+
+            // Limpar
+            if (key === "c") {
+                clear();
+                sync();
+            }
+
+            if (key === "ce") {
+                query = query.slice(0, -lgQueue.length);
+                lgQueue = "0";
+                sync();
+            }
+
+            // Debug
+            console.log(query);
+        });
+    });
+});
+
+  </script>
+</body>
+</html>

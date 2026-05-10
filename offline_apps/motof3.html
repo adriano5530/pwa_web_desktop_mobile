@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Discador Motorola F3 - Fiel</title>
+  <style>
+    @font-face {
+      font-family: 'PixelLCD';
+      src: local('Courier New'), monospace;
+    }
+
+    body {
+      background: #000;
+      font-family: 'PixelLCD', monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .discador {
+      background: #000;
+      border: 4px solid #111;
+      border-radius: 20px;
+      width: 240px;
+      padding: 10px 12px;
+      box-shadow: inset 0 0 6px #111;
+      user-select: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .display {
+      background: #34423c;
+      color: #fff;
+      width: 100%;
+      height: 90px;
+      font-size: 1.8rem;
+      line-height: 1.6;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      letter-spacing: 3px;
+      filter: grayscale(100%) contrast(1.2);
+    }
+
+    .teclado {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      width: 100%;
+    }
+
+    button {
+      background: #000;
+      border: 1px solid #555;
+      border-radius: 4px;
+      font-size: 1.4rem;
+      color: #fff;
+      height: 48px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 2px;
+    }
+
+    button small {
+      font-size: 0.6rem;
+      margin-top: 2px;
+      color: #aaa;
+    }
+
+    button:active {
+      background: #222;
+    }
+
+    .botao-ligar {
+      grid-column: span 1;
+      background: #002800;
+      color: #a0f5a0;
+      font-weight: bold;
+    }
+
+    .botao-encerrar {
+      grid-column: span 1;
+      background: #280000;
+      color: #ffaaaa;
+      font-weight: bold;
+    }
+
+    .botao-vazio {
+      background: transparent;
+      border: none;
+      cursor: default;
+    }
+  </style>
+</head>
+<body>
+  <div class="discador" role="application" aria-label="Discador estilo Motorola F3">
+    <div id="display" class="display">
+      <div id="hora">--:--</div>
+      <div id="data">--/--/--</div>
+    </div>
+    <div class="teclado">
+      <button data-num="1">1</button>
+      <button data-num="2">2<br><small>ABC</small></button>
+      <button data-num="3">3<br><small>DEF</small></button>
+      <button data-num="4">4<br><small>GHI</small></button>
+      <button data-num="5">5<br><small>JKL</small></button>
+      <button data-num="6">6<br><small>MNO</small></button>
+      <button data-num="7">7<br><small>PQRS</small></button>
+      <button data-num="8">8<br><small>TUV</small></button>
+      <button data-num="9">9<br><small>WXYZ</small></button>
+      <button data-num="*">*</button>
+      <button data-num="0">0</button>
+      <button data-num="#">#</button>
+      <button class="botao-ligar" id="ligar">📞</button>
+      <button class="botao-vazio" disabled></button>
+      <button class="botao-encerrar" id="apagar">⛔</button>
+    </div>
+  </div>
+
+  <audio id="somClique" src="https://actions.google.com/sounds/v1/ui/click.ogg" preload="auto"></audio>
+
+  <script>
+    const horaDiv = document.getElementById('hora');
+    const dataDiv = document.getElementById('data');
+    const display = document.getElementById('display');
+    const botoes = document.querySelectorAll('.teclado button[data-num]');
+    const apagar = document.getElementById('apagar');
+    const ligar = document.getElementById('ligar');
+    const somClique = document.getElementById('somClique');
+
+    let numero = "";
+
+    function atualizarRelogio() {
+      const agora = new Date();
+      const horas = String(agora.getHours()).padStart(2, '0');
+      const minutos = String(agora.getMinutes()).padStart(2, '0');
+      const dia = String(agora.getDate()).padStart(2, '0');
+      const mes = String(agora.getMonth() + 1).padStart(2, '0');
+      const ano = String(agora.getFullYear()).slice(-2);
+      if (numero.length === 0) {
+        horaDiv.textContent = `${horas}:${minutos}`;
+        dataDiv.textContent = `${dia}/${mes}/${ano}`;
+      }
+    }
+
+    setInterval(atualizarRelogio, 1000);
+    atualizarRelogio();
+
+    botoes.forEach(btn => {
+      btn.addEventListener('click', () => {
+        somClique.currentTime = 0;
+        somClique.play();
+        numero += btn.getAttribute('data-num');
+        horaDiv.textContent = numero;
+        dataDiv.textContent = '';
+      });
+    });
+
+    apagar.addEventListener('click', () => {
+      somClique.currentTime = 0;
+      somClique.play();
+      numero = numero.slice(0, -1);
+      if (numero.length === 0) {
+        atualizarRelogio();
+      } else {
+        horaDiv.textContent = numero;
+        dataDiv.textContent = '';
+      }
+    });
+
+    ligar.addEventListener('click', () => {
+      const num = numero.trim();
+      if (!num) {
+        alert('Digite um número para ligar.');
+        return;
+      }
+      window.location.href = `tel:${num}`;
+    });
+  </script>
+</body>
+</html>
+

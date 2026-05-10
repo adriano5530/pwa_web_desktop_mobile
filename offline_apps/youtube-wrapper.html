@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Assistir YouTube</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #111;
+      color: white;
+      padding: 2rem;
+      text-align: center;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      margin: 8px;
+    }
+    iframe {
+      margin-top: 20px;
+      width: 100%;
+      max-width: 800px;
+      height: 450px;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Assistir vídeo do YouTube</h1>
+
+  <input id="ytlink" type="text" placeholder="Cole o link do YouTube aqui" size="50"/>
+  <button onclick="embed()">Carregar vídeo</button>
+
+  <div id="player-area">
+    <iframe id="player" allowfullscreen></iframe>
+  </div>
+
+  <script>
+    function embed() {
+      const input = document.getElementById("ytlink").value.trim();
+      const match = input.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+      if (!match) {
+        alert("Link inválido. Cole um link direto de vídeo do YouTube.");
+        return;
+      }
+      const videoId = match[1];
+      document.getElementById("player").src = `https://www.youtube.com/embed/${videoId}`;
+    }
+  </script>
+</body>
+</html>
+

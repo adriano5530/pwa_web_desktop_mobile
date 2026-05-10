@@ -1,0 +1,23 @@
+{
+  "name": "Multi Leitor",
+  "short_name": "Leitor",
+  "start_url": "multileitor.html",
+  "display": "standalone",
+  "background_color": "#e0dede",
+  "theme_color": "#e0dede",
+  "description": "Leitor de PDF e outros - Este manifest é especifico de pwas internos de outros",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+
+

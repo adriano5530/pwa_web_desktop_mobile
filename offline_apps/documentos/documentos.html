@@ -1,0 +1,146 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#e0dede">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="white">
+  <meta name="apple-mobile-web-app-title" content="Word Like"> 
+    <title>Editor Word-Like</title>
+    <script src="jsbib/tinymce.min.js"></script>
+    <script src="jsbib/mammoth.browser.min.js"></script>
+    <script src="jsbib/webodf.js"></script>
+    <script src="jsbib/FileSaver.min.js"></script>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+      textarea {
+        height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <input type="file" id="fileInput" accept=".html,.txt,.docx,.odt" style="display:none" onchange="loadFile(event)" />
+    <textarea id="editor"></textarea>
+
+    <script>
+      const EDITOR_KEY = "tinymce-autosave";
+
+      function saveContent(type) {
+        const content = tinymce.get("editor").getContent({ format: type === 'txt' ? 'text' : 'html' });
+        const blob = new Blob([content], { type: type === "txt" ? "text/plain" : "text/html;charset=utf-8" });
+        const filename = `documento.${type}`;
+        saveAs(blob, filename);
+      }
+
+      function loadFile(event) {
+        const file = event.target.files[0];
+        const extension = file.name.split('.').pop().toLowerCase();
+
+        if (extension === 'docx') {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            mammoth.convertToHtml({ arrayBuffer: e.target.result })
+              .then(result => {
+                tinymce.get("editor").setContent(result.value);
+              })
+              .catch(err => console.error("Erro ao ler DOCX:", err));
+          };
+          reader.readAsArrayBuffer(file);
+
+        } else if (extension === 'odt') {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            const container = document.createElement("div");
+            document.body.appendChild(container);
+
+            const odfCanvas = new odf.OdfCanvas(container);
+            odfCanvas.load(e.target.result);
+
+            setTimeout(() => {
+              tinymce.get("editor").setContent(container.innerHTML);
+              document.body.removeChild(container);
+            }, 1000);
+          };
+          reader.readAsDataURL(file);
+
+        } else {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            const content = e.target.result;
+            tinymce.get("editor").setContent(content);
+          };
+          reader.readAsText(file);
+        }
+      }
+
+      const useDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+      tinymce.init({
+        selector: "#editor",
+        height: 800,
+        plugins:
+          "print preview paste importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap hr pagebreak nonbreaking anchor toc insertdatetime advlist lists wordcount imagetools textpattern noneditable help charmap quickbars emoticons",
+        toolbar:
+          "undo redo | bold italic underline strikethrough | fontselect fontsizeselect formatselect | alignleft aligncenter alignright alignjustify | outdent indent | numlist bullist | forecolor backcolor removeformat | pagebreak | charmap emoticons | fullscreen preview save print | insertfile image media template link anchor codesample | ltr rtl",
+        menubar: "file edit view insert format tools table help",
+        menu: {
+          file: {
+            title: "File",
+            items: "newdocument openfile | savehtml savetxt savedocx saveodt | print"
+          }
+        },
+        setup: function (editor) {
+          editor.ui.registry.addMenuItem("openfile", {
+            text: "📂 Abrir arquivo...",
+            onAction: () => document.getElementById("fileInput").click()
+          });
+          editor.ui.registry.addMenuItem("savehtml", {
+            text: "💾 Salvar como HTML",
+            onAction: () => saveContent("html")
+          });
+          editor.ui.registry.addMenuItem("savetxt", {
+            text: "💾 Salvar como TXT",
+            onAction: () => saveContent("txt")
+          });
+          editor.ui.registry.addMenuItem("savedocx", {
+            text: "💾 Salvar como DOCX",
+            onAction: () => saveContent("docx")
+          });
+          editor.ui.registry.addMenuItem("saveodt", {
+            text: "💾 Salvar como ODT",
+            onAction: () => saveContent("odt")
+          });
+
+          editor.on("Change KeyUp", () => {
+            localStorage.setItem(EDITOR_KEY, editor.getContent());
+          });
+          editor.on("init", () => {
+            const saved = localStorage.getItem(EDITOR_KEY);
+            if (saved) editor.setContent(saved);
+          });
+        },
+        skin: useDarkMode ? "oxide-dark" : "oxide",
+        content_css: useDarkMode ? "dark" : "default",
+        content_style: "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }"
+      });
+    </script>
+    <script>
+  
+  /* Registro especificio pra pwa interno em pasta de outro */    
+    if ('serviceWorker' in navigator) {
+       navigator.serviceWorker.register('service-worker.js', { scope: './' });
+    }
+
+  
+  </script>
+  </body>
+</html>

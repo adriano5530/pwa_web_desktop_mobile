@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>WebLLM Chat - TinyLLaMA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: monospace; background: #111; color: #eee; max-width: 600px; margin: 2em auto; padding: 1em; }
+    #resposta { background: #1e1e1e; padding: 1em; min-height: 8em; white-space: pre-wrap; border: 1px solid #444; border-radius: 6px; margin-bottom: 10px; }
+    #entrada { width: 100%; padding: 0.7em; background: #222; color: #fff; border: 1px solid #555; border-radius: 4px; box-sizing: border-box; }
+    .status { font-size: 0.8em; color: #888; margin-top: 5px; }
+  </style>
+</head>
+<body>
+  <h2>🧠 Chat Local (TinyLLaMA)</h2>
+  <div id="resposta">Aguardando inicialização...</div>
+  <input id="entrada" placeholder="Digite sua pergunta..." autocomplete="off" />
+  <div id="status-log" class="status"></div>
+
+  <script type="module">
+    // Importação correta via CDN (ESM)
+    import * as webllm from "https://esm.run/@mlc-ai/web-llm";
+
+    const output = document.getElementById("resposta");
+    const input = document.getElementById("entrada");
+    const statusLog = document.getElementById("status-log");
+
+    let engine;
+    const modelId = "TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC";
+
+    async function init() {
+      try {
+        output.textContent = "🔄 Carregando motor e modelo... (Isso pode demorar alguns minutos na primeira vez)";
+        
+        // Criando o motor (Engine) em vez de ChatModule
+        engine = await webllm.createMLCEngine(modelId, {
+          initProgressCallback: (report) => {
+            statusLog.textContent = report.text; // Mostra o progresso do download
+          }
+        });
+
+        output.textContent = "✅ Pronto! O modelo está rodando localmente.";
+      } catch (err) {
+        output.textContent = "❌ Erro: " + err.message;
+        console.error(err);
+      }
+    }
+
+    input.addEventListener("keydown", async (e) => {
+      if (e.key === "Enter" && engine) {
+        const prompt = input.value.trim();
+        if (!prompt) return;
+
+        input.value = "";
+        output.textContent = "💬 Você: " + prompt + "\n\n🤖 Pensando...";
+
+        const messages = [{ role: "user", content: prompt }];
+        
+        const reply = await engine.chat.completions.create({ messages });
+        output.textContent = "💬 Você: " + prompt + "\n\n🤖 " + reply.choices[0].message.content;
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>
