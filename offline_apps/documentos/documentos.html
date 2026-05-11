@@ -1,101 +1,113 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="favicon.ico" type="image/x-icon" />
-  <link rel="apple-touch-icon" href="icon-192.png">
-  <meta name="theme-color" content="#e0dede">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="white">
-  <meta name="apple-mobile-web-app-title" content="Word Like"> 
-    <title>Editor Word-Like</title>
+ <link rel="manifest" href="manifest.json">
+ <link rel="icon" href="favicon.ico" type="image/x-icon" />
+ <link rel="apple-touch-icon" href="icon-192.png">
+ <meta name="theme-color" content="#e0dede">
+ <meta name="apple-mobile-web-app-capable" content="yes">
+ <meta name="apple-mobile-web-app-status-bar-style" content="white">
+ <meta name="apple-mobile-web-app-title" content="Editor WYSIWYG"> 
+	
+    <title>Editor WYSIWYG Híbrido (MD/HTML)</title>
     <script src="jsbib/tinymce.min.js"></script>
     <script src="jsbib/mammoth.browser.min.js"></script>
     <script src="jsbib/webodf.js"></script>
     <script src="jsbib/FileSaver.min.js"></script>
+    <script src="jsbib/showdown.min.js"></script>
+    <script src="jsbib/turndown.js"></script>
     <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-      }
-      textarea {
-        height: 100vh;
-      }
+      html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+      #editor { height: 100vh !important; }
     </style>
   </head>
   <body>
-    <input type="file" id="fileInput" accept=".html,.txt,.docx,.odt" style="display:none" onchange="loadFile(event)" />
+    <input type="file" id="fileInput" accept=".html,.txt,.docx,.odt,.md" style="display:none" onchange="loadFile(event)" />
     <textarea id="editor"></textarea>
 
     <script>
       const EDITOR_KEY = "tinymce-autosave";
+      
+      // 1. Inicializadores das bibliotecas de conversão
+      const mdToHtmlConverter = new showdown.Converter();
+      const htmlToMdConverter = new TurndownService();
 
+      // 2. Função de Salvar Corrigida
       function saveContent(type) {
-        const content = tinymce.get("editor").getContent({ format: type === 'txt' ? 'text' : 'html' });
-        const blob = new Blob([content], { type: type === "txt" ? "text/plain" : "text/html;charset=utf-8" });
-        const filename = `documento.${type}`;
+        let content = tinymce.get("editor").getContent();
+        let filename = `documento.${type}`;
+        let blobType = "text/html;charset=utf-8";
+
+        if (type === 'md') {
+          // Converte o HTML do TinyMCE para Markdown puro
+          content = htmlToMdConverter.turndown(content);
+          blobType = "text/markdown;charset=utf-8";
+        } else if (type === 'txt') {
+          content = tinymce.get("editor").getContent({ format: 'text' });
+          blobType = "text/plain;charset=utf-8";
+        }
+
+        const blob = new Blob([content], { type: blobType });
         saveAs(blob, filename);
       }
 
+      // 3. Função de Carregar Corrigida
       function loadFile(event) {
         const file = event.target.files[0];
+        if (!file) return;
         const extension = file.name.split('.').pop().toLowerCase();
+        const reader = new FileReader();
 
-        if (extension === 'docx') {
-          const reader = new FileReader();
-          reader.onload = function (e) {
-            mammoth.convertToHtml({ arrayBuffer: e.target.result })
-              .then(result => {
-                tinymce.get("editor").setContent(result.value);
-              })
-              .catch(err => console.error("Erro ao ler DOCX:", err));
-          };
-          reader.readAsArrayBuffer(file);
+        reader.onload = function (e) {
+          const result = e.target.result;
 
-        } else if (extension === 'odt') {
-          const reader = new FileReader();
-          reader.onload = function (e) {
+          if (extension === 'docx') {
+            mammoth.convertToHtml({ arrayBuffer: result })
+              .then(res => tinymce.get("editor").setContent(res.value))
+              .catch(err => console.error("Erro no DOCX:", err));
+          } 
+          else if (extension === 'md') {
+            // Converte o texto MD carregado para HTML para o TinyMCE
+            const html = mdToHtmlConverter.makeHtml(result);
+            tinymce.get("editor").setContent(html);
+          }
+          else if (extension === 'odt') {
+            // Lógica ODT permanece como DataURL
             const container = document.createElement("div");
-            document.body.appendChild(container);
-
             const odfCanvas = new odf.OdfCanvas(container);
-            odfCanvas.load(e.target.result);
-
+            odfCanvas.load(result);
             setTimeout(() => {
               tinymce.get("editor").setContent(container.innerHTML);
-              document.body.removeChild(container);
             }, 1000);
-          };
-          reader.readAsDataURL(file);
+          } 
+          else {
+            tinymce.get("editor").setContent(result);
+          }
+        };
 
+        // Escolhe o método de leitura baseado na extensão
+        if (extension === 'docx' || extension === 'odt') {
+          reader.readAsArrayBuffer(file);
         } else {
-          const reader = new FileReader();
-          reader.onload = function (e) {
-            const content = e.target.result;
-            tinymce.get("editor").setContent(content);
-          };
-          reader.readAsText(file);
+          reader.readAsText(file); // Essencial para .md, .txt e .html
         }
       }
 
+      // 4. Configuração do TinyMCE
       const useDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
 
       tinymce.init({
         selector: "#editor",
-        height: 800,
-        plugins:
-          "print preview paste importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap hr pagebreak nonbreaking anchor toc insertdatetime advlist lists wordcount imagetools textpattern noneditable help charmap quickbars emoticons",
-        toolbar:
-          "undo redo | bold italic underline strikethrough | fontselect fontsizeselect formatselect | alignleft aligncenter alignright alignjustify | outdent indent | numlist bullist | forecolor backcolor removeformat | pagebreak | charmap emoticons | fullscreen preview save print | insertfile image media template link anchor codesample | ltr rtl",
+        height: "100%",
+        plugins: "print preview paste importcss searchreplace autolink autosave save code visualblocks visualchars fullscreen image link media codesample table charmap hr pagebreak nonbreaking anchor toc insertdatetime advlist lists wordcount imagetools textpattern help emoticons quickbars",
+        toolbar: "undo redo | bold italic underline | fontselect fontsizeselect formatselect | alignleft aligncenter alignright | numlist bullist | forecolor backcolor | fullscreen preview save",
         menubar: "file edit view insert format tools table help",
         menu: {
           file: {
-            title: "File",
-            items: "newdocument openfile | savehtml savetxt savedocx saveodt | print"
+            title: "Arquivo",
+            items: "newdocument openfile | savemd savehtml savetxt savedocx saveodt | print"
           }
         },
         setup: function (editor) {
@@ -103,22 +115,15 @@
             text: "📂 Abrir arquivo...",
             onAction: () => document.getElementById("fileInput").click()
           });
-          editor.ui.registry.addMenuItem("savehtml", {
-            text: "💾 Salvar como HTML",
-            onAction: () => saveContent("html")
+          // Novo botão para salvar em Markdown
+          editor.ui.registry.addMenuItem("savemd", {
+            text: "📝 Salvar como Markdown (.md)",
+            onAction: () => saveContent("md")
           });
-          editor.ui.registry.addMenuItem("savetxt", {
-            text: "💾 Salvar como TXT",
-            onAction: () => saveContent("txt")
-          });
-          editor.ui.registry.addMenuItem("savedocx", {
-            text: "💾 Salvar como DOCX",
-            onAction: () => saveContent("docx")
-          });
-          editor.ui.registry.addMenuItem("saveodt", {
-            text: "💾 Salvar como ODT",
-            onAction: () => saveContent("odt")
-          });
+          editor.ui.registry.addMenuItem("savehtml", { text: "🌐 Salvar como HTML", onAction: () => saveContent("html") });
+          editor.ui.registry.addMenuItem("savetxt", { text: "📄 Salvar como TXT", onAction: () => saveContent("txt") });
+          editor.ui.registry.addMenuItem("savedocx", { text: "📘 Salvar como DOCX", onAction: () => saveContent("docx") });
+	  editor.ui.registry.addMenuItem("saveodt", { text: "📘 Salvar como ODT", onAction: () => saveContent("odt") });
 
           editor.on("Change KeyUp", () => {
             localStorage.setItem(EDITOR_KEY, editor.getContent());
@@ -129,11 +134,10 @@
           });
         },
         skin: useDarkMode ? "oxide-dark" : "oxide",
-        content_css: useDarkMode ? "dark" : "default",
-        content_style: "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }"
+        content_css: useDarkMode ? "dark" : "default"
       });
     </script>
-    <script>
+  <script>
   
   /* Registro especificio pra pwa interno em pasta de outro */    
     if ('serviceWorker' in navigator) {
