@@ -2,7 +2,8 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!--<meta name="viewport" content="width=device-width, initial-scale=1.0">-->
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="favicon.ico" type="image/x-icon" />
   <link rel="apple-touch-icon" href="icon-192.png">
@@ -32,19 +33,20 @@
       box-sizing: border-box;
     }
  
-    
-    body {
-    min-height: 200vh;
-      /* força o dobro da altura da tela */
-      ;
+     
+   body {
+    /* min-height: 200vh; força o dobro da altura da tela */
+    height: 100vh;
+    width: 100vw;
     background: #1e1e1e;
     font-family: Arial, sans-serif;
     color: white;
     transition: background 0.5s ease;
     background-size: cover;
     background-position: center;
-    overflow: hidden;
-   }
+    overflow: hidden; /* Mantém o conteúdo preso à tela */
+    touch-action: none; /* Bloqueia o zoom de pinça e scroll acidental do navegador */
+}
 
 body.fundo-imagem {
   background: url("images/trigo.jpg") no-repeat center center;
@@ -404,9 +406,9 @@ body.fundo-imagem {
       <img src="images/google.png" alt="Google">
       <span>🇬 Google</span>
     </div>-->
-    <div class="shortcut" onclick="openWindow('offline_apps/documentos/documentos.html', 'Editor WYSIWYG 📄')">
+    <div class="shortcut" onclick="openWindow('offline_apps/documentos/documentos.html', 'Editor de Documentos 📄')">
      <!--<img src="images/word.png" alt="Word">-->
-      <span>📄 Editor WYSIWYG (tipo Word)</span>
+      <span>📄 Editor de Documentos</span>
     </div>
     <div class="shortcut" data-id="player" onclick="openWindow('offline_apps/player.html', 'Player 🎞️')">
       <span>🎞️ Player</span>
@@ -435,7 +437,13 @@ body.fundo-imagem {
   <div class="taskbar">
     <!--<button onclick="toggleMenu()">🪟 Iniciar</button>-->
         <button class="start-button" onclick="toggleMenu()">☰ Iniciar</button>
-    <div class="shortcut-taskbar" onclick="openWindow('offline_apps/filemanager.html', 'Files 🗂️')">
+	<div class="shortcut-taskbar" onclick="openWindow('offline_apps/browser.html', 'Browser 🌎')">
+      <span>🌎 Browser</span>
+    </div>	
+	<!--<div class="shortcut-taskbar" onclick="openWindow('offline_apps/calculadora.html', 'Calculadora 🖩')">
+		<span>🖩 Calculadora</span>
+    </div>-->
+	<div class="shortcut-taskbar" onclick="openWindow('offline_apps/filemanager.html', 'Files 🗂️')">
       <span>🗂️ Files</span>
     </div>
     <div class="zoom-control">
@@ -495,8 +503,8 @@ body.fundo-imagem {
 	📸 Camera
 	 <span style="display:none;">Acesse sua camera sem precisar sair da interface.</span>
 </a>
-    <a href="#" onclick="openWindow('offline_apps/documentos/documentos.html', 'Editor WYSIWYG 📄')">
-	📄 Editor WYSIWYG (tipo Word)
+    <a href="#" onclick="openWindow('offline_apps/documentos/documentos.html', 'Documentos 📄')">
+	📄 Documentos
 	<span style="display:none;">Edição de textos e documentos com formatação dinâmica.</span>
 </a>
     <a href="#" onclick="openWindow('offline_apps/planilhas.html', 'Planilhas 📊')">
