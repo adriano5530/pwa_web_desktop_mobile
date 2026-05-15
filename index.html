@@ -108,26 +108,30 @@ body.fundo-imagem {
   position: absolute;
   width: 400px;
   height: 550px;
-  background: rgba(255, 255, 255, 0.08); /* Fundo sutil */
-  backdrop-filter: blur(30px) saturate(210%); /* Blur profundo e saturação vibrante */
-  -webkit-backdrop-filter: blur(30px) saturate(210%);
+  background: var(--glass-bg);
+  backdrop-filter: blur(30px) saturate(180%);
+      -webkit-backdrop-filter: blur(30px) saturate(180%);
+ /* backdrop-filter: blur(30px) saturate(210%);
+  -webkit-backdrop-filter: blur(30px) saturate(210%); */
   
   /* Borda de 'Corte de Vidro' */
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--glass-border);
   border-top: 1px solid rgba(255, 255, 255, 0.4); /* Luz incidindo de cima */
   border-left: 1px solid rgba(255, 255, 255, 0.25);
   
   border-radius: 10px; /* Cantos mais orgânicos */
-  display: none;
+  /*display: none;*/
+  display: flex;
   resize: both;
   overflow: hidden;
   z-index: 10;
+  flex-direction: column;
+      animation: openApp 0.3s cubic-bezier(0.17, 0.67, 0.83, 0.67);
   
   /* Sombra com 'Ambient Occlusion' */
-  box-shadow: 
-    0 25px 50px -12px rgba(0, 0, 0, 0.5),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1); 
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 10px rgba(255,255,255,0.1);
 }
+
    
    .window::before {
   content: "";
@@ -151,11 +155,11 @@ body.fundo-imagem {
    /* Barra de Título Integrada */
 .titlebar {
   height: 35px;
-  background: rgba(255, 255, 255, 0.05); /* Mescla-se ao corpo da janela */
+  background: rgba(0,0,0,0.2); /* Mescla-se ao corpo da janela */
   backdrop-filter: blur(5px);
-  padding: 0 16px;
+  padding: 12px;
   cursor: move;
-  color: rgba(255, 255, 255, 0.9);
+  color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -163,7 +167,7 @@ body.fundo-imagem {
   font-weight: 500;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
-    
+
     
    .titlebar .window-buttons button {
       background: none;
