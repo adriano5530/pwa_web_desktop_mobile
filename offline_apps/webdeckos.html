@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raycast Vicinae OS</title>
+    <meta name="theme-color" content="#1c1c1e">
+    
+    <!-- Manifesto PWA embutido via Data URI -->
+    <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIlJheWNhc3QgVmljaW5hZSBPUyIsCiAgInNob3J0X25hbWUiOiAiUmF5Y2FzdE9TIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMxYzFjMWUiLAogICJ0aGVtZV9jb2xvciI6ICIjMWMxYzFlIiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE40ZHlCaGNtTjFjbTVoYldVZ01qQXlNaUF4TURBd0lqdHpaVzUwWlc0Z0luZHpJSHR6ZG1jc0lqdHpaVzUwWlc0Z0lucHpaWE1nWTI5c2IzSW9IekU1TXprNU9pSnpJaUIzZVdJZ2NIVXljR3hsSWlCNGJIUnBiaUk1TVNJK1BITjJjeUI0YnlCbmJtUnJaWE1nWTI5c2IzSW9IekU1TXprNU9pSnpJaUI3Q2dsayFYTjBaVzVqWlY5emNHRmpaMlZ6YzV4bGJtTWdkbVY0ZEdGellqdG1hV3hzSWlCNGJIUnJaWE1nWTI5c2IzSW9IekUxTlRFNU9pSnpJaXAzQ2dsayFYTjBaVzVqWlY5emNHRmpaMlZ6YzV4bGJtTWdkbVY0ZEdGellqdG1hV3hzSWlCNGJIUnJaWE1nWTI5c2IzSW9IekUxTlRFNU9pSnpJaXAzQ2ZsMFlYTjBjaUI0YnlCaVlXTnJaWEpvYjNWMElqdG1hV3hzSWlCNGJIUnJaWE1nWTI5c2IzSW9IekU1TXprNU9pSnpJaXAzQ2ZsOCsiLAogICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiCiAgICB9CiAgXQp9">
+
+    <style>
+        :root {
+            --bg-main: #1c1c1e;
+            --bg-panel: rgba(44, 44, 46, 0.85);
+            --bg-selected: rgba(255, 255, 255, 0.1);
+            --text-main: #f2f2f7;
+            --text-muted: #aeaeae;
+            --accent: #ff9f0a;
+            --border: rgba(255, 255, 255, 0.1);
+            --blur: blur(20px);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            user-select: none;
+        }
+
+        body {
+            background: #000 url('../images/38598.jpg') no-repeat center center;
+            background-size: cover;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        /* --- RAYCAST CENTRAL PROMPT --- */
+        .raycast-trigger-hint {
+            position: absolute;
+            top: 20px;
+            font-size: 0.8rem;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 6px 12px;
+            border-radius: 20px;
+            backdrop-filter: var(--blur);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .raycast-window {
+            position: absolute;
+            top: 15%;
+            width: 680px;
+            max-width: 95vw;
+            height: 380px;
+            background: var(--bg-panel);
+            backdrop-filter: var(--blur);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 9999;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .raycast-window.hidden {
+            opacity: 0;
+            transform: scale(0.95);
+            pointer-events: none;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .search-icon { color: var(--text-muted); margin-right: 12px; font-size: 1.2rem; }
+        
+        .search-input {
+            flex: 1; background: transparent; border: none; outline: none;
+            color: var(--text-main); font-size: 1.1rem;
+        }
+
+        .results-list { flex: 1; overflow-y: auto; padding: 8px; list-style: none; }
+        .list-section { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); padding: 8px 12px 4px; letter-spacing: 0.5px; }
+        
+        .list-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-bottom: 2px;
+        }
+        .list-item.selected { background-color: var(--bg-selected); }
+        .item-left { display: flex; align-items: center; gap: 10px; }
+        .item-subtitle { font-size: 0.85rem; color: var(--text-muted); margin-left: 6px; }
+        .item-shortcut { background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; color: var(--text-muted); }
+
+        .footer {
+            height: 32px; background: rgba(0,0,0,0.2); border-top: 1px solid var(--border);
+            display: flex; justify-content: flex-end; align-items: center; padding: 0 16px; gap: 12px; font-size: 0.75rem; color: var(--text-muted);
+        }
+        kbd { background: #3a3a3c; border-radius: 4px; padding: 1px 4px; font-size: 0.7rem; border: 1px solid var(--border); }
+
+        /* --- DOCK SYSTEM --- */
+        .dock-container {
+            background: rgba(28, 28, 30, 0.4);
+            backdrop-filter: var(--blur);
+            padding: 10px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            display: fixed;
+            gap: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+            z-index: 9000;
+        }
+
+        .dock-item {
+            width: 50px; height: 50px; background: rgba(255,255,255,0.05);
+            border-radius: 12px; display: flex; justify-content: center; align-items: center;
+            font-size: 1.6rem; cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+        .dock-item:hover { transform: scale(1.2) translateY(-5px); background: rgba(255,255,255,0.15); }
+        .dock-item::after {
+            content: ''; position: absolute; bottom: -6px; width: 4px; height: 4px;
+            background: var(--text-muted); border-radius: 50%; opacity: 0;
+        }
+        .dock-item.active::after { opacity: 1; }
+
+        /* --- APP WINDOWS (VICINAE STYLE) --- */
+        .app-window {
+            position: absolute; width: 500px; height: 350px;
+            background: var(--bg-panel); backdrop-filter: var(--blur);
+            border: 1px solid var(--border); border-radius: 10px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            display: flex; flex-direction: column; overflow: hidden; z-index: 1000;
+        }
+        .window-header {
+            background: rgba(0,0,0,0.1); padding: 10px; display: flex;
+            justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); cursor: move;
+        }
+        .window-dots { display: flex; gap: 6px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; }
+        .dot-close { background: #ff5f56; }
+        .dot-min { background: #ffbd2e; }
+        .window-title { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+        .window-content { flex: 1; padding: 16px; overflow-y: auto; user-select: text; }
+
+        /* Scratchpad Notepad styling */
+        .scratchpad {
+            width: 100%; height: 100%; background: transparent; border: none; outline: none;
+            color: var(--text-main); resize: none; font-size: 1rem; line-height: 1.5;
+        }
+
+        .hidden-app { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div class="raycast-trigger-hint">Pressione <kbd>Alt</kbd> + <kbd>Espaço</kbd> para o Raycast</div>
+
+    <!-- RAYCAST POPUP -->
+    <div class="raycast-window" id="raycastWin">
+        <div class="search-bar">
+            <span class="search-icon">⌕</span>
+            <input type="text" class="search-input" id="searchIn" placeholder="Buscar aplicativos ou comandos..." autofocus autocomplete="off">
+        </div>
+        <ul class="results-list" id="resList">
+            <div class="list-section">Módulos Vicinae</div>
+            <li class="list-item selected" data-action="app" data-target="win-notes">
+                <div class="item-left"><span>📝</span><span class="item-name">Scratchpad</span><span class="item-subtitle">Notas persistentes</span></div>
+                <span class="item-shortcut">↵</span>
+            </li>
+            <li class="list-item" data-action="app" data-target="win-sys">
+                <div class="item-left"><span>💻</span><span class="item-name">System Info</span><span class="item-subtitle">Status do Hardware</span></div>
+                <span class="item-shortcut">↵</span>
+            </li>
+            <div class="list-section">Links Rápidos</div>
+            <li class="list-item" data-action="url" data-target="https://github.com">
+                <div class="item-left"><span>🐙</span><span class="item-name">GitHub</span><span class="item-subtitle">Abrir Web Dev Workspace</span></div>
+                <span class="item-shortcut">🌐</span>
+            </li>
+        </ul>
+        <div class="footer">
+            <div><kbd>↓↑</kbd> Navegar</div>
+            <div><kbd>↵</kbd> Abrir</div>
+            <div><kbd>Esc</kbd> Fechar</div>
+        </div>
+    </div>
+
+    <!-- DYNAMIC WINDOWS -->
+    <!-- Window 1: Notes -->
+    <div id="win-notes" class="app-window hidden-app" style="top: 25%; left: 15%;">
+        <div class="window-header">
+            <div class="window-dots"><div class="dot dot-close" onclick="closeApp('win-notes')"></div><div class="dot dot-min"></div></div>
+            <span class="window-title">Scratchpad.md</span>
+            <div style="width: 30px;"></div>
+        </div>
+        <div class="window-content">
+            <textarea class="scratchpad" id="notepad" placeholder="Escreva algo aqui... Salva automaticamente localmente!"></textarea>
+        </div>
+    </div>
+
+    <!-- Window 2: System Info -->
+    <div id="win-sys" class="app-window hidden-app" style="top: 30%; left: 40%;">
+        <div class="window-header">
+            <div class="window-dots"><div class="dot dot-close" onclick="closeApp('win-sys')"></div><div class="dot dot-min"></div></div>
+            <span class="window-title">System Status</span>
+            <div style="width: 30px;"></div>
+        </div>
+        <div class="window-content" style="font-size: 0.9rem; line-height: 1.8;">
+            <p style="color: var(--accent); font-weight: bold; margin-bottom: 8px;">Web Deck Environment Active</p>
+            <p>🌐 <strong>OS Emulado:</strong> Vicinae Minimalist Web OS</p>
+            <p>💾 <strong>Data Sovereignty:</strong> Ativa (LocalStorage Local)</p>
+            <p>⚡ <strong>PWA Engine:</strong> Injetado e pronto offline</p>
+        </div>
+    </div>
+
+    <!-- PERSISTENT BOTTOM DOCK -->
+    <div class="dock-container">
+        <div class="dock-item" id="dock-ray" title="Raycast (Alt+Espaço)" onclick="toggleRaycast()">⌕</div>
+        <div class="dock-item" id="dock-notes" title="Scratchpad" onclick="openApp('win-notes')">📝</div>
+        <div class="dock-item" id="dock-sys" title="System Info" onclick="openApp('win-sys')">💻</div>
+    </div>
+
+    <script>
+        const raycastWin = document.getElementById('raycastWin');
+        const searchIn = document.getElementById('searchIn');
+        const resList = document.getElementById('resList');
+        const items = resList.getElementsByClassName('list-item');
+        const notepad = document.getElementById('notepad');
+        let selectedIndex = 0;
+
+        // --- Toggle Raycast Panel ---
+        function toggleRaycast() {
+            raycastWin.classList.toggle('hidden');
+            if(!raycastWin.classList.contains('hidden')) {
+                searchIn.value = '';
+                resetFilter();
+                searchIn.focus();
+            }
+        }
+
+        // --- Keyboard Global Shortcut (Alt + Space) ---
+        window.addEventListener('keydown', (e) => {
+            if (e.altKey && e.code === 'Space') {
+                e.preventDefault();
+                toggleRaycast();
+            }
+            if (e.key === 'Escape' && !raycastWin.classList.contains('hidden')) {
+                raycastWin.classList.add('hidden');
+            }
+        });
+
+        // --- Raycast Navigation System ---
+        window.addEventListener('keydown', (e) => {
+            if (raycastWin.classList.contains('hidden')) return;
+            const visibleItems = Array.from(items).filter(i => i.style.display !== 'none');
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (selectedIndex < visibleItems.length - 1) selectedIndex++;
+                updateSelection(visibleItems);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (selectedIndex > 0) selectedIndex--;
+                updateSelection(visibleItems);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (visibleItems[selectedIndex]) triggerAction(visibleItems[selectedIndex]);
+            }
+        });
+
+        function updateSelection(visibleItems) {
+            Array.from(items).forEach(i => i.classList.remove('selected'));
+            if (visibleItems[selectedIndex]) {
+                visibleItems[selectedIndex].classList.add('selected');
+                visibleItems[selectedIndex].scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+        // --- Fuzzy-search Filter ---
+        searchIn.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            Array.from(items).forEach(item => {
+                const text = item.querySelector('.item-name').textContent.toLowerCase();
+                item.style.display = text.includes(query) ? 'flex' : 'none';
+            });
+            selectedIndex = 0;
+            updateSelection(Array.from(items).filter(i => i.style.display !== 'none'));
+        });
+
+        function resetFilter() {
+            Array.from(items).forEach(i => i.style.display = 'flex');
+            selectedIndex = 0;
+            updateSelection(Array.from(items));
+        }
+
+        // --- Window Actions Manager ---
+        function triggerAction(item) {
+            const action = item.getAttribute('data-action');
+            const target = item.getAttribute('data-target');
+            raycastWin.classList.add('hidden');
+
+            if (action === 'app') {
+                openApp(target);
+            } else if (action === 'url') {
+                window.open(target, '_blank');
+            }
+        }
+
+        // Click actions on list items
+        Array.from(items).forEach(item => {
+            item.addEventListener('click', () => triggerAction(item));
+        });
+
+        // --- App Windows Core Lifecycle ---
+        function openApp(id) {
+            const win = document.getElementById(id);
+            win.classList.remove('hidden-app');
+            // Sync with Dock status indicators
+            if(id === 'win-notes') document.getElementById('dock-notes').classList.add('active');
+            if(id === 'win-sys') document.getElementById('dock-sys').classList.add('active');
+            // Bring to front
+            focusWindow(win);
+        }
+
+        function closeApp(id) {
+            document.getElementById(id).classList.add('hidden-app');
+            if(id === 'win-notes') document.getElementById('dock-notes').classList.remove('active');
+            if(id === 'win-sys') document.getElementById('dock-sys').classList.remove('active');
+        }
+
+        function focusWindow(win) {
+            document.querySelectorAll('.app-window').forEach(w => w.style.zindex = '1000');
+            win.style.zIndex = '2000';
+        }
+
+        // --- Data Sovereignty Engine (Auto-save) ---
+        if(localStorage.getItem('scratchpad_data')) {
+            notepad.value = localStorage.getItem('scratchpad_data');
+        }
+        notepad.addEventListener('input', (e) => {
+            localStorage.setItem('scratchpad_data', e.target.value);
+        });
+
+        // --- Draggable Windows Implementation (Vanilla JS) ---
+        document.querySelectorAll('.app-window').forEach(win => {
+            const header = win.querySelector('.window-header');
+            header.onmousedown = function(e) {
+                focusWindow(win);
+                let shiftX = e.clientX - win.getBoundingClientRect().left;
+                let shiftY = e.clientY - win.getBoundingClientRect().top;
+
+                function moveAt(clientX, clientY) {
+                    win.style.left = clientX - shiftX + 'px';
+                    win.style.top = clientY - shiftY + 'px';
+                }
+
+                function onMouseMove(e) { moveAt(e.clientX, e.clientY); }
+                document.addEventListener('mousemove', onMouseMove);
+                document.onmouseup = function() {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.onmouseup = null;
+                };
+            };
+            header.ondragstart = function() { return false; };
+            win.addEventListener('mousedown', () => focusWindow(win));
+        });
+
+        // --- Service Worker Injetado para Suporte PWA Offline ---
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+                const CACHE_NAME = 'rayvic-v1';
+                self.addEventListener('install', e => {
+                    e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(['./', './index.html'])));
+                });
+                self.addEventListener('fetch', e => {
+                    e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+                });
+            `;
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            navigator.serviceWorker.register(URL.createObjectURL(blob), { scope: './' })
+                .then(() => console.log('PWA Service Worker Online.'))
+                .catch(err => console.log('PWA Error:', err));
+        }
+    </script>
+</body>
+</html>
