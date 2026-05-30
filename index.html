@@ -398,6 +398,7 @@
 
 <body onload="onLoad()">
   <div id="snapPreview" class="snap-preview"></div>
+  <div id="zoomRoot" style="position:fixed;top:0;left:0;width:100vw;height:100vh;transform-origin:top left;">
 
   <div id="desktop" class="desktop">
   <!-- <iframe src="offline_apps/relogio.html" id="iframe-relogio" pointer-events: none; z-index: 0;"></iframe>-->
@@ -638,7 +639,7 @@
 
     win.appendChild(content);
     win.appendChild(resizer);
-    document.body.appendChild(win);
+    document.getElementById('zoomRoot').appendChild(win);
 
     // Focar ao clicar na janela
     win.addEventListener('mousedown', () => focusWindow(id));
@@ -728,9 +729,10 @@
     container.appendChild(btn);
   }
 
-  // ── Drag corrigido — sem dupla escala de zoom ──
-  // Usa clientX/Y brutos para o delta e getBoundingClientRect para posição atual,
-  // evitando a discrepância causada por body zoom + offsetLeft/Top.
+  // ── Drag — funciona corretamente com CSS transform:scale ──
+  // Com scale() no zoomRoot, clientX/Y e getBoundingClientRect já chegam
+  // em coordenadas do espaço escalado, então dividimos pelo scale para
+  // converter de volta ao espaço de layout (px do elemento).
   function dragMouseDown(e, win) {
     e.preventDefault();
     e.stopPropagation();
@@ -745,22 +747,14 @@
       const zf = getZoomFactor();
       const cx = e.clientX ?? e.touches?.[0].clientX;
       const cy = e.clientY ?? e.touches?.[0].clientY;
-
-      // Delta em clientX/Y (coordenadas da viewport, não escaladas pelo zoom)
-      // dividido pelo zoom para converter para o espaço escalado do body
       const dx = (cx - lastX) / zf;
       const dy = (cy - lastY) / zf;
       lastX = cx; lastY = cy;
+      win.style.left = (parseFloat(win.style.left || 0) + dx) + 'px';
+      win.style.top  = (parseFloat(win.style.top  || 0) + dy) + 'px';
 
-      const rect = win.getBoundingClientRect();
-      // getBoundingClientRect retorna coordenadas de viewport (escaladas pelo zoom)
-      // então dividimos pelo zoom para obter posição no espaço do body
-      win.style.left = (rect.left / zf + dx) + 'px';
-      win.style.top  = (rect.top  / zf + dy) + 'px';
-
-      // Snap preview nas bordas (coordenadas brutas da viewport)
       const W = window.innerWidth;
-      if      (cx < 20)    showSnapPreview('0','0','50%','calc(100% - 60px)');
+      if      (cx < 20)     showSnapPreview('0','0','50%','calc(100% - 60px)');
       else if (cx > W - 20) showSnapPreview('50vw','0','50%','calc(100% - 60px)');
       else                  preview.style.display = 'none';
     }
@@ -768,12 +762,11 @@
     function stopDrag() {
       if (preview.style.display === 'block') {
         const zf = getZoomFactor();
-        // Converter coordenadas do preview (viewport) para espaço do body
-        const previewRect = preview.getBoundingClientRect();
-        win.style.width  = (previewRect.width  / zf) + 'px';
-        win.style.height = (previewRect.height / zf) + 'px';
-        win.style.left   = (previewRect.left   / zf) + 'px';
-        win.style.top    = (previewRect.top    / zf) + 'px';
+        const pr = preview.getBoundingClientRect();
+        win.style.width  = (pr.width  / zf) + 'px';
+        win.style.height = (pr.height / zf) + 'px';
+        win.style.left   = (pr.left   / zf) + 'px';
+        win.style.top    = (pr.top    / zf) + 'px';
         win.dataset.maximized = '0';
         preview.style.display = 'none';
       }
@@ -796,17 +789,15 @@
     p.style.width = width; p.style.height = height;
   }
 
-  // ── Redimensionar corrigido — mesma lógica de delta sem dupla escala ──
+  // ── Redimensionar com scale() ──
   function initResizer(win) {
     const resizer = win.querySelector('.resizer');
-    let lastX, lastY, startW, startH;
+    let lastX, lastY;
 
     function dragStart(e) {
       e.preventDefault();
-      lastX  = e.clientX ?? e.touches?.[0].clientX;
-      lastY  = e.clientY ?? e.touches?.[0].clientY;
-      startW = parseInt(getComputedStyle(win).width,  10);
-      startH = parseInt(getComputedStyle(win).height, 10);
+      lastX = e.clientX ?? e.touches?.[0].clientX;
+      lastY = e.clientY ?? e.touches?.[0].clientY;
       document.addEventListener('mousemove', drag);
       document.addEventListener('mouseup',   stopDrag);
       document.addEventListener('touchmove', drag, { passive: false });
@@ -821,8 +812,8 @@
       const dx = (cx - lastX) / zf;
       const dy = (cy - lastY) / zf;
       lastX = cx; lastY = cy;
-      win.style.width  = Math.max(200, parseInt(win.style.width  || startW) + dx) + 'px';
-      win.style.height = Math.max(120, parseInt(win.style.height || startH) + dy) + 'px';
+      win.style.width  = Math.max(200, parseFloat(win.style.width  || 400) + dx) + 'px';
+      win.style.height = Math.max(120, parseFloat(win.style.height || 550) + dy) + 'px';
     }
 
     function stopDrag() {
@@ -874,10 +865,19 @@
     openApp({ url: 'public/sobre.html', title: 'Sobre' });
   }
 
-  // ── Zoom ──
+  // ── Zoom via CSS transform (compatível com todos os navegadores) ──
+  // Usamos scale() no #zoomRoot em vez de body.zoom, que não é padrão
+  // e se comporta diferente em Safari mobile vs Chrome.
+  // Com scale(), getBoundingClientRect() e clientX/Y são sempre afetados
+  // de forma consistente, então getZoomFactor() compensa corretamente.
   function setGlobalZoom(percent) {
     localStorage.setItem('desktopZoom', percent);
-    document.body.style.zoom = percent + '%';
+    const scale = percent / 100;
+    const root = document.getElementById('zoomRoot');
+    root.style.transform = `scale(${scale})`;
+    root.style.transformOrigin = 'top left';
+    root.style.width  = (100 / scale) + 'vw';
+    root.style.height = (100 / scale) + 'vh';
   }
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -1051,5 +1051,6 @@
   }
 </script>
 
+  </div><!-- /zoomRoot -->
 </body>
 </html>
