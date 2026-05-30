@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!--<meta name="viewport" content="width=device-width, initial-scale=1.0">-->
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="favicon.ico" type="image/x-icon" />
   <link rel="apple-touch-icon" href="icon-192.png">
@@ -16,8 +17,12 @@
     if ('serviceWorker' in navigator) {
       window.addEventListener('DOMContentLoaded', function () {
         navigator.serviceWorker.register('service-worker.js')
-          .then(r => console.log('Service Worker registrado:', r.scope))
-          .catch(e => console.log('Falha ao registrar Service Worker:', e));
+          .then(function (registration) {
+            console.log('Service Worker registrado com sucesso:', registration.scope);
+          })
+          .catch(function (error) {
+            console.log('Falha ao registrar o Service Worker:', error);
+          });
       });
     }
   </script>
@@ -124,7 +129,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 500;
       border-bottom: 1px solid rgba(255,255,255,0.1);
       flex-shrink: 0;
@@ -133,17 +138,21 @@
     /* Botões macOS style (do kernel2) */
     .window-controls {
       display: flex;
-      gap: 6px;
+      gap: 6.1px;
       align-items: center;
     }
 
     .window-controls span {
-      width: 14px;
-      height: 14px;
+      width: 19.1px;
+      height: 19.1px;
       border-radius: 50%;
-      display: inline-block;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
       transition: opacity 0.15s;
+      font-size: 10px;
+      line-height: 1;
     }
 
     .window-controls span:hover { opacity: 0.75; }
@@ -161,7 +170,7 @@
     iframe {
       width: 100%;
       height: 100%;
-      border: none;
+	  border: none;
     }
 
     /* Resizer (do index) */
@@ -373,6 +382,15 @@
       pointer-events: none;
       z-index: -1;
     }
+	
+	.calendario {
+  right: 10%;
+  padding: 1rem; 
+  background: #222; 
+  color: #fff; 
+  border-radius: 8px;
+}
+	
   </style>
 
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4818539305804157" crossorigin="anonymous"></script>
@@ -382,6 +400,11 @@
   <div id="snapPreview" class="snap-preview"></div>
 
   <div id="desktop" class="desktop">
+  <!-- <iframe src="offline_apps/relogio.html" id="iframe-relogio" pointer-events: none; z-index: 0;"></iframe>-->
+    <!--<div class="shortcut" onclick="openWindow('https://google.com/?igu=1', 'Google 🇬')">
+      <img src="images/google.png" alt="Google">
+      <span>🇬 Google</span>
+    </div>-->
     <div class="shortcut" onclick="openApp({url:'offline_apps/documentos/documentos.html', title:'Editor de Documentos 📄'})">
       <span>📄 Editor de Documentos</span>
     </div>
@@ -415,6 +438,9 @@
       <div class="shortcut-taskbar" onclick="openApp({url:'offline_apps/filemanager.html', title:'Files 🗂️'})">
         <span>🗂️ Files</span>
       </div>
+	  <div class="shortcut-taskbar" onclick="openApp({url:'offline_apps/calculadora.html', title: 'Calc 🖩', width: 300, height: 400 })">
+        <span>🖩 Calculadora</span>
+      </div>
     </div>
     <!-- Janelas abertas aparecem aqui dinamicamente (do kernel2) -->
     <div id="tasks-container"></div>
@@ -422,6 +448,11 @@
       <label for="zoomSlider">Zoom:</label>
       <input id="zoomSlider" type="range" min="50" max="150" value="100">
     </div>
+	<!-- <div class="calendario">
+  <h3 id="data-atual"></h3>
+  <label>📅 Calendário</label><br>
+  <input id="calendario" class="form-control" type="date" />
+</div>-->
   </div>
 
   <!-- Menu Iniciar -->
@@ -465,7 +496,7 @@
     <a href="#" onclick="openApp({url:'offline_apps/recortaimagem.html', title:'Recortador Offline de Imagem 🖼️'})">🖼️ Recortador Offline de Imagem</a>
     <a href="#" data-id="paintoff" onclick="openApp({url:'offline_apps/whiteboard/index.html', title:'Paint Offline 🖌️'})">🖌️ Paint Offline</a>
     <a href="#" data-id="diario"   onclick="openApp({url:'offline_apps/diario/diario.html', title:'Diário 📓'})">📓 Diário</a>
-    <a href="#" onclick="openApp({url:'offline_apps/calculadora.html', title:'Calculadora 🖩'})">🖩 Calculadora</a>
+    <a href="#" onclick="openApp({url:'offline_apps/calculadora.html', title: 'Calc 🖩', width: 300, height: 400 })">🖩 Calculadora</a>
     <a href="#" data-id="youtube"  onclick="openApp({url:'offline_apps/youtube-wrapper.html', title:'Youtube 📺'})">📺 Youtube</a>
     <a href="#" data-id="iptv"     onclick="openApp({url:'offline_apps/iptv.html', title:'IPTV 📺'})">📺 IPTV</a>
     <a href="#" data-id="terminal" onclick="openApp({url:'offline_apps/terminal.html', title:'Terminal 👨🏽‍💻'})">👨🏽‍💻 Terminal</a>
@@ -473,6 +504,7 @@
     <a href="#" onclick="openApp({url:'offline_apps/base64.html', title:'Base64 🧑🏽‍💻'})">🧑🏽‍💻 Base64</a>
     <a href="#" onclick="openApp({url:'offline_apps/gravador.html', title:'Gravador 🎤'})">🎤 Gravador</a>
     <a href="#" onclick="openApp({url:'offline_apps/webdeckos.html', title:'WebDeckOS 🚀'})">🚀 WebDeckOS</a>
+	<!--<a href="#" onclick="openWindow('offline_apps/spacedesk/spacedesk.html', 'SpaceDesk Local 🖥️')">🖥️ Space_Desk Local</a>-->
     <hr>
 
     <strong>➕ Adicionar novo atalho:</strong>
@@ -517,6 +549,8 @@
     <a href="sms://">💬 Mensagens</a>
     <a href="tg://resolve?domain=SeuUsuario">💬 Telegram</a>
     <a href="sgnl://signal.me/#p/+55119999">🔒 Signal</a>
+	<details>
+	<summary>⚙ Configurações</summary>
     <button class="button" onclick="toggleTouchpad()">🖱️ Ativar/Desativar Touchpad</button>
     <script src="offline_apps/touchpad.js"></script><br>
     <button class="button" onclick="alternarFundo()">🌄 Alternar Fundo</button>
@@ -527,7 +561,8 @@
     <button class="button" onclick="toggleHUD()">🕶️ Alternar Modo HUD/Holográfico</button>
     <script src="offline_apps/hud-toggle.js"></script>
     <button onclick="alternarMenuCentro()" class="button">Alternar Menu: Centro/Esquerda</button>
-
+	</details>
+	<hr>
     <strong>📢 Público:</strong>
     <a href="#" onclick="openApp({url:'public/privacidade.html', title:'Privacidade'})">🔏 Privacidade</a>
     <a href="#" onclick="openApp({url:'public/sobre.html', title:'Sobre'})">📖 Sobre</a>
@@ -545,38 +580,46 @@
     return (parseFloat(localStorage.getItem('desktopZoom')) || 100) / 100;
   }
 
-  // ── Abrir janela (objeto de config — do kernel2) ──
+  // ── Abrir janela (objeto de config) ──
+  // Parâmetros opcionais: width (px), height (px), titlebar (bool, default true)
   function openApp(config) {
-    // Compatibilidade: aceita openApp(url, title) legado se necessário
     if (typeof config === 'string') config = { url: config, title: arguments[1] || config };
 
     const id  = 'win-' + Date.now();
     const win = document.createElement('div');
     win.className = 'window';
     win.id = id;
-    win.style.top  = Math.round(60 + Math.random() * 120) + 'px';
-    win.style.left = Math.round(60 + Math.random() * 200) + 'px';
+    win.style.top    = Math.round(60 + Math.random() * 120) + 'px';
+    win.style.left   = Math.round(60 + Math.random() * 200) + 'px';
     win.style.zIndex = ++zIndexAtual;
 
-    // Titlebar com botões macOS (kernel2) + touch support (index)
-    const titlebar = document.createElement('div');
-    titlebar.className = 'titlebar';
-    titlebar.innerHTML = `
-      <span class="window-title">${config.title}</span>
-      <div class="window-controls">
-        <span class="btn-minimize" title="Minimizar" onclick="minimizeWindow('${id}')"></span>
-        <span class="btn-maximize" title="Maximizar" onclick="maximizeWindow('${id}')"></span>
-        <span class="btn-close"    title="Fechar"    onclick="closeWindow('${id}')"></span>
-      </div>`;
+    // Tamanho personalizado
+    if (config.width)  win.style.width  = config.width  + 'px';
+    if (config.height) win.style.height = config.height + 'px';
 
-    titlebar.addEventListener('mousedown', e => dragMouseDown(e, win));
-    titlebar.addEventListener('touchstart', e => dragMouseDown(e, win), { passive: false });
-
-    // Impede que cliques nos botões propaguem para o drag
-    titlebar.querySelectorAll('span').forEach(s => {
-      s.addEventListener('mousedown', e => e.stopPropagation());
-      s.addEventListener('touchstart', e => e.stopPropagation());
-    });
+    // Titlebar (ocultável via titlebar: false)
+    const showTitlebar = config.titlebar !== false;
+    if (showTitlebar) {
+      const titlebar = document.createElement('div');
+      titlebar.className = 'titlebar';
+      titlebar.innerHTML = `
+        <span class="window-title">${config.title}</span>
+        <div class="window-controls">
+          <span class="btn-minimize" title="Minimizar" onclick="minimizeWindow('${id}')">➖</span>
+          <span class="btn-maximize" title="Maximizar" onclick="maximizeWindow('${id}')">🔳</span>
+          <span class="btn-close"    title="Fechar"    onclick="closeWindow('${id}')">✖️</span>
+        </div>`;
+      titlebar.addEventListener('mousedown', e => dragMouseDown(e, win));
+      titlebar.addEventListener('touchstart', e => dragMouseDown(e, win), { passive: false });
+      titlebar.querySelectorAll('span').forEach(s => {
+        s.addEventListener('mousedown', e => e.stopPropagation());
+        s.addEventListener('touchstart', e => e.stopPropagation());
+      });
+      win.appendChild(titlebar);
+    } else {
+      // Sem titlebar: arrastar pela borda superior da janela (primeiros 8px)
+      win.addEventListener('mousedown', e => { if (e.offsetY < 8) dragMouseDown(e, win); });
+    }
 
     const content = document.createElement('div');
     content.className = 'window-content';
@@ -593,18 +636,20 @@
     const resizer = document.createElement('div');
     resizer.className = 'resizer';
 
-    win.appendChild(titlebar);
     win.appendChild(content);
     win.appendChild(resizer);
     document.body.appendChild(win);
 
-    // Aplicar filtros ativos
+    // Focar ao clicar na janela
+    win.addEventListener('mousedown', () => focusWindow(id));
+    win.addEventListener('touchstart', () => focusWindow(id), { passive: true });
+
     if (typeof applySepiaToElement === 'function') applySepiaToElement(win);
     if (typeof applyGreyToElement  === 'function') applyGreyToElement(win);
 
     initResizer(win);
     focusWindow(id);
-    addTaskbarItem(id, config.title);   // taskbar dinâmica (do kernel2)
+    addTaskbarItem(id, config.title);
   }
 
   // Alias de compatibilidade para os poucos lugares que ainda usam openWindow()
@@ -683,44 +728,52 @@
     container.appendChild(btn);
   }
 
-  // ── Drag com zoom-correction (do index corrigido) ──
+  // ── Drag corrigido — sem dupla escala de zoom ──
+  // Usa clientX/Y brutos para o delta e getBoundingClientRect para posição atual,
+  // evitando a discrepância causada por body zoom + offsetLeft/Top.
   function dragMouseDown(e, win) {
     e.preventDefault();
+    e.stopPropagation();
     focusWindow(win.id);
-    const zf = getZoomFactor();
-    let pos3 = (e.clientX ?? e.touches?.[0].clientX) / zf;
-    let pos4 = (e.clientY ?? e.touches?.[0].clientY) / zf;
 
-    // Snap preview ao arrastar para bordas (do kernel2)
     const preview = document.getElementById('snapPreview');
+    let lastX = e.clientX ?? e.touches?.[0].clientX;
+    let lastY = e.clientY ?? e.touches?.[0].clientY;
 
     function elementDrag(e) {
       e.preventDefault();
-      const zf  = getZoomFactor();
-      const cx  = (e.clientX ?? e.touches?.[0].clientX) / zf;
-      const cy  = (e.clientY ?? e.touches?.[0].clientY) / zf;
-      win.style.left = (win.offsetLeft - (pos3 - cx)) + 'px';
-      win.style.top  = (win.offsetTop  - (pos4 - cy)) + 'px';
-      pos3 = cx; pos4 = cy;
+      const zf = getZoomFactor();
+      const cx = e.clientX ?? e.touches?.[0].clientX;
+      const cy = e.clientY ?? e.touches?.[0].clientY;
 
-      // Snap preview ao arrastar para borda esquerda ou direita
-      const rawX = e.clientX ?? e.touches?.[0].clientX;
+      // Delta em clientX/Y (coordenadas da viewport, não escaladas pelo zoom)
+      // dividido pelo zoom para converter para o espaço escalado do body
+      const dx = (cx - lastX) / zf;
+      const dy = (cy - lastY) / zf;
+      lastX = cx; lastY = cy;
+
+      const rect = win.getBoundingClientRect();
+      // getBoundingClientRect retorna coordenadas de viewport (escaladas pelo zoom)
+      // então dividimos pelo zoom para obter posição no espaço do body
+      win.style.left = (rect.left / zf + dx) + 'px';
+      win.style.top  = (rect.top  / zf + dy) + 'px';
+
+      // Snap preview nas bordas (coordenadas brutas da viewport)
       const W = window.innerWidth;
-      if (rawX < 20) {
-        showSnapPreview('0','0','50%','calc(100% - 60px)');
-      } else if (rawX > W - 20) {
-        showSnapPreview('50vw','0','50%','calc(100% - 60px)');
-      } else {
-        preview.style.display = 'none';
-      }
+      if      (cx < 20)    showSnapPreview('0','0','50%','calc(100% - 60px)');
+      else if (cx > W - 20) showSnapPreview('50vw','0','50%','calc(100% - 60px)');
+      else                  preview.style.display = 'none';
     }
 
     function stopDrag() {
       if (preview.style.display === 'block') {
-        win.style.width  = preview.style.width;
-        win.style.height = preview.style.height;
-        win.style.left   = preview.style.left;
-        win.style.top    = preview.style.top;
+        const zf = getZoomFactor();
+        // Converter coordenadas do preview (viewport) para espaço do body
+        const previewRect = preview.getBoundingClientRect();
+        win.style.width  = (previewRect.width  / zf) + 'px';
+        win.style.height = (previewRect.height / zf) + 'px';
+        win.style.left   = (previewRect.left   / zf) + 'px';
+        win.style.top    = (previewRect.top    / zf) + 'px';
         win.dataset.maximized = '0';
         preview.style.display = 'none';
       }
@@ -743,31 +796,33 @@
     p.style.width = width; p.style.height = height;
   }
 
-  // ── Redimensionar (do index corrigido) ──
+  // ── Redimensionar corrigido — mesma lógica de delta sem dupla escala ──
   function initResizer(win) {
     const resizer = win.querySelector('.resizer');
-    let startX, startY, startW, startH;
+    let lastX, lastY, startW, startH;
 
     function dragStart(e) {
       e.preventDefault();
-      const zf = getZoomFactor();
-      startX = (e.clientX ?? e.touches?.[0].clientX) / zf;
-      startY = (e.clientY ?? e.touches?.[0].clientY) / zf;
+      lastX  = e.clientX ?? e.touches?.[0].clientX;
+      lastY  = e.clientY ?? e.touches?.[0].clientY;
       startW = parseInt(getComputedStyle(win).width,  10);
       startH = parseInt(getComputedStyle(win).height, 10);
       document.addEventListener('mousemove', drag);
       document.addEventListener('mouseup',   stopDrag);
-      document.addEventListener('touchmove', drag,     { passive: false });
+      document.addEventListener('touchmove', drag, { passive: false });
       document.addEventListener('touchend',  stopDrag);
     }
 
     function drag(e) {
       e.preventDefault();
       const zf = getZoomFactor();
-      const cx = (e.clientX ?? e.touches?.[0].clientX) / zf;
-      const cy = (e.clientY ?? e.touches?.[0].clientY) / zf;
-      win.style.width  = Math.max(200, startW + (cx - startX)) + 'px';
-      win.style.height = Math.max(120, startH + (cy - startY)) + 'px';
+      const cx = e.clientX ?? e.touches?.[0].clientX;
+      const cy = e.clientY ?? e.touches?.[0].clientY;
+      const dx = (cx - lastX) / zf;
+      const dy = (cy - lastY) / zf;
+      lastX = cx; lastY = cy;
+      win.style.width  = Math.max(200, parseInt(win.style.width  || startW) + dx) + 'px';
+      win.style.height = Math.max(120, parseInt(win.style.height || startH) + dy) + 'px';
     }
 
     function stopDrag() {
@@ -960,25 +1015,41 @@
     document.querySelectorAll('[data-id]').forEach(el => el.style.display = '');
   });
   </script>
+  
+  <!--<script>
+  const hoje = new Date();
+  const opcoes = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  document.getElementById('data-atual').innerText = hoje.toLocaleDateString('pt-BR', opcoes);
+</script>-->
 
   <script>
     function alternarFundo() { document.body.classList.toggle('fundo-imagem'); }
   </script>
 
   <script>
-    let menuCentralizado = false;
-    function alternarMenuCentro() {
-      const menu = document.querySelector('.menu');
-      const btn  = document.querySelector('.start-button');
-      if (!menuCentralizado) {
-        menu.style.left = '50%'; menu.style.transform = 'translateX(-50%)';
-        menuCentralizado = true;
-      } else {
-        menu.style.left = '10px'; menu.style.transform = 'none';
-        menuCentralizado = false;
-      }
+  let menuCentralizado = false;
+
+  function alternarMenuCentro() {
+    const menu = document.querySelector('.menu');
+    const startButton = document.querySelector('.start-button');
+
+    if (!menuCentralizado) {
+      menu.style.left = '50%';
+      menu.style.transform = 'translateX(-50%)';
+      startButton.style.left = '50%';
+      startButton.style.transform = 'translateX(-50%)';
+      startButton.style.position = 'fixed';
+      menuCentralizado = true;
+    } else {
+      menu.style.left = '10px';
+      menu.style.transform = 'none';
+      startButton.style.left = '10px';
+      startButton.style.transform = 'none';
+      startButton.style.position = 'fixed';
+      menuCentralizado = false;
     }
-  </script>
+  }
+</script>
 
 </body>
 </html>
