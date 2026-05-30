@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <!--<meta name="viewport" content="width=device-width, initial-scale=1.0">-->
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="favicon.ico" type="image/x-icon" />
   <link rel="apple-touch-icon" href="icon-192.png">
@@ -17,12 +16,8 @@
     if ('serviceWorker' in navigator) {
       window.addEventListener('DOMContentLoaded', function () {
         navigator.serviceWorker.register('service-worker.js')
-          .then(function (registration) {
-            console.log('Service Worker registrado com sucesso:', registration.scope);
-          })
-          .catch(function (error) {
-            console.log('Falha ao registrar o Service Worker:', error);
-          });
+          .then(r => console.log('Service Worker registrado:', r.scope))
+          .catch(e => console.log('Falha ao registrar Service Worker:', e));
       });
     }
   </script>
@@ -138,13 +133,13 @@
     /* Botões macOS style (do kernel2) */
     .window-controls {
       display: flex;
-      gap: 6.1px;
+      gap: 6px;
       align-items: center;
     }
 
     .window-controls span {
-      width: 19.1px;
-      height: 19.1px;
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
       display: inline-block;
       cursor: pointer;
@@ -166,7 +161,7 @@
     iframe {
       width: 100%;
       height: 100%;
-	  border: none;
+      border: none;
     }
 
     /* Resizer (do index) */
@@ -378,15 +373,6 @@
       pointer-events: none;
       z-index: -1;
     }
-	
-	.calendario {
-  right: 10%;
-  padding: 1rem; 
-  background: #222; 
-  color: #fff; 
-  border-radius: 8px;
-}
-	
   </style>
 
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4818539305804157" crossorigin="anonymous"></script>
@@ -396,11 +382,6 @@
   <div id="snapPreview" class="snap-preview"></div>
 
   <div id="desktop" class="desktop">
-  <!-- <iframe src="offline_apps/relogio.html" id="iframe-relogio" pointer-events: none; z-index: 0;"></iframe>-->
-    <!--<div class="shortcut" onclick="openWindow('https://google.com/?igu=1', 'Google 🇬')">
-      <img src="images/google.png" alt="Google">
-      <span>🇬 Google</span>
-    </div>-->
     <div class="shortcut" onclick="openApp({url:'offline_apps/documentos/documentos.html', title:'Editor de Documentos 📄'})">
       <span>📄 Editor de Documentos</span>
     </div>
@@ -434,9 +415,6 @@
       <div class="shortcut-taskbar" onclick="openApp({url:'offline_apps/filemanager.html', title:'Files 🗂️'})">
         <span>🗂️ Files</span>
       </div>
-	  <div class="shortcut-taskbar" onclick="openApp({url:'offline_apps/calculadora.html', title:'Calculadora 🖩️'})">
-        <span>🖩 Calculadora</span>
-      </div>
     </div>
     <!-- Janelas abertas aparecem aqui dinamicamente (do kernel2) -->
     <div id="tasks-container"></div>
@@ -444,11 +422,6 @@
       <label for="zoomSlider">Zoom:</label>
       <input id="zoomSlider" type="range" min="50" max="150" value="100">
     </div>
-	<!-- <div class="calendario">
-  <h3 id="data-atual"></h3>
-  <label>📅 Calendário</label><br>
-  <input id="calendario" class="form-control" type="date" />
-</div>-->
   </div>
 
   <!-- Menu Iniciar -->
@@ -500,7 +473,6 @@
     <a href="#" onclick="openApp({url:'offline_apps/base64.html', title:'Base64 🧑🏽‍💻'})">🧑🏽‍💻 Base64</a>
     <a href="#" onclick="openApp({url:'offline_apps/gravador.html', title:'Gravador 🎤'})">🎤 Gravador</a>
     <a href="#" onclick="openApp({url:'offline_apps/webdeckos.html', title:'WebDeckOS 🚀'})">🚀 WebDeckOS</a>
-	<!--<a href="#" onclick="openWindow('offline_apps/spacedesk/spacedesk.html', 'SpaceDesk Local 🖥️')">🖥️ Space_Desk Local</a>-->
     <hr>
 
     <strong>➕ Adicionar novo atalho:</strong>
@@ -545,8 +517,6 @@
     <a href="sms://">💬 Mensagens</a>
     <a href="tg://resolve?domain=SeuUsuario">💬 Telegram</a>
     <a href="sgnl://signal.me/#p/+55119999">🔒 Signal</a>
-	<details>
-	<summary>⚙ Configurações</summary>
     <button class="button" onclick="toggleTouchpad()">🖱️ Ativar/Desativar Touchpad</button>
     <script src="offline_apps/touchpad.js"></script><br>
     <button class="button" onclick="alternarFundo()">🌄 Alternar Fundo</button>
@@ -557,7 +527,7 @@
     <button class="button" onclick="toggleHUD()">🕶️ Alternar Modo HUD/Holográfico</button>
     <script src="offline_apps/hud-toggle.js"></script>
     <button onclick="alternarMenuCentro()" class="button">Alternar Menu: Centro/Esquerda</button>
-	</details>
+
     <strong>📢 Público:</strong>
     <a href="#" onclick="openApp({url:'public/privacidade.html', title:'Privacidade'})">🔏 Privacidade</a>
     <a href="#" onclick="openApp({url:'public/sobre.html', title:'Sobre'})">📖 Sobre</a>
@@ -594,9 +564,9 @@
     titlebar.innerHTML = `
       <span class="window-title">${config.title}</span>
       <div class="window-controls">
-        <span class="btn-minimize" title="Minimizar" onclick="minimizeWindow('${id}')">➖</span>
-        <span class="btn-maximize" title="Maximizar" onclick="maximizeWindow('${id}')">🔳</span>
-        <span class="btn-close"    title="Fechar"    onclick="closeWindow('${id}')">✖️</span>
+        <span class="btn-minimize" title="Minimizar" onclick="minimizeWindow('${id}')"></span>
+        <span class="btn-maximize" title="Maximizar" onclick="maximizeWindow('${id}')"></span>
+        <span class="btn-close"    title="Fechar"    onclick="closeWindow('${id}')"></span>
       </div>`;
 
     titlebar.addEventListener('mousedown', e => dragMouseDown(e, win));
@@ -990,41 +960,25 @@
     document.querySelectorAll('[data-id]').forEach(el => el.style.display = '');
   });
   </script>
-  
-  <!--<script>
-  const hoje = new Date();
-  const opcoes = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  document.getElementById('data-atual').innerText = hoje.toLocaleDateString('pt-BR', opcoes);
-</script>-->
 
   <script>
     function alternarFundo() { document.body.classList.toggle('fundo-imagem'); }
   </script>
 
   <script>
-  let menuCentralizado = false;
-
-  function alternarMenuCentro() {
-    const menu = document.querySelector('.menu');
-    const startButton = document.querySelector('.start-button');
-
-    if (!menuCentralizado) {
-      menu.style.left = '50%';
-      menu.style.transform = 'translateX(-50%)';
-      startButton.style.left = '50%';
-      startButton.style.transform = 'translateX(-50%)';
-      startButton.style.position = 'fixed';
-      menuCentralizado = true;
-    } else {
-      menu.style.left = '10px';
-      menu.style.transform = 'none';
-      startButton.style.left = '10px';
-      startButton.style.transform = 'none';
-      startButton.style.position = 'fixed';
-      menuCentralizado = false;
+    let menuCentralizado = false;
+    function alternarMenuCentro() {
+      const menu = document.querySelector('.menu');
+      const btn  = document.querySelector('.start-button');
+      if (!menuCentralizado) {
+        menu.style.left = '50%'; menu.style.transform = 'translateX(-50%)';
+        menuCentralizado = true;
+      } else {
+        menu.style.left = '10px'; menu.style.transform = 'none';
+        menuCentralizado = false;
+      }
     }
-  }
-</script>
+  </script>
 
 </body>
 </html>
