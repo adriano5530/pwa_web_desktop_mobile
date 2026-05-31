@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Editor de Planilhas</title>
+  <script src="jslib/xlsx.full.min.js"></script>
+  <script src="jslib/FileSaver.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:     #2b2321;
+      --panel:  #3d322e;
+      --border: #4a3f3b;
+      --accent: #8b5a2b;
+      --acc2:   #c17f3e;
+      --text:   #e3dcd2;
+      --muted:  #c9bbae;
+      --hover:  #4a3f3b;
+      --sel:    rgba(193,127,62,0.22);
+      --cell-h: 24px;
+      --row-w:  52px;
+      --col-w:  100px;
+      --hdr-h:  26px;
+      --tb-h:   38px;    /* menu bar */
+      --fmt-h:  36px;    /* format toolbar */
+      --fb-h:   28px;    /* formula bar */
+      --sb-h:   24px;
+      --tabs-h: 32px;
+    }
+    html, body { height:100%; overflow:hidden; background:var(--bg); color:var(--text); font:13px 'Segoe UI',system-ui,sans-serif; }
+
+    /* ── MENU BAR ── */
+    #menubar {
+      position:fixed; top:0; left:0; right:0; height:var(--tb-h);
+      background:var(--bg); border-bottom:1px solid var(--border);
+      display:flex; align-items:center; padding:0 8px; gap:2px; z-index:300; user-select:none;
+    }
+    #app-title { font-weight:700; color:var(--acc2); letter-spacing:.05em; padding-right:12px; border-right:1px solid var(--border); margin-right:6px; font-size:13px; }
+    .vsep { width:1px; height:20px; background:var(--border); margin:0 4px; flex-shrink:0; }
+    .menu-group { position:relative; }
+    .menu-btn { background:none; border:none; color:var(--text); padding:4px 10px; border-radius:4px; cursor:pointer; font-size:13px; white-space:nowrap; }
+    .menu-btn:hover { background:var(--hover); }
+    .dropdown { display:none; position:absolute; top:100%; left:0; background:var(--panel); border:1px solid var(--border); border-radius:6px; min-width:230px; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,.55); padding:4px 0; }
+    .dropdown.open { display:block; }
+    .dd-item { display:flex; align-items:center; gap:10px; padding:7px 16px; cursor:pointer; color:var(--text); font-size:13px; }
+    .dd-item:hover { background:var(--hover); }
+    .dd-item .ddicon { width:18px; text-align:center; }
+    .dd-item .shortcut { margin-left:auto; color:var(--muted); font-size:11px; }
+    .dd-sep { height:1px; background:var(--border); margin:4px 0; }
+
+    /* ── FORMAT TOOLBAR ── */
+    #fmtbar {
+      position:fixed; top:var(--tb-h); left:0; right:0; height:var(--fmt-h);
+      background:var(--panel); border-bottom:1px solid var(--border);
+      display:flex; align-items:center; padding:0 6px; gap:2px; z-index:299; overflow:hidden; flex-wrap:nowrap;
+    }
+    .ftbtn {
+      background:none; border:1px solid transparent; color:var(--muted);
+      padding:3px 7px; border-radius:3px; cursor:pointer; font-size:13px; line-height:1.3;
+      display:flex; align-items:center; justify-content:center; gap:3px; white-space:nowrap; flex-shrink:0;
+    }
+    .ftbtn:hover { background:var(--hover); color:var(--text); border-color:var(--border); }
+    .ftbtn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .ftbtn svg { width:14px; height:14px; fill:currentColor; }
+
+    /* Font family select */
+    .fmt-select {
+      background:var(--bg); border:1px solid var(--border); color:var(--text);
+      border-radius:3px; padding:2px 4px; font-size:12px; cursor:pointer; flex-shrink:0;
+    }
+    .fmt-select:focus { outline:none; border-color:var(--acc2); }
+
+    /* Color picker wrapper */
+    .color-wrap { position:relative; display:flex; align-items:center; flex-shrink:0; }
+    .color-wrap input[type=color] { opacity:0; position:absolute; inset:0; width:100%; height:100%; cursor:pointer; border:none; padding:0; }
+    .color-indicator { width:3px; height:12px; border-radius:1px; margin-top:1px; }
+
+    /* ── FORMULA BAR ── */
+    #formulabar {
+      position:fixed; top:calc(var(--tb-h) + var(--fmt-h)); left:0; right:0; height:var(--fb-h);
+      background:var(--bg); border-bottom:1px solid var(--border);
+      display:flex; align-items:center; gap:6px; padding:0 8px; z-index:150;
+    }
+    #cell-addr { width:64px; background:var(--panel); border:1px solid var(--border); border-radius:3px; color:var(--acc2); font-size:12px; text-align:center; padding:2px 4px; flex-shrink:0; }
+    #fb-sep { width:1px; height:16px; background:var(--border); flex-shrink:0; }
+    #fx-label { color:var(--muted); font-size:11px; font-style:italic; flex-shrink:0; }
+    #formula-input { flex:1; background:transparent; border:none; outline:none; color:var(--text); font-size:13px; }
+
+    /* ── GRID AREA ── */
+    #grid-wrap {
+      position:fixed;
+      top:calc(var(--tb-h) + var(--fmt-h) + var(--fb-h));
+      left:0; right:0;
+      bottom:calc(var(--sb-h) + var(--tabs-h));
+      overflow:hidden;
+    }
+    #corner { position:absolute; top:0; left:0; width:var(--row-w); height:var(--hdr-h); background:var(--panel); border-right:1px solid var(--border); border-bottom:1px solid var(--border); z-index:50; }
+    #col-header-scroll { position:absolute; top:0; left:var(--row-w); right:0; height:var(--hdr-h); overflow:hidden; z-index:40; }
+    #col-header-inner { display:flex; height:100%; }
+    .col-hdr { flex-shrink:0; width:var(--col-w); height:var(--hdr-h); background:var(--panel); border-right:1px solid var(--border); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--muted); font-weight:600; cursor:pointer; user-select:none; }
+    .col-hdr:hover,.col-hdr.hsel { background:var(--hover); color:var(--text); }
+    #row-header-scroll { position:absolute; top:var(--hdr-h); left:0; width:var(--row-w); bottom:0; overflow:hidden; z-index:40; }
+    .row-hdr { width:var(--row-w); height:var(--cell-h); background:var(--panel); border-right:1px solid var(--border); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--muted); font-weight:600; cursor:pointer; user-select:none; }
+    .row-hdr:hover,.row-hdr.hsel { background:var(--hover); color:var(--text); }
+    #data-scroll { position:absolute; top:var(--hdr-h); left:var(--row-w); right:0; bottom:0; overflow:scroll; }
+    #data-scroll::-webkit-scrollbar { width:10px; height:10px; }
+    #data-scroll::-webkit-scrollbar-track { background:var(--bg); }
+    #data-scroll::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+    #data-scroll::-webkit-scrollbar-thumb:hover { background:var(--accent); }
+    #data-scroll::-webkit-scrollbar-corner { background:var(--bg); }
+    #data-inner { position:relative; }
+    .grid-row { display:flex; }
+    .cell {
+      flex-shrink:0; width:var(--col-w); height:var(--cell-h);
+      border-right:1px solid var(--border); border-bottom:1px solid var(--border);
+      overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+      padding:0 4px; display:flex; align-items:center;
+      font-size:12px; color:var(--text); cursor:default;
+      background:var(--bg);
+    }
+    .cell.num { justify-content:flex-end; }
+    .cell.sel  { background:var(--sel) !important; outline:1px solid var(--acc2); outline-offset:-1px; }
+    .cell.active { outline:2px solid var(--acc2); outline-offset:-1px; }
+    #cell-editor {
+      position:absolute; display:none;
+      border:2px solid var(--acc2); z-index:100;
+      font-size:12px; color:var(--text); background:var(--bg);
+      padding:0 4px; outline:none; box-shadow:0 2px 12px rgba(0,0,0,.4);
+    }
+
+    /* ── TABS ── */
+    #tabs-bar { position:fixed; bottom:var(--sb-h); left:0; right:0; height:var(--tabs-h); background:var(--bg); border-top:1px solid var(--border); display:flex; align-items:center; gap:2px; padding:0 8px; overflow-x:auto; z-index:200; }
+    #tabs-bar::-webkit-scrollbar { height:4px; }
+    #tabs-bar::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+    .tab { padding:4px 14px; border-radius:4px 4px 0 0; cursor:pointer; font-size:12px; color:var(--muted); background:var(--panel); border:1px solid var(--border); border-bottom:none; white-space:nowrap; user-select:none; }
+    .tab:hover { color:var(--text); }
+    .tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+    #tab-add { padding:4px 10px; color:var(--muted); cursor:pointer; font-size:16px; line-height:1; }
+    #tab-add:hover { color:var(--text); }
+
+    /* ── STATUS BAR ── */
+    #statusbar { position:fixed; bottom:0; left:0; right:0; height:var(--sb-h); background:var(--bg); border-top:1px solid var(--border); display:flex; align-items:center; padding:0 12px; gap:16px; font-size:11px; color:var(--muted); z-index:200; }
+    #status-sum { margin-left:auto; }
+
+    /* ── TOAST ── */
+    #toast { position:fixed; bottom:60px; left:50%; transform:translateX(-50%) translateY(10px); background:var(--accent); color:#fff; padding:6px 18px; border-radius:20px; font-size:12px; opacity:0; transition:opacity .25s,transform .25s; pointer-events:none; z-index:9999; }
+    #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    /* ── CONTEXT MENU ── */
+    #ctx-menu { display:none; position:fixed; background:var(--panel); border:1px solid var(--border); border-radius:6px; min-width:180px; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,.55); padding:4px 0; }
+    #ctx-menu.open { display:block; }
+    .ctx-item { padding:7px 16px; cursor:pointer; color:var(--text); font-size:13px; }
+    .ctx-item:hover { background:var(--hover); }
+    .ctx-sep { height:1px; background:var(--border); margin:4px 0; }
+  </style>
+</head>
+<body>
+
+<!-- ══ MENU BAR ══ -->
+<div id="menubar">
+  <span id="app-title">📊 Planilhas</span>
+
+  <div class="menu-group">
+    <button class="menu-btn" onclick="toggleMenu('m-arquivo')">Arquivo</button>
+    <div class="dropdown" id="m-arquivo">
+      <div class="dd-item" onclick="cmdNew()"><span class="ddicon">🆕</span>Nova planilha<span class="shortcut">Ctrl+N</span></div>
+      <div class="dd-sep"></div>
+      <div class="dd-item" onclick="triggerOpen()"><span class="ddicon">📂</span>Abrir (.xlsx/.csv/.ods/.json)<span class="shortcut">Ctrl+O</span></div>
+      <div class="dd-sep"></div>
+      <div class="dd-item" onclick="cmdSave('xlsx')"><span class="ddicon">📗</span>Salvar como XLSX<span class="shortcut">Ctrl+S</span></div>
+      <div class="dd-item" onclick="cmdSave('csv')"><span class="ddicon">📄</span>Salvar como CSV</div>
+      <div class="dd-item" onclick="cmdSave('ods')"><span class="ddicon">📘</span>Salvar como ODS</div>
+      <div class="dd-item" onclick="cmdSave('json')"><span class="ddicon">🗂️</span>Salvar como JSON</div>
+      <div class="dd-sep"></div>
+      <div class="dd-item" onclick="window.print()"><span class="ddicon">🖨️</span>Imprimir</div>
+    </div>
+  </div>
+
+  <div class="menu-group">
+    <button class="menu-btn" onclick="toggleMenu('m-editar')">Editar</button>
+    <div class="dropdown" id="m-editar">
+      <div class="dd-item" onclick="cmdUndo()"><span class="ddicon">↩️</span>Desfazer<span class="shortcut">Ctrl+Z</span></div>
+      <div class="dd-item" onclick="cmdRedo()"><span class="ddicon">↪️</span>Refazer<span class="shortcut">Ctrl+Y</span></div>
+      <div class="dd-sep"></div>
+      <div class="dd-item" onclick="cmdCopy()"><span class="ddicon">📋</span>Copiar<span class="shortcut">Ctrl+C</span></div>
+      <div class="dd-item" onclick="cmdCut()"><span class="ddicon">✂️</span>Recortar<span class="shortcut">Ctrl+X</span></div>
+      <div class="dd-item" onclick="cmdPaste()"><span class="ddicon">📌</span>Colar<span class="shortcut">Ctrl+V</span></div>
+      <div class="dd-sep"></div>
+      <div class="dd-item" onclick="clearSel()"><span class="ddicon">🗑️</span>Limpar seleção<span class="shortcut">Del</span></div>
+      <div class="dd-item" onclick="cmdSelectAll()"><span class="ddicon">⬜</span>Selecionar tudo<span class="shortcut">Ctrl+A</span></div>
+    </div>
+  </div>
+
+  <div class="menu-group">
+    <button class="menu-btn" onclick="toggleMenu('m-inserir')">Inserir</button>
+    <div class="dropdown" id="m-inserir">
+      <div class="dd-item" onclick="insertRowAbove()"><span class="ddicon">⬆️</span>Linha acima</div>
+      <div class="dd-item" onclick="insertRowBelow()"><span class="ddicon">⬇️</span>Linha abaixo</div>
+      <div class="dd-sep"></div>
+      <div class="dd-item" onclick="insertColLeft()"><span class="ddicon">⬅️</span>Coluna à esquerda</div>
+      <div class="dd-item" onclick="insertColRight()"><span class="ddicon">➡️</span>Coluna à direita</div>
+      <div class="dd-sep"></div>
+      <div class="dd-item" onclick="addSheet()"><span class="ddicon">➕</span>Nova aba</div>
+    </div>
+  </div>
+
+  <div class="menu-group">
+    <button class="menu-btn" onclick="toggleMenu('m-excluir')">Excluir</button>
+    <div class="dropdown" id="m-excluir">
+      <div class="dd-item" onclick="deleteRow()"><span class="ddicon">🗑️</span>Linha selecionada</div>
+      <div class="dd-item" onclick="deleteCol()"><span class="ddicon">🗑️</span>Coluna selecionada</div>
+      <div class="dd-sep"></div>
+      <div class="dd-item" onclick="deleteSheet()"><span class="ddicon">❌</span>Aba atual</div>
+    </div>
+  </div>
+
+  <div class="menu-group">
+    <button class="menu-btn" onclick="toggleMenu('m-formato')">Formato</button>
+    <div class="dropdown" id="m-formato">
+      <div class="dd-item" onclick="fmtToggle('bold')"><span class="ddicon">𝐁</span>Negrito<span class="shortcut">Ctrl+B</span></div>
+      <div class="dd-item" onclick="fmtToggle('italic')"><span class="ddicon">𝐼</span>Itálico<span class="shortcut">Ctrl+I</span></div>
+      <div class="dd-item" onclick="fmtToggle('underline')"><span class="ddicon">U̲</span>Sublinhado<span class="shortcut">Ctrl+U</span></div>
+      <div class="dd-sep"></div>
+      <div class="dd-item" onclick="fmtToggle('strike')"><span class="ddicon">S̶</span>Tachado</div>
+      <div class="dd-sep"></div>
+      <div class="dd-item" onclick="fmtAlign('left')"><span class="ddicon">⬛</span>Alinhar à esquerda</div>
+      <div class="dd-item" onclick="fmtAlign('center')"><span class="ddicon">⬛</span>Centralizar</div>
+      <div class="dd-item" onclick="fmtAlign('right')"><span class="ddicon">⬛</span>Alinhar à direita</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FORMAT TOOLBAR ══ -->
+<div id="fmtbar">
+  <!-- Font family -->
+  <select class="fmt-select" id="sel-font" onchange="fmtFont(this.value)" style="width:110px">
+    <option value="">Padrão</option>
+    <option value="Arial">Arial</option>
+    <option value="'Courier New'">Courier New</option>
+    <option value="Georgia">Georgia</option>
+    <option value="'Times New Roman'">Times New Roman</option>
+    <option value="Verdana">Verdana</option>
+    <option value="Tahoma">Tahoma</option>
+    <option value="'Trebuchet MS'">Trebuchet MS</option>
+  </select>
+
+  <!-- Font size -->
+  <select class="fmt-select" id="sel-size" onchange="fmtSize(this.value)" style="width:52px">
+    <option value="">—</option>
+    <option value="10px">10</option>
+    <option value="11px">11</option>
+    <option value="12px">12</option>
+    <option value="13px" selected>13</option>
+    <option value="14px">14</option>
+    <option value="16px">16</option>
+    <option value="18px">18</option>
+    <option value="20px">20</option>
+    <option value="24px">24</option>
+    <option value="28px">28</option>
+    <option value="32px">32</option>
+    <option value="36px">36</option>
+  </select>
+
+  <div class="vsep"></div>
+
+  <!-- Bold / Italic / Underline / Strike -->
+  <button class="ftbtn" id="btn-bold"      title="Negrito (Ctrl+B)"     onclick="fmtToggle('bold')"><b>N</b></button>
+  <button class="ftbtn" id="btn-italic"    title="Itálico (Ctrl+I)"     onclick="fmtToggle('italic')"><i>I</i></button>
+  <button class="ftbtn" id="btn-underline" title="Sublinhado (Ctrl+U)"  onclick="fmtToggle('underline')"><u>S</u></button>
+  <button class="ftbtn" id="btn-strike"    title="Tachado"              onclick="fmtToggle('strike')"><s>T</s></button>
+
+  <div class="vsep"></div>
+
+  <!-- Align -->
+  <button class="ftbtn" id="btn-al"  title="Alinhar esquerda" onclick="fmtAlign('left')">
+    <svg viewBox="0 0 16 16"><rect x="1" y="2" width="14" height="2"/><rect x="1" y="6" width="10" height="2"/><rect x="1" y="10" width="14" height="2"/><rect x="1" y="14" width="8" height="2"/></svg>
+  </button>
+  <button class="ftbtn" id="btn-ac"  title="Centralizar"      onclick="fmtAlign('center')">
+    <svg viewBox="0 0 16 16"><rect x="1" y="2" width="14" height="2"/><rect x="3" y="6" width="10" height="2"/><rect x="1" y="10" width="14" height="2"/><rect x="4" y="14" width="8" height="2"/></svg>
+  </button>
+  <button class="ftbtn" id="btn-ar"  title="Alinhar direita"  onclick="fmtAlign('right')">
+    <svg viewBox="0 0 16 16"><rect x="1" y="2" width="14" height="2"/><rect x="5" y="6" width="10" height="2"/><rect x="1" y="10" width="14" height="2"/><rect x="7" y="14" width="8" height="2"/></svg>
+  </button>
+
+  <div class="vsep"></div>
+
+  <!-- Text color -->
+  <div class="color-wrap" title="Cor do texto">
+    <button class="ftbtn" style="padding:3px 5px; pointer-events:none">
+      A<div class="color-indicator" id="ind-tc" style="background:#e3dcd2;"></div>
+    </button>
+    <input type="color" id="pick-textcolor" value="#e3dcd2" oninput="fmtColor('color', this.value)"/>
+  </div>
+
+  <!-- BG color -->
+  <div class="color-wrap" title="Cor de preenchimento">
+    <button class="ftbtn" style="padding:3px 5px; pointer-events:none">
+      <svg viewBox="0 0 16 16" style="width:13px;height:13px;fill:currentColor"><path d="M14.5 13c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5c0-.55.67-1.5 1.5-2.5.83 1 1.5 1.95 1.5 2.5zM2 1L1 2l3.5 3.5L1 9h5l1.5-1.5 5 5 1-1L2 1zm3.5 6H3l2.5-2.5L7 6l-1.5 1z"/></svg>
+      <div class="color-indicator" id="ind-bg" style="background:transparent; border:1px solid var(--border);"></div>
+    </button>
+    <input type="color" id="pick-bgcolor" value="#2b2321" oninput="fmtColor('backgroundColor', this.value)"/>
+  </div>
+
+  <div class="vsep"></div>
+
+  <!-- Borders -->
+  <div class="menu-group">
+    <button class="ftbtn" id="btn-border" title="Bordas" onclick="toggleMenu('m-borders')">
+      <svg viewBox="0 0 16 16" style="width:14px;height:14px;fill:currentColor"><rect x="1" y="1" width="14" height="14" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="8" y1="1" x2="8" y2="15" stroke="currentColor" stroke-width="1"/><line x1="1" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1"/></svg>
+      ▾
+    </button>
+    <div class="dropdown" id="m-borders" style="min-width:180px">
+      <div class="dd-item" onclick="fmtBorder('all')"><span class="ddicon">⊞</span>Todas as bordas</div>
+      <div class="dd-item" onclick="fmtBorder('outer')"><span class="ddicon">▣</span>Apenas externas</div>
+      <div class="dd-item" onclick="fmtBorder('none')"><span class="ddicon">□</span>Remover bordas</div>
+    </div>
+  </div>
+
+  <!-- Wrap text -->
+  <button class="ftbtn" id="btn-wrap" title="Quebra de texto" onclick="fmtToggle('wrap')">↵ Wrap</button>
+
+  <div class="vsep"></div>
+
+  <!-- Freeze -->
+  <button class="ftbtn" title="Congelar linha/coluna" onclick="toggleFreeze()">❄️</button>
+
+  <!-- Clear format -->
+  <button class="ftbtn" title="Limpar formatação" onclick="clearFormat()">✖ Fmt</button>
+
+  <div class="vsep"></div>
+
+  <!-- Undo/Redo quick -->
+  <button class="ftbtn" title="Desfazer (Ctrl+Z)" onclick="cmdUndo()">↩</button>
+  <button class="ftbtn" title="Refazer (Ctrl+Y)"  onclick="cmdRedo()">↪</button>
+</div>
+
+<!-- ══ FORMULA BAR ══ -->
+<div id="formulabar">
+  <span id="cell-addr">A1</span>
+  <div id="fb-sep"></div>
+  <span id="fx-label">fx</span>
+  <input id="formula-input" placeholder="valor ou fórmula..." spellcheck="false"
+    oninput="onFormulaInput()" onkeydown="onFormulaKey(event)"/>
+</div>
+
+<!-- ══ GRID ══ -->
+<div id="grid-wrap">
+  <div id="corner"></div>
+  <div id="col-header-scroll"><div id="col-header-inner"></div></div>
+  <div id="row-header-scroll"><div id="row-header-inner"></div></div>
+  <div id="data-scroll" onscroll="syncScroll()">
+    <div id="data-inner"></div>
+  </div>
+  <input id="cell-editor" spellcheck="false"
+    onkeydown="onEditorKey(event)" onblur="commitEdit()"/>
+</div>
+
+<!-- ══ TABS ══ -->
+<div id="tabs-bar">
+  <span id="tab-add" onclick="addSheet()" title="Adicionar aba">＋</span>
+</div>
+
+<!-- ══ STATUS BAR ══ -->
+<div id="statusbar">
+  <span id="status-cell">A1</span>
+  <span id="status-sheet">Planilha1</span>
+  <span id="status-sum"></span>
+</div>
+
+<!-- ══ CONTEXT MENU ══ -->
+<div id="ctx-menu">
+  <div class="ctx-item" onclick="cmdCopy()">📋 Copiar</div>
+  <div class="ctx-item" onclick="cmdCut()">✂️ Recortar</div>
+  <div class="ctx-item" onclick="cmdPaste()">📌 Colar</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="insertRowAbove()">⬆️ Inserir linha acima</div>
+  <div class="ctx-item" onclick="insertRowBelow()">⬇️ Inserir linha abaixo</div>
+  <div class="ctx-item" onclick="deleteRow()">🗑️ Excluir linha</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="insertColLeft()">⬅️ Inserir coluna à esquerda</div>
+  <div class="ctx-item" onclick="insertColRight()">➡️ Inserir coluna à direita</div>
+  <div class="ctx-item" onclick="deleteCol()">🗑️ Excluir coluna</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="clearFormat()">✖ Limpar formatação</div>
+</div>
+
+<div id="toast"></div>
+<input type="file" id="fileInput" accept=".xlsx,.xls,.csv,.ods,.json" style="display:none" onchange="loadFile(event)"/>
+
+<script>
+/* ═══════════════════════════
+   ESTADO
+═══════════════════════════ */
+const ROWS = 200, COLS = 26;
+const LS_KEY = "planilhas-v4";
+
+// sheets[i] = { name, data:[[val,...]], fmt:[[{bold,italic,underline,strike,color,bg,align,font,size,wrap,border},...]] }
+let sheets = [], curSheet = 0;
+let selR = 0, selC = 0, selStart = null;
+let editing = false;
+let clipboard = null;  // {data:[[]], fmt:[[]]}
+let history = [], histIdx = -1;
+let freezeRow = 0, freezeCol = 0;
+
+/* ═══════════════════════════
+   INIT
+═══════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = loadLS();
+  sheets = saved || [newSheetObj("Planilha1")];
+  renderTabs();
+  switchSheet(0);
+
+  document.addEventListener('keydown', onGlobalKey);
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.menu-group')) closeMenus();
+    if (!e.target.closest('#ctx-menu') && !e.target.closest('.cell')) closeCtx();
+  });
+  document.getElementById('data-inner').addEventListener('contextmenu', onContextMenu);
+  setInterval(autoSave, 15000);
+});
+
+function newSheetObj(name) {
+  const data = [], fmt = [];
+  for (let r = 0; r < ROWS; r++) {
+    data.push(new Array(COLS).fill(""));
+    fmt.push(Array.from({length:COLS}, () => ({})));
+  }
+  return { name, data, fmt };
+}
+
+/* ═══════════════════════════
+   HELPERS
+═══════════════════════════ */
+function colName(c) {
+  let s="", n=c+1;
+  while(n>0){n--;s=String.fromCharCode(65+(n%26))+s;n=Math.floor(n/26);}
+  return s;
+}
+function cellAddr(r,c){return colName(c)+(r+1);}
+function isNumeric(v){return v!==''&&!isNaN(+v);}
+function getCW(){return 100;}
+function getCH(){return 24;}
+
+function getSheet(){return sheets[curSheet];}
+function getCell(r,c){return getSheet().data[r]?.[c]??'';}
+function getFmt(r,c){return getSheet().fmt[r]?.[c]??{};}
+function setFmt(r,c,key,val){if(!getSheet().fmt[r])return;getSheet().fmt[r][c]={...getSheet().fmt[r][c],[key]:val};}
+
+/* ═══════════════════════════
+   HISTORY (Undo/Redo)
+═══════════════════════════ */
+function snapshot(){
+  const snap = JSON.stringify({data:getSheet().data, fmt:getSheet().fmt});
+  history = history.slice(0, histIdx+1);
+  history.push(snap);
+  if(history.length>50) history.shift();
+  histIdx = history.length-1;
+}
+
+function cmdUndo(){
+  if(histIdx<=0){toast("Nada para desfazer");return;}
+  histIdx--;
+  const s = JSON.parse(history[histIdx]);
+  getSheet().data = s.data; getSheet().fmt = s.fmt;
+  renderGrid(); updateFormulaBar();
+}
+function cmdRedo(){
+  if(histIdx>=history.length-1){toast("Nada para refazer");return;}
+  histIdx++;
+  const s = JSON.parse(history[histIdx]);
+  getSheet().data = s.data; getSheet().fmt = s.fmt;
+  renderGrid(); updateFormulaBar();
+}
+
+/* ═══════════════════════════
+   RENDER
+═══════════════════════════ */
+function renderGrid(){
+  renderColHeaders(); renderRowHeaders(); renderDataCells(); updateFormulaBar();
+}
+
+function renderColHeaders(){
+  const inner = document.getElementById('col-header-inner');
+  inner.innerHTML='';
+  for(let c=0;c<COLS;c++){
+    const d=document.createElement('div');
+    d.className='col-hdr'; d.textContent=colName(c); d.dataset.c=c;
+    d.onclick=()=>selectCol(+d.dataset.c);
+    inner.appendChild(d);
+  }
+}
+
+function renderRowHeaders(){
+  const inner=document.getElementById('row-header-inner');
+  inner.innerHTML='';
+  const rows=getSheet().data.length;
+  for(let r=0;r<rows;r++){
+    const d=document.createElement('div');
+    d.className='row-hdr'; d.textContent=r+1; d.dataset.r=r;
+    d.onclick=()=>selectRow(+d.dataset.r);
+    inner.appendChild(d);
+  }
+}
+
+function applyFmtToEl(el, f){
+  el.style.fontWeight     = f.bold      ? 'bold'      : '';
+  el.style.fontStyle      = f.italic    ? 'italic'    : '';
+  el.style.textDecoration = [f.underline?'underline':'', f.strike?'line-through':''].filter(Boolean).join(' ') || '';
+  el.style.color          = f.color     || '';
+  el.style.backgroundColor= f.bg        || '';
+  el.style.justifyContent = f.align==='center'?'center': f.align==='right'?'flex-end': f.align==='left'?'flex-start': '';
+  el.style.fontFamily     = f.font      || '';
+  el.style.fontSize       = f.size      || '';
+  el.style.whiteSpace     = f.wrap      ? 'pre-wrap'  : 'nowrap';
+  el.style.height         = f.wrap      ? 'auto'      : '';
+  // borders
+  if(f.border==='all'){
+    el.style.outline='1px solid var(--acc2)'; el.style.outlineOffset='-1px';
+  } else if(f.border==='outer'){
+    el.style.outline='1px solid var(--muted)'; el.style.outlineOffset='-1px';
+  } else if(f.border==='none'){
+    el.style.outline='';
+  }
+}
+
+function renderDataCells(){
+  const inner=document.getElementById('data-inner');
+  inner.innerHTML='';
+  const {data,fmt}=getSheet();
+  inner.style.width =(COLS*getCW())+'px';
+  inner.style.height=(data.length*getCH())+'px';
+
+  for(let r=0;r<data.length;r++){
+    const rowDiv=document.createElement('div');
+    rowDiv.className='grid-row';
+    for(let c=0;c<COLS;c++){
+      const val=data[r][c]??'';
+      const f=fmt[r]?.[c]??{};
+      const td=document.createElement('div');
+      td.className='cell'+(isNumeric(val)&&val!==''&&!f.align?' num':'');
+      td.textContent=val;
+      td.dataset.r=r; td.dataset.c=c;
+      applyFmtToEl(td,f);
+      td.addEventListener('mousedown',onCellMousedown);
+      td.addEventListener('dblclick',()=>startEdit(r,c));
+      rowDiv.appendChild(td);
+    }
+    inner.appendChild(rowDiv);
+  }
+  highlightSel();
+}
+
+function highlightSel(){
+  document.querySelectorAll('.cell.sel,.cell.active').forEach(el=>el.classList.remove('sel','active'));
+  const el=getCellEl(selR,selC);
+  if(el) el.classList.add('active');
+  if(selStart&&(selStart.r!==selR||selStart.c!==selC)){
+    const r0=Math.min(selStart.r,selR),r1=Math.max(selStart.r,selR);
+    const c0=Math.min(selStart.c,selC),c1=Math.max(selStart.c,selC);
+    for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++){
+      const e=getCellEl(r,c); if(e&&!(r===selR&&c===selC)) e.classList.add('sel');
+    }
+  }
+  updateFmtBar();
+}
+
+function getCellEl(r,c){return document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);}
+
+/* ═══════════════════════════
+   FORMAT BAR SYNC
+═══════════════════════════ */
+function updateFmtBar(){
+  const f=getFmt(selR,selC);
+  document.getElementById('btn-bold').classList.toggle('active',!!f.bold);
+  document.getElementById('btn-italic').classList.toggle('active',!!f.italic);
+  document.getElementById('btn-underline').classList.toggle('active',!!f.underline);
+  document.getElementById('btn-strike').classList.toggle('active',!!f.strike);
+  document.getElementById('btn-wrap').classList.toggle('active',!!f.wrap);
+  ['al','ac','ar'].forEach(id=>document.getElementById('btn-'+id).classList.remove('active'));
+  if(f.align==='left') document.getElementById('btn-al').classList.add('active');
+  else if(f.align==='center') document.getElementById('btn-ac').classList.add('active');
+  else if(f.align==='right') document.getElementById('btn-ar').classList.add('active');
+  if(f.font) document.getElementById('sel-font').value=f.font;
+  if(f.size) document.getElementById('sel-size').value=f.size;
+  if(f.color){ document.getElementById('pick-textcolor').value=f.color; document.getElementById('ind-tc').style.background=f.color; }
+  if(f.bg){ document.getElementById('pick-bgcolor').value=f.bg; document.getElementById('ind-bg').style.background=f.bg; }
+}
+
+/* ═══════════════════════════
+   SELECTION
+═══════════════════════════ */
+function onCellMousedown(e){
+  const r=+e.currentTarget.dataset.r, c=+e.currentTarget.dataset.c;
+  if(e.button===2) return; // context menu handled separately
+  if(e.shiftKey){ selR=r;selC=c; highlightSel(); updateFormulaBar(); }
+  else { commitEdit(); selStart={r,c}; selR=r;selC=c; highlightSel(); updateFormulaBar(); }
+  e.preventDefault();
+}
+
+function onContextMenu(e){
+  const td=e.target.closest('.cell');
+  if(!td) return;
+  e.preventDefault();
+  closeMenus();
+  const ctx=document.getElementById('ctx-menu');
+  ctx.style.left=e.clientX+'px'; ctx.style.top=e.clientY+'px';
+  ctx.classList.add('open');
+}
+function closeCtx(){ document.getElementById('ctx-menu').classList.remove('open'); }
+
+function moveSel(dr,dc,extend){
+  const rows=getSheet().data.length;
+  const nr=Math.max(0,Math.min(rows-1,selR+dr));
+  const nc=Math.max(0,Math.min(COLS-1,selC+dc));
+  if(!extend) selStart=null;
+  selR=nr; selC=nc;
+  highlightSel(); updateFormulaBar(); scrollToCell(selR,selC);
+}
+
+function selectCol(c){ selStart=null;selR=0;selC=c; highlightSel();updateFormulaBar(); }
+function selectRow(r){ selStart=null;selR=r;selC=0; highlightSel();updateFormulaBar(); }
+function cmdSelectAll(){ closeMenus(); selStart={r:0,c:0}; selR=getSheet().data.length-1;selC=COLS-1; highlightSel(); }
+
+function scrollToCell(r,c){
+  const sc=document.getElementById('data-scroll');
+  const cw=getCW(),ch=getCH();
+  if(c*cw<sc.scrollLeft) sc.scrollLeft=c*cw;
+  if((c+1)*cw>sc.scrollLeft+sc.clientWidth) sc.scrollLeft=(c+1)*cw-sc.clientWidth;
+  if(r*ch<sc.scrollTop) sc.scrollTop=r*ch;
+  if((r+1)*ch>sc.scrollTop+sc.clientHeight) sc.scrollTop=(r+1)*ch-sc.clientHeight;
+}
+
+/* ═══════════════════════════
+   EDITING
+═══════════════════════════ */
+function startEdit(r,c){
+  if(editing) commitEdit();
+  editing=true; selR=r; selC=c;
+  const sc=document.getElementById('data-scroll');
+  const cw=getCW(),ch=getCH();
+  const ROW_W=52, HDR_H=26;
+  const ed=document.getElementById('cell-editor');
+  ed.style.left =(ROW_W+c*cw-sc.scrollLeft)+'px';
+  ed.style.top  =(HDR_H+r*ch-sc.scrollTop)+'px';
+  ed.style.width=cw+'px'; ed.style.height=ch+'px';
+  ed.style.display='block';
+  ed.value=getCell(r,c); ed.focus(); ed.select();
+  updateFormulaBar();
+}
+
+function commitEdit(){
+  if(!editing) return;
+  editing=false;
+  const ed=document.getElementById('cell-editor');
+  const val=ed.value;
+  snapshot();
+  getSheet().data[selR][selC]=val;
+  ed.style.display='none';
+  const el=getCellEl(selR,selC);
+  if(el){ const f=getFmt(selR,selC); el.textContent=val; applyFmtToEl(el,f); el.classList.add('active'); }
+  updateFormulaBar(); autoSave();
+}
+
+function onEditorKey(e){
+  if(e.key==='Enter'){commitEdit();moveSel(1,0,false);e.preventDefault();}
+  else if(e.key==='Tab'){commitEdit();moveSel(0,1,false);e.preventDefault();}
+  else if(e.key==='Escape'){editing=false;document.getElementById('cell-editor').style.display='none';}
+  else setTimeout(()=>{document.getElementById('formula-input').value=document.getElementById('cell-editor').value;},0);
+}
+
+function onGlobalKey(e){
+  if(editing) return;
+  if(document.activeElement===document.getElementById('formula-input')) return;
+  const tag=document.activeElement.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA') return;
+  const sh=e.shiftKey;
+  if(e.key==='ArrowUp')         {moveSel(-1,0,sh);e.preventDefault();}
+  else if(e.key==='ArrowDown')  {moveSel(1,0,sh);e.preventDefault();}
+  else if(e.key==='ArrowLeft')  {moveSel(0,-1,sh);e.preventDefault();}
+  else if(e.key==='ArrowRight') {moveSel(0,1,sh);e.preventDefault();}
+  else if(e.key==='Tab')        {moveSel(0,1,false);e.preventDefault();}
+  else if(e.key==='Enter')      {moveSel(1,0,false);e.preventDefault();}
+  else if(e.key==='Delete'||e.key==='Backspace'){clearSel();e.preventDefault();}
+  else if(e.key==='F2')         {startEdit(selR,selC);e.preventDefault();}
+  else if(e.ctrlKey&&e.key==='s'){cmdSave('xlsx');e.preventDefault();}
+  else if(e.ctrlKey&&e.key==='o'){triggerOpen();e.preventDefault();}
+  else if(e.ctrlKey&&e.key==='n'){cmdNew();e.preventDefault();}
+  else if(e.ctrlKey&&e.key==='z'){cmdUndo();e.preventDefault();}
+  else if(e.ctrlKey&&e.key==='y'){cmdRedo();e.preventDefault();}
+  else if(e.ctrlKey&&e.key==='c'){cmdCopy();e.preventDefault();}
+  else if(e.ctrlKey&&e.key==='x'){cmdCut();e.preventDefault();}
+  else if(e.ctrlKey&&e.key==='v'){cmdPaste();e.preventDefault();}
+  else if(e.ctrlKey&&e.key==='b'){fmtToggle('bold');e.preventDefault();}
+  else if(e.ctrlKey&&e.key==='i'){fmtToggle('italic');e.preventDefault();}
+  else if(e.ctrlKey&&e.key==='u'){fmtToggle('underline');e.preventDefault();}
+  else if(e.ctrlKey&&e.key==='a'){cmdSelectAll();e.preventDefault();}
+  else if(e.key.length===1&&!e.ctrlKey&&!e.metaKey){
+    getSheet().data[selR][selC]='';
+    startEdit(selR,selC);
+    document.getElementById('cell-editor').value=e.key;
+    document.getElementById('formula-input').value=e.key;
+  }
+}
+
+function clearSel(){
+  snapshot();
+  selRange((r,c)=>{ getSheet().data[r][c]=''; });
+  renderDataCells(); updateFormulaBar(); autoSave();
+}
+
+/* ═══════════════════════════
+   COPY / CUT / PASTE
+═══════════════════════════ */
+function selRange(fn){
+  if(selStart){
+    const r0=Math.min(selStart.r,selR),r1=Math.max(selStart.r,selR);
+    const c0=Math.min(selStart.c,selC),c1=Math.max(selStart.c,selC);
+    for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++) fn(r,c);
+  } else fn(selR,selC);
+}
+
+function cmdCopy(){
+  closeMenus(); closeCtx();
+  const r0=selStart?Math.min(selStart.r,selR):selR;
+  const r1=selStart?Math.max(selStart.r,selR):selR;
+  const c0=selStart?Math.min(selStart.c,selC):selC;
+  const c1=selStart?Math.max(selStart.c,selC):selC;
+  clipboard={data:[],fmt:[],r0,c0};
+  for(let r=r0;r<=r1;r++){
+    const drow=[],frow=[];
+    for(let c=c0;c<=c1;c++){drow.push(getCell(r,c));frow.push({...getFmt(r,c)});}
+    clipboard.data.push(drow); clipboard.fmt.push(frow);
+  }
+  toast("Copiado");
+}
+
+function cmdCut(){
+  cmdCopy();
+  snapshot();
+  selRange((r,c)=>{ getSheet().data[r][c]=''; });
+  renderDataCells(); autoSave();
+  toast("Recortado");
+}
+
+function cmdPaste(){
+  closeMenus(); closeCtx();
+  if(!clipboard){toast("Nada no clipboard");return;}
+  snapshot();
+  for(let ri=0;ri<clipboard.data.length;ri++){
+    for(let ci=0;ci<clipboard.data[ri].length;ci++){
+      const r=selR+ri, c=selC+ci;
+      if(r<getSheet().data.length&&c<COLS){
+        getSheet().data[r][c]=clipboard.data[ri][ci];
+        getSheet().fmt[r][c]={...clipboard.fmt[ri][ci]};
+      }
+    }
+  }
+  renderDataCells(); autoSave(); toast("Colado");
+}
+
+/* ═══════════════════════════
+   FORMATTING
+═══════════════════════════ */
+function fmtToggle(key){
+  closeMenus();
+  const cur=getFmt(selR,selC)[key];
+  selRange((r,c)=>setFmt(r,c,key,!cur));
+  selRange((r,c)=>{const el=getCellEl(r,c);if(el)applyFmtToEl(el,getFmt(r,c));});
+  updateFmtBar(); autoSave();
+}
+
+function fmtAlign(val){
+  closeMenus();
+  selRange((r,c)=>setFmt(r,c,'align',val));
+  selRange((r,c)=>{const el=getCellEl(r,c);if(el)applyFmtToEl(el,getFmt(r,c));});
+  updateFmtBar(); autoSave();
+}
+
+function fmtColor(prop,val){
+  const key=prop==='color'?'color':'bg';
+  selRange((r,c)=>setFmt(r,c,key,val));
+  selRange((r,c)=>{const el=getCellEl(r,c);if(el)applyFmtToEl(el,getFmt(r,c));});
+  document.getElementById(key==='color'?'ind-tc':'ind-bg').style.background=val;
+  autoSave();
+}
+
+function fmtFont(val){
+  selRange((r,c)=>setFmt(r,c,'font',val));
+  selRange((r,c)=>{const el=getCellEl(r,c);if(el)applyFmtToEl(el,getFmt(r,c));});
+  autoSave();
+}
+
+function fmtSize(val){
+  selRange((r,c)=>setFmt(r,c,'size',val));
+  selRange((r,c)=>{const el=getCellEl(r,c);if(el)applyFmtToEl(el,getFmt(r,c));});
+  autoSave();
+}
+
+function fmtBorder(type){
+  closeMenus();
+  selRange((r,c)=>setFmt(r,c,'border',type));
+  selRange((r,c)=>{const el=getCellEl(r,c);if(el)applyFmtToEl(el,getFmt(r,c));});
+  autoSave();
+}
+
+function clearFormat(){
+  closeMenus(); closeCtx();
+  selRange((r,c)=>{ getSheet().fmt[r][c]={}; });
+  selRange((r,c)=>{const el=getCellEl(r,c);if(el)applyFmtToEl(el,{});});
+  updateFmtBar(); autoSave(); toast("Formatação limpa");
+}
+
+function toggleFreeze(){
+  if(freezeRow||freezeCol){freezeRow=0;freezeCol=0;toast("Congelamento removido");}
+  else{freezeRow=selR;freezeCol=selC;toast(`Congelado em ${cellAddr(selR,selC)}`);}
+}
+
+/* ═══════════════════════════
+   FORMULA BAR
+═══════════════════════════ */
+function updateFormulaBar(){
+  const val=getCell(selR,selC);
+  document.getElementById('cell-addr').textContent=cellAddr(selR,selC);
+  document.getElementById('formula-input').value=val;
+  document.getElementById('status-cell').textContent=cellAddr(selR,selC);
+  document.getElementById('status-sheet').textContent=getSheet().name;
+
+  if(selStart){
+    const r0=Math.min(selStart.r,selR),r1=Math.max(selStart.r,selR);
+    const c0=Math.min(selStart.c,selC),c1=Math.max(selStart.c,selC);
+    let nums=[],sum=0;
+    for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++){
+      const v=getSheet().data[r][c];
+      if(v!==''&&!isNaN(+v)){nums.push(+v);sum+=+v;}
+    }
+    document.getElementById('status-sum').textContent=nums.length?`Soma: ${sum.toLocaleString('pt-BR')}  Média: ${(sum/nums.length).toFixed(2)}  Cont: ${nums.length}`:'';
+  } else {
+    document.getElementById('status-sum').textContent='';
+  }
+}
+
+function onFormulaInput(){
+  getSheet().data[selR][selC]=document.getElementById('formula-input').value;
+  const el=getCellEl(selR,selC);
+  if(el) el.textContent=getSheet().data[selR][selC];
+}
+
+function onFormulaKey(e){
+  if(e.key==='Enter'){
+    snapshot();
+    getSheet().data[selR][selC]=document.getElementById('formula-input').value;
+    const el=getCellEl(selR,selC);
+    if(el){el.textContent=getSheet().data[selR][selC]; applyFmtToEl(el,getFmt(selR,selC));}
+    moveSel(1,0,false); autoSave(); e.preventDefault();
+  } else if(e.key==='Escape') updateFormulaBar();
+}
+
+/* ═══════════════════════════
+   SCROLL SYNC
+═══════════════════════════ */
+function syncScroll(){
+  const ds=document.getElementById('data-scroll');
+  document.getElementById('col-header-scroll').scrollLeft=ds.scrollLeft;
+  document.getElementById('row-header-scroll').scrollTop=ds.scrollTop;
+}
+
+/* ═══════════════════════════
+   INSERIR / EXCLUIR LINHAS E COLUNAS
+═══════════════════════════ */
+function insertRowAbove(){ closeMenus(); closeCtx(); snapshot(); const r=selR; getSheet().data.splice(r,0,new Array(COLS).fill("")); getSheet().fmt.splice(r,0,Array.from({length:COLS},()=>({}))); renderGrid(); autoSave(); }
+function insertRowBelow(){ closeMenus(); closeCtx(); snapshot(); const r=selR+1; getSheet().data.splice(r,0,new Array(COLS).fill("")); getSheet().fmt.splice(r,0,Array.from({length:COLS},()=>({}))); renderGrid(); autoSave(); }
+function deleteRow()     { closeMenus(); closeCtx(); if(getSheet().data.length<=1)return; snapshot(); getSheet().data.splice(selR,1); getSheet().fmt.splice(selR,1); selR=Math.min(selR,getSheet().data.length-1); renderGrid(); autoSave(); }
+function insertColLeft() { closeMenus(); snapshot(); getSheet().data.forEach(r=>r.splice(selC,0,"")); getSheet().fmt.forEach(r=>r.splice(selC,0,{})); renderGrid(); autoSave(); }
+function insertColRight(){ closeMenus(); snapshot(); const c=selC+1; getSheet().data.forEach(r=>r.splice(c,0,"")); getSheet().fmt.forEach(r=>r.splice(c,0,{})); renderGrid(); autoSave(); }
+function deleteCol()     { closeMenus(); if(COLS<=1)return; snapshot(); getSheet().data.forEach(r=>r.splice(selC,1)); getSheet().fmt.forEach(r=>r.splice(selC,1)); selC=Math.min(selC,COLS-2); renderGrid(); autoSave(); }
+
+/* ═══════════════════════════
+   TABS
+═══════════════════════════ */
+function renderTabs(){
+  const bar=document.getElementById('tabs-bar');
+  bar.querySelectorAll('.tab').forEach(t=>t.remove());
+  const addBtn=document.getElementById('tab-add');
+  sheets.forEach((s,i)=>{
+    const tab=document.createElement('span');
+    tab.className='tab'+(i===curSheet?' active':'');
+    tab.textContent=s.name;
+    tab.title='Clique para selecionar | Duplo clique para renomear';
+    tab.onclick=()=>{commitEdit();switchSheet(i);};
+    tab.ondblclick=()=>renameSheet(i);
+    bar.insertBefore(tab,addBtn);
+  });
+}
+
+function switchSheet(i){
+  curSheet=i; selR=0;selC=0;selStart=null;
+  history=[]; histIdx=-1;
+  renderTabs(); renderGrid();
+  snapshot();
+}
+
+function addSheet(){ closeMenus(); sheets.push(newSheetObj("Planilha"+(sheets.length+1))); switchSheet(sheets.length-1); autoSave(); }
+
+function renameSheet(i){
+  const name=prompt("Nome da aba:",sheets[i].name);
+  if(name&&name.trim()){sheets[i].name=name.trim(); renderTabs(); autoSave();}
+}
+
+function deleteSheet(){
+  closeMenus();
+  if(sheets.length===1){toast("Não é possível excluir a única aba");return;}
+  if(!confirm(`Excluir aba "${sheets[curSheet].name}"?`)) return;
+  sheets.splice(curSheet,1);
+  switchSheet(Math.max(0,curSheet-1));
+  autoSave();
+}
+
+/* ═══════════════════════════
+   ARQUIVO
+═══════════════════════════ */
+function triggerOpen(){ closeMenus(); document.getElementById('fileInput').click(); }
+
+function loadFile(event){
+  const file=event.target.files[0]; if(!file) return;
+  const ext=file.name.split('.').pop().toLowerCase();
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      let wb;
+      if(ext==='json'){
+        try{
+          const parsed=JSON.parse(e.target.result);
+          // Suporta: array de objetos [{col:val}], array de arrays [[val]], ou objeto unico
+          let aoa;
+          if(Array.isArray(parsed)&&parsed.length&&typeof parsed[0]==='object'&&!Array.isArray(parsed[0])){
+            // [{col:val},...] -> headers na primeira linha
+            const headers=[...new Set(parsed.flatMap(o=>Object.keys(o)))];
+            aoa=[headers,...parsed.map(o=>headers.map(h=>o[h]??''))];
+          } else if(Array.isArray(parsed)&&parsed.length&&Array.isArray(parsed[0])){
+            aoa=parsed; // ja eh array de arrays
+          } else if(Array.isArray(parsed)){
+            aoa=parsed.map(v=>[v]); // array simples -> coluna unica
+          } else {
+            // objeto unico -> chave/valor
+            aoa=[['Chave','Valor'],...Object.entries(parsed)];
+          }
+          const ws=XLSX.utils.aoa_to_sheet(aoa);
+          wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Planilha1');
+        }catch(je){alert('JSON inválido: '+je.message);return;}
+      } else if(ext==='csv') wb=XLSX.read(e.target.result,{type:'string',raw:false});
+      else if(ext==='ods') wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',dense:true});
+      else wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+
+      sheets=wb.SheetNames.map(name=>{
+        const ws=wb.Sheets[name];
+        const ref=ws['!ref'];
+        const data=[];
+        const fmt=[];
+        if(ref){
+          const range=XLSX.utils.decode_range(ref);
+          const maxR=Math.max(range.e.r+1,ROWS);
+          const maxC=Math.max(range.e.c+1,COLS);
+          for(let r=0;r<maxR;r++){
+            const row=[],frow=[];
+            for(let c=0;c<maxC;c++){
+              const addr=XLSX.utils.encode_cell({r,c});
+              const cell=ws[addr];
+              row.push(cell?String(cell.v??''):'');
+              frow.push({});
+            }
+            data.push(row); fmt.push(frow);
+          }
+        } else {
+          for(let r=0;r<ROWS;r++){data.push(new Array(COLS).fill(''));fmt.push(Array.from({length:COLS},()=>({})));}
+        }
+        while(data.length<ROWS){data.push(new Array(data[0]?.length||COLS).fill(''));fmt.push(Array.from({length:data[0]?.length||COLS},()=>({})));}
+        data.forEach((row,ri)=>{while(row.length<COLS){row.push('');fmt[ri].push({});}});
+        return{name,data,fmt};
+      });
+
+      if(!sheets.length) sheets=[newSheetObj("Planilha1")];
+      switchSheet(0); toast(`"${file.name}" carregado`);
+    }catch(err){ alert("Erro ao abrir: "+err.message); console.error(err); }
+  };
+  if(ext==='csv'||ext==='json') reader.readAsText(file); else reader.readAsArrayBuffer(file);
+  event.target.value='';
+}
+
+function cmdSave(type){
+  closeMenus();
+  try{
+    const wb=XLSX.utils.book_new();
+    sheets.forEach(sheet=>{
+      let maxR=0,maxC=0;
+      sheet.data.forEach((row,r)=>row.forEach((v,c)=>{if(v!==''){maxR=Math.max(maxR,r+1);maxC=Math.max(maxC,c+1);}}));
+      if(!maxR) maxR=1; if(!maxC) maxC=1;
+      const aoa=sheet.data.slice(0,maxR).map(row=>row.slice(0,maxC));
+      const ws=XLSX.utils.aoa_to_sheet(aoa);
+      XLSX.utils.book_append_sheet(wb,ws,sheet.name);
+    });
+    if(type==='csv'){
+      const ws=wb.Sheets[wb.SheetNames[curSheet]];
+      saveAs(new Blob([XLSX.utils.sheet_to_csv(ws)],{type:'text/csv;charset=utf-8'}),'planilha.csv');
+      toast("Salvo como CSV");
+    } else if(type==='ods'){
+      const out=XLSX.write(wb,{type:'array',bookType:'ods'});
+      saveAs(new Blob([out],{type:'application/vnd.oasis.opendocument.spreadsheet'}),'planilha.ods');
+      toast("Salvo como ODS");
+    } else if(type==='json'){
+      // Exporta aba ativa como array de objetos (headers = primeira linha)
+      const sheet=sheets[curSheet];
+      let maxR=0,maxC=0;
+      sheet.data.forEach((row,r)=>row.forEach((v,c)=>{if(v!==''){maxR=Math.max(maxR,r+1);maxC=Math.max(maxC,c+1);}}));
+      if(!maxR){saveAs(new Blob(['[]'],{type:'application/json'}),'planilha.json');toast('Salvo como JSON');return;}
+      const rows=sheet.data.slice(0,maxR).map(r=>r.slice(0,maxC));
+      const headers=rows[0].map((h,i)=>h||colName(i));
+      const json=rows.slice(1).map(row=>{
+        const obj={};
+        headers.forEach((h,i)=>{const v=row[i]??'';obj[h]=isNumeric(v)?+v:v;});
+        return obj;
+      });
+      saveAs(new Blob([JSON.stringify(json,null,2)],{type:'application/json'}),'planilha.json');
+      toast('Salvo como JSON');
+    } else {
+      const out=XLSX.write(wb,{type:'array',bookType:'xlsx'});
+      saveAs(new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'planilha.xlsx');
+      toast("Salvo como XLSX");
+    }
+  }catch(err){ alert("Erro ao salvar: "+err.message); console.error(err); }
+}
+
+function cmdNew(){
+  closeMenus();
+  if(!confirm("Criar nova planilha? Dados não salvos serão perdidos.")) return;
+  sheets=[newSheetObj("Planilha1")];
+  localStorage.removeItem(LS_KEY);
+  switchSheet(0); toast("Nova planilha criada");
+}
+
+/* ═══════════════════════════
+   LOCAL STORAGE
+═══════════════════════════ */
+function autoSave(){
+  try{ localStorage.setItem(LS_KEY,JSON.stringify(sheets)); }catch(e){}
+}
+function loadLS(){
+  try{
+    const raw=localStorage.getItem(LS_KEY);
+    if(!raw) return null;
+    const d=JSON.parse(raw);
+    return Array.isArray(d)&&d.length?d:null;
+  }catch{return null;}
+}
+
+/* ═══════════════════════════
+   HELPERS
+═══════════════════════════ */
+function toggleMenu(id){
+  const el=document.getElementById(id);
+  const wasOpen=el.classList.contains('open');
+  closeMenus(); closeCtx();
+  if(!wasOpen) el.classList.add('open');
+}
+function closeMenus(){ document.querySelectorAll('.dropdown').forEach(d=>d.classList.remove('open')); }
+function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2500); }
+</script>
+</body>
+</html>
