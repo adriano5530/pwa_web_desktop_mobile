@@ -61,8 +61,11 @@
     /* ── Desktop ── */
     .desktop {
       position: absolute;
-      top: 0; left: 0; right: 0;
-      bottom: var(--taskbar-h);
+      top: 0; 
+	  left: 0; 
+	  right: 0;
+	  bottom: 50px;
+      /* bottom: var(--taskbar-h); */
       padding: 10px;
       display: flex;
       flex-wrap: wrap;
@@ -91,6 +94,7 @@
       border-left: 1px solid rgba(255, 255, 255, 0.25);
       border-radius: 10px;
       display: flex;
+	  resize: both;
       flex-direction: column;
       overflow: hidden;
       z-index: 10;
@@ -109,11 +113,16 @@
     .window::before {
       content: "";
       position: absolute;
-      top: 0; left: 0; right: 0; height: 100%;
-      background: linear-gradient(135deg,
+      top: 0; 
+	  left: 0; 
+	  right: 0; 
+	  height: 100%;
+      background: linear-gradient(
+	  135deg,
         rgba(255,255,255,0.12) 0%,
         rgba(255,255,255,0.03) 40%,
-        transparent 100%);
+        transparent 100%
+		);
       pointer-events: none;
       z-index: 0;
     }
@@ -211,7 +220,7 @@
       padding: 0 10px;
       z-index: 10000;
       box-shadow: 0 15px 35px rgba(0,0,0,0.4);
-      gap: 4px;
+      /* gap: 4px; */
     }
 
     .start-button {
@@ -486,7 +495,7 @@
     <a href="#" onclick="openApp({url:'offline_apps/googlemaps.html', title:'Google Maps 🧭'})">🧭 Google Maps</a>
     <a href="#" onclick="openApp({url:'offline_apps/iaoff/webllm-chat.html', title:'IA 🤖'})">🤖 IA</a>
     <a href="#" data-id="clima"  onclick="openApp({url:'offline_apps/clima.html', title:'Clima 🌦️'})">🌦️ Clima</a>
-    <a href="#" data-id="motof3" onclick="openApp({url:'offline_apps/motof3.html', title:'MotoFone F3 📱'})">📱 MotoFone F3</a>
+    <a href="#" data-id="motof3" onclick="openApp({url:'offline_apps/motof3.html', title:'MotoFone F3 📱', width: 250, height: 600 })">📱 MotoFone F3</a>
     <a href="#" onclick="openApp({url:'offline_apps/camera.html', title:'Camera 📸'})">📸 Camera</a>
     <a href="#" onclick="openApp({url:'offline_apps/documentos/documentos.html', title:'Documentos 📄'})">📄 Documentos</a>
     <a href="#" onclick="openApp({url:'offline_apps/planilhas/planilhas.html', title:'Planilhas 📊'})">📊 Planilhas</a>
@@ -503,8 +512,9 @@
     <a href="#" data-id="terminal" onclick="openApp({url:'offline_apps/terminal.html', title:'Terminal 👨🏽‍💻'})">👨🏽‍💻 Terminal</a>
     <a href="#" data-id="console"  onclick="openApp({url:'offline_apps/webdevterminal.html', title:'Console Dev Web 👨🏽‍💻'})">👨🏽‍💻 Console Dev Web</a>
     <a href="#" onclick="openApp({url:'offline_apps/base64.html', title:'Base64 🧑🏽‍💻'})">🧑🏽‍💻 Base64</a>
-    <a href="#" onclick="openApp({url:'offline_apps/gravador.html', title:'Gravador 🎤'})">🎤 Gravador</a>
+    <a href="#" onclick="openApp({url:'offline_apps/gravador.html', title:'Gravador 🎤', width: 358, height: 189 })">🎤 Gravador</a>
     <a href="#" onclick="openApp({url:'offline_apps/webdeckos.html', title:'WebDeckOS 🚀'})">🚀 WebDeckOS</a>
+	<a href="#" onclick="openApp({url:'offline_apps/relogio.html', title:'Relógio ⌚', width: 300, height: 300 })">⌚ Relógio</a>
 	<!--<a href="#" onclick="openWindow('offline_apps/spacedesk/spacedesk.html', 'SpaceDesk Local 🖥️')">🖥️ Space_Desk Local</a>-->
     <hr>
 
