@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <!--<meta name="viewport" content="width=device-width, initial-scale=1.0">-->
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="favicon.ico" type="image/x-icon" />
@@ -40,7 +40,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      height: 100vh;
+      height: 100dvh;
       width: 100vw;
       background: #1e1e1e;
       font-family: 'Segoe UI', Arial, sans-serif;
@@ -50,6 +50,7 @@
       background-position: center;
       overflow: hidden;
       touch-action: none;
+      padding-bottom: env(safe-area-inset-bottom);
     }
 
     body.fundo-imagem {
@@ -64,8 +65,7 @@
       top: 0; 
 	  left: 0; 
 	  right: 0;
-	  bottom: 50px;
-      /* bottom: var(--taskbar-h); */
+	  bottom: calc(70px + env(safe-area-inset-bottom));
       padding: 10px;
       display: flex;
       flex-wrap: wrap;
@@ -204,7 +204,7 @@
     /* ── Taskbar ── */
     .taskbar {
       position: fixed;
-      bottom: 10px;
+      bottom: calc(10px + env(safe-area-inset-bottom));
       left: 50%;
       transform: translateX(-50%);
       width: 99%;
@@ -220,7 +220,7 @@
       padding: 0 10px;
       z-index: 10000;
       box-shadow: 0 15px 35px rgba(0,0,0,0.4);
-      /* gap: 4px; */
+
     }
 
     .start-button {
@@ -407,7 +407,7 @@
 
 <body onload="onLoad()">
   <div id="snapPreview" class="snap-preview"></div>
-  <div id="zoomRoot" style="position:fixed;top:0;left:0;width:100vw;height:100vh;transform-origin:top left;">
+  <div id="zoomRoot" style="position:fixed;top:0;left:0;width:100vw;height:100dvh;transform-origin:top left;">
 
   <div id="desktop" class="desktop">
   <!-- <iframe src="offline_apps/relogio.html" id="iframe-relogio" pointer-events: none; z-index: 0;"></iframe>-->
@@ -436,7 +436,7 @@
 
   <!-- Barra de tarefas -->
   <div class="taskbar">
-    <button class="start-button" onclick="toggleMenu()">☰ Iniciar</button>
+    <button class="start-button" onclick="toggleMenu()"> ☰ === </button>
     <div class="taskbar-shortcuts">
       <div class="shortcut-taskbar" onclick="openApp({url:'offline_apps/browser.html', title:'Browser 🌎'})">
         <span>🌎 Browser</span>
@@ -886,7 +886,7 @@
     root.style.transform = `scale(${scale})`;
     root.style.transformOrigin = 'top left';
     root.style.width  = (100 / scale) + 'vw';
-    root.style.height = (100 / scale) + 'vh';
+    root.style.height = (100 / scale) + 'dvh';
   }
 
   document.addEventListener('DOMContentLoaded', () => {
