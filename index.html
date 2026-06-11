@@ -316,6 +316,9 @@
       .zoom-btn {
         display: flex;
       }
+      #tasks-container {
+        max-width: 60px;
+      }
     }
 
     /* Botões de janelas minimizadas na taskbar (do kernel2 — task-item) */
@@ -368,7 +371,7 @@
     .zoom-btn {
       display: none;
       align-items: center;
-      gap: 4px;
+      gap: 2px;
       flex-shrink: 0;
     }
     .zoom-btn button {
@@ -623,11 +626,11 @@
     <div class="zoom-control">
       <label for="zoomSlider">Zoom:</label>
       <input id="zoomSlider" type="range" min="50" max="150" value="100">
-    </div>
-    <div class="zoom-btn">
-      <button onclick="stepZoom(-10)" title="Diminuir zoom">−</button>
-      <span id="zoomValue">100%</span>
-      <button onclick="stepZoom(10)" title="Aumentar zoom">+</button>
+      <div class="zoom-btn">
+        <button onclick="stepZoom(-10)" title="Diminuir zoom">−</button>
+        <span id="zoomValue">100%</span>
+        <button onclick="stepZoom(10)" title="Aumentar zoom">+</button>
+      </div>
     </div>
 	<!-- <div class="calendario">
   <h3 id="data-atual"></h3>
