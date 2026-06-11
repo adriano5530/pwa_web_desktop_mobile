@@ -217,10 +217,10 @@
       display: flex;
       align-items: center;
       justify-content: flex-start;
-      gap: 6px;
       padding: 0 10px;
       z-index: 10000;
       box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+
     }
 
     .start-button {
@@ -237,27 +237,9 @@
       flex-shrink: 0;
     }
 
-    .taskbar.menu-centro {
-      justify-content: flex-start;
-    }
-
-    .taskbar.menu-centro .start-button {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-
-    .taskbar.menu-centro #tasks-container {
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      flex: none;
-      max-width: 40%;
-    }
-
-    .taskbar.menu-centro .zoom-control {
-      display: none;
+    .start-button:hover {
+      background: rgba(255,255,255,0.25);
+      transform: scale(1.05);
     }
 
     /* Atalhos fixos da taskbar */
@@ -265,9 +247,7 @@
       display: flex;
       align-items: center;
       gap: 2px;
-      flex-shrink: 0;
-      padding-right: 8px;
-      border-right: 1px solid rgba(255,255,255,0.15);
+      margin-left: 8px;
     }
 
     .shortcut-taskbar {
@@ -284,36 +264,6 @@
     }
 
     .shortcut-taskbar:hover { background: rgba(255,255,255,0.1); }
-
-    /* No mobile: mostra só emoji, esconde o texto dos atalhos fixos */
-    @media (max-width: 600px) {
-      .taskbar {
-        gap: 4px;
-        padding: 0 6px;
-      }
-      .start-button {
-        padding: 0 10px;
-        flex-shrink: 0;
-      }
-      .taskbar-shortcuts {
-        gap: 0;
-        padding-right: 4px;
-      }
-      .shortcut-taskbar {
-        padding: 0 6px;
-        font-size: 20px;
-      }
-      .shortcut-taskbar span {
-        font-size: 0;
-      }
-      .shortcut-taskbar span::first-letter {
-        font-size: 20px;
-      }
-      .zoom-control label,
-      .zoom-control input[type="range"] {
-        display: none;
-      }
-    }
 
     /* Botões de janelas minimizadas na taskbar (do kernel2 — task-item) */
     .task-item {
@@ -343,7 +293,6 @@
       gap: 4px;
       overflow-x: auto;
       flex: 1;
-      min-width: 0;
       margin: 0 6px;
     }
 
@@ -387,13 +336,10 @@
       background: rgba(12,12,12,0.6);
       backdrop-filter: blur(15px) saturate(160%);
       -webkit-backdrop-filter: blur(15px) saturate(160%);
-      /* taskbar: bottom = 10px + safe-area, height = 50px → topo da taskbar = 60px + safe-area
-         adicionamos 8px de folga visual */
-      bottom: calc(68px + env(safe-area-inset-bottom));
+      bottom: 65px;
       left: 10px;
-      width: 390px;
-      /* nunca crescer mais que o espaço entre o topo da taskbar e o topo da tela, com margens */
-      max-height: calc(100dvh - 68px - env(safe-area-inset-bottom) - 16px);
+      width: 350px;
+      max-height: 50%;
       padding: 10px;
       display: none;
       border-radius: 8px;
@@ -434,88 +380,6 @@
     /* ── Filtros ── */
     .sepia-filter { filter: sepia(1); }
     .grey-filter  { filter: grayscale(1) invert(1); }
-
-    /* ── Modo Grade ── */
-    .menu.grade-mode {
-      width: 460px;
-    }
-
-    /* No modo grade, esconde apenas os links de apps (não strong, hr, form, buttons, details) */
-    .menu.grade-mode > a {
-      display: none !important;
-    }
-
-    .grade-grid {
-      display: none;
-      grid-template-columns: 1fr;
-      gap: 0;
-      padding: 8px 4px;
-    }
-
-    .menu.grade-mode .grade-grid {
-      display: grid;
-    }
-
-    .grade-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      padding: 10px 4px;
-      border-radius: 10px;
-      cursor: pointer;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.1);
-      text-align: center;
-      color: white;
-      text-decoration: none;
-      transition: background 0.15s, transform 0.1s;
-      min-height: 80px;
-    }
-
-    .grade-item:hover {
-      background: rgba(255,255,255,0.18);
-      transform: scale(1.06);
-    }
-
-    .grade-item .grade-emoji {
-      font-size: 32px;
-      line-height: 1;
-    }
-
-    .grade-item .grade-label {
-      font-size: 10px;
-      line-height: 1.2;
-      max-width: 90px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      opacity: 0.85;
-    }
-
-    /* Seção de categoria dentro do grid */
-    .grade-section {
-      grid-column: 1 / -1;
-    }
-
-    .grade-cat-title {
-      font-size: 11px;
-      font-weight: 600;
-      color: rgba(255,255,255,0.5);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      padding: 8px 2px 4px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-      margin-bottom: 4px;
-    }
-
-    .grade-section-items {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-      padding-bottom: 8px;
-    }
 
     #iframe-relogio {
       position: absolute;
@@ -603,8 +467,6 @@
   <!-- Menu Iniciar -->
   <div class="menu" id="startMenu">
     <input type="text" id="searchInput" placeholder="Pesquisar apps...">
-    <!-- Grade Mode Grid -->
-    <div class="grade-grid" id="gradeGrid"></div>
 
     <strong>🌐 Web Apps (PWAs and Others):</strong>
     <a href="#" data-id="stedit"       onclick="openApp({url:'https://stedit.app', title:'Smart Text Editor 🗒️'})">🗒️ Smart Text Editor</a>
@@ -709,7 +571,6 @@
     <button class="button" onclick="toggleHUD()">🕶️ Alternar Modo HUD/Holográfico</button>
     <script src="offline_apps/hud-toggle.js"></script>
     <button onclick="alternarMenuCentro()" class="button">Alternar Menu: Centro/Esquerda</button>
-    <button class="button" onclick="toggleGradeMode()">⊞ Modo Grade</button>
 	</details>
 	<hr>
     <strong>📢 Público:</strong>
@@ -1040,37 +901,14 @@
     // Pesquisa no menu
     document.getElementById('searchInput').addEventListener('input', function() {
       const f = this.value.toLowerCase();
-
-      // Filtra todos os links da lista (href="#" e nativos)
-      document.querySelectorAll('#startMenu > a').forEach(a => {
+      document.querySelectorAll('#startMenu a').forEach(a => {
         a.style.display = a.textContent.toLowerCase().includes(f) ? '' : 'none';
-      });
-
-      // Filtra itens do modo grade
-      document.querySelectorAll('#gradeGrid .grade-section').forEach(section => {
-        let algumVisivel = false;
-        section.querySelectorAll('.grade-item').forEach(item => {
-          const visivel = item.dataset.label.toLowerCase().includes(f);
-          item.style.display = visivel ? '' : 'none';
-          if (visivel) algumVisivel = true;
-        });
-        section.querySelector('.grade-cat-title').style.display = algumVisivel ? '' : 'none';
       });
     });
 
     carregarAtalhos();
     aplicarOcultos();
     adicionarBotaoOcultar();
-
-    // Restaura posição do menu
-    menuCentralizado = localStorage.getItem('menuCentralizado') === '1';
-    aplicarPosicaoMenu(menuCentralizado);
-
-    // Restaura modo grade
-    if (localStorage.getItem('gradeMode') === '1') {
-      gradeModeAtivo = false; // toggleGradeMode vai inverter
-      toggleGradeMode();
-    }
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -1200,86 +1038,25 @@
   <script>
   let menuCentralizado = false;
 
-  function aplicarPosicaoMenu(centralizado) {
+  function alternarMenuCentro() {
     const menu = document.querySelector('.menu');
-    const taskbar = document.querySelector('.taskbar');
-    if (centralizado) {
+    const startButton = document.querySelector('.start-button');
+
+    if (!menuCentralizado) {
       menu.style.left = '50%';
       menu.style.transform = 'translateX(-50%)';
-      taskbar.classList.add('menu-centro');
+      startButton.style.left = '50%';
+      startButton.style.transform = 'translateX(-50%)';
+      startButton.style.position = 'fixed';
+      menuCentralizado = true;
     } else {
       menu.style.left = '10px';
       menu.style.transform = 'none';
-      taskbar.classList.remove('menu-centro');
+      startButton.style.left = '10px';
+      startButton.style.transform = 'none';
+      startButton.style.position = 'fixed';
+      menuCentralizado = false;
     }
-  }
-
-  function alternarMenuCentro() {
-    menuCentralizado = !menuCentralizado;
-    aplicarPosicaoMenu(menuCentralizado);
-    localStorage.setItem('menuCentralizado', menuCentralizado ? '1' : '0');
-  }
-
-  // ── Modo Grade ──
-  let gradeModeAtivo = false;
-
-  function construirGrid() {
-    const menu = document.getElementById('startMenu');
-    const grid = document.getElementById('gradeGrid');
-    if (grid.children.length > 0) return; // já construído
-
-    const children = Array.from(menu.childNodes);
-    let currentItems = null;
-
-    children.forEach(node => {
-      if (node.nodeName === 'STRONG') {
-        const section = document.createElement('div');
-        section.className = 'grade-section';
-
-        const title = document.createElement('div');
-        title.className = 'grade-cat-title';
-        title.textContent = node.textContent;
-        section.appendChild(title);
-
-        const itemsRow = document.createElement('div');
-        itemsRow.className = 'grade-section-items';
-        section.appendChild(itemsRow);
-
-        grid.appendChild(section);
-        currentItems = itemsRow;
-      }
-      else if (node.nodeName === 'A') {
-        if (!currentItems) return;
-        const raw = node.textContent.trim();
-        const emojiMatch = raw.match(/^([\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}⌚-⌛⏩-⏳🀄-🃏🌀-🗿🚀-🛿🤀-🤿🥀-🿿\u{FE00}-\u{FE0F}]+)/u);
-        const emoji = emojiMatch ? emojiMatch[1] : '📌';
-        const label = raw.replace(emoji, '').trim();
-
-        const item = document.createElement('div');
-        item.className = 'grade-item';
-        item.dataset.label = raw;
-        item.innerHTML = `<span class="grade-emoji">${emoji}</span><span class="grade-label">${label}</span>`;
-        const href = node.getAttribute('href');
-        if (href && href !== '#') {
-          item.onclick = () => { window.location.href = href; };
-        } else {
-          item.onclick = () => { node.click(); };
-        }
-        currentItems.appendChild(item);
-      }
-    });
-  }
-
-  function toggleGradeMode() {
-    const menu = document.getElementById('startMenu');
-    gradeModeAtivo = !gradeModeAtivo;
-    if (gradeModeAtivo) {
-      construirGrid();
-      menu.classList.add('grade-mode');
-    } else {
-      menu.classList.remove('grade-mode');
-    }
-    localStorage.setItem('gradeMode', gradeModeAtivo ? '1' : '0');
   }
 </script>
 
