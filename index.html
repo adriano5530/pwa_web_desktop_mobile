@@ -313,12 +313,6 @@
       .zoom-control input[type="range"] {
         display: none;
       }
-      .zoom-btn {
-        display: flex;
-      }
-      #tasks-container {
-        max-width: 60px;
-      }
     }
 
     /* Botões de janelas minimizadas na taskbar (do kernel2 — task-item) */
@@ -366,34 +360,6 @@
     }
 
     .zoom-control input[type="range"] { width: 100px; }
-
-    /* Botões +/− de zoom (visíveis só no mobile) */
-    .zoom-btn {
-      display: none;
-      align-items: center;
-      gap: 2px;
-      flex-shrink: 0;
-    }
-    .zoom-btn button {
-      width: 30px;
-      height: 30px;
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.25);
-      background: rgba(255,255,255,0.12);
-      color: white;
-      font-size: 18px;
-      line-height: 1;
-      cursor: pointer;
-      flex-shrink: 0;
-      transition: background 0.15s;
-    }
-    .zoom-btn button:active { background: rgba(255,255,255,0.28); }
-    .zoom-btn span#zoomValue {
-      font-size: 11px;
-      color: rgba(255,255,255,0.8);
-      min-width: 32px;
-      text-align: center;
-    }
 
     /* ── Menu Iniciar ── */
     #searchInput {
@@ -626,11 +592,6 @@
     <div class="zoom-control">
       <label for="zoomSlider">Zoom:</label>
       <input id="zoomSlider" type="range" min="50" max="150" value="100">
-      <div class="zoom-btn">
-        <button onclick="stepZoom(-10)" title="Diminuir zoom">−</button>
-        <span id="zoomValue">100%</span>
-        <button onclick="stepZoom(10)" title="Aumentar zoom">+</button>
-      </div>
     </div>
 	<!-- <div class="calendario">
   <h3 id="data-atual"></h3>
@@ -1067,25 +1028,13 @@
     root.style.height = (100 / scale) + 'dvh';
   }
 
-  function stepZoom(delta) {
-    const slider = document.getElementById('zoomSlider');
-    let val = Math.min(150, Math.max(50, parseInt(slider.value) + delta));
-    slider.value = val;
-    setGlobalZoom(val);
-    const lbl = document.getElementById('zoomValue');
-    if (lbl) lbl.textContent = val + '%';
-  }
-
   document.addEventListener('DOMContentLoaded', () => {
     // Zoom
     const savedZoom = localStorage.getItem('desktopZoom') || 100;
     document.getElementById('zoomSlider').value = savedZoom;
     setGlobalZoom(savedZoom);
-    const zoomLbl = document.getElementById('zoomValue');
-    if (zoomLbl) zoomLbl.textContent = savedZoom + '%';
     document.getElementById('zoomSlider').addEventListener('input', function() {
       setGlobalZoom(this.value);
-      if (zoomLbl) zoomLbl.textContent = this.value + '%';
     });
 
     // Pesquisa no menu
