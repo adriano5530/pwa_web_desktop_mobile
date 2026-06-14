@@ -256,9 +256,7 @@
       max-width: 40%;
     }
 
-    .taskbar.menu-centro .zoom-control {
-      display: none;
-    }
+    /* zoom-control sempre visível mesmo com menu centralizado */
 
     /* Atalhos fixos da taskbar */
     .taskbar-shortcuts {
@@ -309,10 +307,7 @@
       .shortcut-taskbar span::first-letter {
         font-size: 20px;
       }
-      .zoom-control label,
-      .zoom-control input[type="range"] {
-        display: none;
-      }
+      /* zoom-control sempre visível no mobile */
     }
 
     /* Botões de janelas minimizadas na taskbar (do kernel2 — task-item) */
@@ -517,6 +512,95 @@
       padding-bottom: 8px;
     }
 
+    /* ── Relógio na taskbar ── */
+    .clock-widget {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 2px 10px;
+      border-radius: 8px;
+      flex-shrink: 0;
+      line-height: 1.2;
+      transition: background 0.15s;
+      user-select: none;
+    }
+    .clock-widget:hover { background: rgba(255,255,255,0.1); }
+    #clock-time { font-size: 15px; font-weight: 600; }
+    #clock-date { font-size: 10px; opacity: 0.7; white-space: nowrap; }
+
+    /* ── Calendário Popover ── */
+    .calendar-popover {
+      position: fixed;
+      bottom: calc(68px + env(safe-area-inset-bottom));
+      right: 10px;
+      width: 260px;
+      background: rgba(20, 20, 20, 0.85);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 12px;
+      z-index: 200000;
+      display: none;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      animation: openApp 0.2s ease;
+    }
+    .calendar-popover.show { display: block; }
+
+    .cal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .cal-header span {
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+    .cal-header button {
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: white;
+      font-size: 18px;
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .cal-header button:hover { background: rgba(255,255,255,0.25); }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+    }
+    .cal-dia-semana {
+      text-align: center;
+      font-size: 10px;
+      opacity: 0.5;
+      padding: 2px 0 6px;
+      font-weight: 600;
+    }
+    .cal-dia {
+      text-align: center;
+      padding: 5px 2px;
+      font-size: 12px;
+      border-radius: 6px;
+      cursor: default;
+      transition: background 0.1s;
+    }
+    .cal-dia:hover { background: rgba(255,255,255,0.1); }
+    .cal-dia.hoje {
+      background: rgba(0,120,215,0.7);
+      font-weight: 700;
+      border-radius: 50%;
+    }
+    .cal-dia.outro-mes { opacity: 0.3; }
+
     #iframe-relogio {
       position: absolute;
       top: 50%; left: 50%;
@@ -593,12 +677,32 @@
       <label for="zoomSlider">Zoom:</label>
       <input id="zoomSlider" type="range" min="50" max="150" value="100">
     </div>
-	<!-- <div class="calendario">
-  <h3 id="data-atual"></h3>
-  <label>📅 Calendário</label><br>
-  <input id="calendario" class="form-control" type="date" />
-</div>-->
-</div>
+
+    <!-- Relógio + Calendário -->
+    <div class="clock-widget" id="clockWidget" onclick="toggleCalendar(event)">
+      <div id="clock-time">00:00</div>
+      <div id="clock-date">seg, 1 jan</div>
+    </div>
+  </div>
+
+  <!-- Popover Calendário -->
+  <div class="calendar-popover" id="calendarPopover">
+    <div class="cal-header">
+      <button onclick="mudaMes(-1)">&#8249;</button>
+      <span id="cal-mes-ano"></span>
+      <button onclick="mudaMes(1)">&#8250;</button>
+    </div>
+    <div class="cal-grid">
+      <div class="cal-dia-semana">Dom</div>
+      <div class="cal-dia-semana">Seg</div>
+      <div class="cal-dia-semana">Ter</div>
+      <div class="cal-dia-semana">Qua</div>
+      <div class="cal-dia-semana">Qui</div>
+      <div class="cal-dia-semana">Sex</div>
+      <div class="cal-dia-semana">Sáb</div>
+      <div id="cal-dias" style="display:contents"></div>
+    </div>
+  </div>
 
   <!-- Menu Iniciar -->
   <div class="menu" id="startMenu">
@@ -1195,6 +1299,98 @@
 
   <script>
     function alternarFundo() { document.body.classList.toggle('fundo-imagem'); }
+
+  // ── Relógio ──
+  (function relogio() {
+    const timeEl = document.getElementById('clock-time');
+    const dateEl = document.getElementById('clock-date');
+    const dias = ['dom','seg','ter','qua','qui','sex','sáb'];
+    const meses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+    function tick() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2,'0');
+      const m = String(now.getMinutes()).padStart(2,'0');
+      timeEl.textContent = h + ':' + m;
+      dateEl.textContent = dias[now.getDay()] + ', ' + now.getDate() + ' ' + meses[now.getMonth()];
+    }
+    tick();
+    setInterval(tick, 1000);
+  })();
+
+  // ── Calendário Popover ──
+  let calVisivel = false;
+  let calAno, calMes;
+
+  function toggleCalendar(e) {
+    e.stopPropagation();
+    calVisivel = !calVisivel;
+    const pop = document.getElementById('calendarPopover');
+    if (calVisivel) {
+      const hoje = new Date();
+      calAno = hoje.getFullYear();
+      calMes = hoje.getMonth();
+      renderCalendario();
+      pop.classList.add('show');
+    } else {
+      pop.classList.remove('show');
+    }
+  }
+
+  function mudaMes(delta) {
+    calMes += delta;
+    if (calMes < 0)  { calMes = 11; calAno--; }
+    if (calMes > 11) { calMes = 0;  calAno++; }
+    renderCalendario();
+  }
+
+  function renderCalendario() {
+    const mesesNomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                        'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    document.getElementById('cal-mes-ano').textContent = mesesNomes[calMes] + ' ' + calAno;
+
+    const hoje = new Date();
+    const container = document.getElementById('cal-dias');
+    container.innerHTML = '';
+
+    const primeiro = new Date(calAno, calMes, 1).getDay(); // 0=dom
+    const ultimoDia = new Date(calAno, calMes + 1, 0).getDate();
+    const ultimoMesAnterior = new Date(calAno, calMes, 0).getDate();
+
+    // Dias do mês anterior
+    for (let i = primeiro - 1; i >= 0; i--) {
+      const d = document.createElement('div');
+      d.className = 'cal-dia outro-mes';
+      d.textContent = ultimoMesAnterior - i;
+      container.appendChild(d);
+    }
+    // Dias do mês atual
+    for (let i = 1; i <= ultimoDia; i++) {
+      const d = document.createElement('div');
+      d.className = 'cal-dia';
+      if (i === hoje.getDate() && calMes === hoje.getMonth() && calAno === hoje.getFullYear()) {
+        d.classList.add('hoje');
+      }
+      d.textContent = i;
+      container.appendChild(d);
+    }
+    // Dias do próximo mês
+    const total = primeiro + ultimoDia;
+    const resto = total % 7 === 0 ? 0 : 7 - (total % 7);
+    for (let i = 1; i <= resto; i++) {
+      const d = document.createElement('div');
+      d.className = 'cal-dia outro-mes';
+      d.textContent = i;
+      container.appendChild(d);
+    }
+  }
+
+  // Fecha calendário ao clicar fora
+  document.addEventListener('click', function(e) {
+    if (calVisivel && !document.getElementById('calendarPopover').contains(e.target)) {
+      calVisivel = false;
+      document.getElementById('calendarPopover').classList.remove('show');
+    }
+  });
   </script>
 
   <script>
