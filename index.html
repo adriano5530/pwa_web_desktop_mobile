@@ -217,10 +217,10 @@
       display: flex;
       align-items: center;
       justify-content: flex-start;
-      gap: 6px;
       padding: 0 10px;
       z-index: 10000;
       box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+
     }
 
     .start-button {
@@ -237,7 +237,12 @@
       flex-shrink: 0;
     }
 
-    .taskbar.menu-centro {
+    .start-button:hover {
+      background: rgba(255,255,255,0.25);
+      transform: scale(1.05);
+    }
+	
+	.taskbar.menu-centro {
       justify-content: flex-start;
     }
 
@@ -255,8 +260,6 @@
       flex: none;
       max-width: 40%;
     }
-
-    /* zoom-control sempre visível mesmo com menu centralizado */
 
     /* Atalhos fixos da taskbar */
     .taskbar-shortcuts {
@@ -282,8 +285,8 @@
     }
 
     .shortcut-taskbar:hover { background: rgba(255,255,255,0.1); }
-
-    /* No mobile: mostra só emoji, esconde o texto dos atalhos fixos */
+	
+	   /* No mobile: mostra só emoji, esconde o texto dos atalhos fixos */
     @media (max-width: 600px) {
       .taskbar {
         gap: 4px;
@@ -338,7 +341,6 @@
       gap: 4px;
       overflow-x: auto;
       flex: 1;
-      min-width: 0;
       margin: 0 6px;
     }
 
@@ -382,13 +384,10 @@
       background: rgba(12,12,12,0.6);
       backdrop-filter: blur(15px) saturate(160%);
       -webkit-backdrop-filter: blur(15px) saturate(160%);
-      /* taskbar: bottom = 10px + safe-area, height = 50px → topo da taskbar = 60px + safe-area
-         adicionamos 8px de folga visual */
       bottom: calc(68px + env(safe-area-inset-bottom));
       left: 10px;
-      width: 390px;
-      /* nunca crescer mais que o espaço entre o topo da taskbar e o topo da tela, com margens */
-      max-height: calc(100dvh - 68px - env(safe-area-inset-bottom) - 16px);
+      width: 350px;
+      max-height: 50%;
       padding: 10px;
       display: none;
       border-radius: 8px;
@@ -430,7 +429,9 @@
     .sepia-filter { filter: sepia(1); }
     .grey-filter  { filter: grayscale(1) invert(1); }
 
-    /* ── Modo Grade ── */
+   
+	
+ /* ── Modo Grade ── */
     .menu.grade-mode {
       width: 460px;
     }
@@ -600,25 +601,6 @@
       border-radius: 50%;
     }
     .cal-dia.outro-mes { opacity: 0.3; }
-
-    #iframe-relogio {
-      position: absolute;
-      top: 50%; left: 50%;
-      width: 400px; height: 400px;
-      transform: translate(-50%, -50%);
-      border: none;
-      background: transparent;
-      pointer-events: none;
-      z-index: -1;
-    }
-	
-	.calendario {
-  right: 10%;
-  padding: 1rem; 
-  background: #222; 
-  color: #fff; 
-  border-radius: 8px;
-}
 	
   </style>
 
@@ -677,15 +659,14 @@
       <label for="zoomSlider">Zoom:</label>
       <input id="zoomSlider" type="range" min="50" max="150" value="100">
     </div>
-
-    <!-- Relógio + Calendário -->
+	<!-- Relógio + Calendário -->
     <div class="clock-widget" id="clockWidget" onclick="toggleCalendar(event)">
       <div id="clock-time">00:00</div>
       <div id="clock-date">seg, 1 jan</div>
     </div>
-  </div>
+</div>
 
-  <!-- Popover Calendário -->
+<!-- Popover Calendário -->
   <div class="calendar-popover" id="calendarPopover">
     <div class="cal-header">
       <button onclick="mudaMes(-1)">&#8249;</button>
@@ -707,7 +688,7 @@
   <!-- Menu Iniciar -->
   <div class="menu" id="startMenu">
     <input type="text" id="searchInput" placeholder="Pesquisar apps...">
-    <!-- Grade Mode Grid -->
+	<!-- Grade Mode Grid -->
     <div class="grade-grid" id="gradeGrid"></div>
 
     <strong>🌐 Web Apps (PWAs and Others):</strong>
@@ -756,7 +737,6 @@
     <a href="#" onclick="openApp({url:'offline_apps/gravador.html', title:'Gravador 🎤', width: 358, height: 189 })">🎤 Gravador</a>
     <a href="#" onclick="openApp({url:'offline_apps/webdeckos.html', title:'WebDeckOS 🚀'})">🚀 WebDeckOS</a>
 	<a href="#" onclick="openApp({url:'offline_apps/relogio.html', title:'Relógio ⌚', width: 300, height: 300 })">⌚ Relógio</a>
-	<!--<a href="#" onclick="openWindow('offline_apps/spacedesk/spacedesk.html', 'SpaceDesk Local 🖥️')">🖥️ Space_Desk Local</a>-->
     <hr>
 
     <strong>➕ Adicionar novo atalho:</strong>
@@ -813,7 +793,7 @@
     <button class="button" onclick="toggleHUD()">🕶️ Alternar Modo HUD/Holográfico</button>
     <script src="offline_apps/hud-toggle.js"></script>
     <button onclick="alternarMenuCentro()" class="button">Alternar Menu: Centro/Esquerda</button>
-    <button class="button" onclick="toggleGradeMode()">⊞ Modo Grade</button>
+	<button class="button" onclick="toggleGradeMode()">⊞ Modo Grade</button>
 	</details>
 	<hr>
     <strong>📢 Público:</strong>
@@ -905,8 +885,6 @@
     addTaskbarItem(id, config.title);
   }
 
-  // Alias de compatibilidade para os poucos lugares que ainda usam openWindow()
-  function openWindow(url, title) { openApp({ url, title }); }
 
   // ── Foco: ID direto (do kernel2) ──
   function focusWindow(id) {
@@ -1142,7 +1120,7 @@
     });
 
     // Pesquisa no menu
-    document.getElementById('searchInput').addEventListener('input', function() {
+        document.getElementById('searchInput').addEventListener('input', function() {
       const f = this.value.toLowerCase();
 
       // Filtra todos os links da lista (href="#" e nativos)
@@ -1291,16 +1269,12 @@
   });
   </script>
   
-  <!--<script>
-  const hoje = new Date();
-  const opcoes = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  document.getElementById('data-atual').innerText = hoje.toLocaleDateString('pt-BR', opcoes);
-</script>-->
+
 
   <script>
     function alternarFundo() { document.body.classList.toggle('fundo-imagem'); }
-
-  // ── Relógio ──
+	
+	  // ── Relógio ──
   (function relogio() {
     const timeEl = document.getElementById('clock-time');
     const dateEl = document.getElementById('clock-date');
@@ -1391,9 +1365,33 @@
       document.getElementById('calendarPopover').classList.remove('show');
     }
   });
+  
   </script>
 
   <script>
+  /*let menuCentralizado = false;
+
+  function alternarMenuCentro() {
+    const menu = document.querySelector('.menu');
+    const startButton = document.querySelector('.start-button');
+
+    if (!menuCentralizado) {
+      menu.style.left = '50%';
+      menu.style.transform = 'translateX(-50%)';
+      startButton.style.left = '50%';
+      startButton.style.transform = 'translateX(-50%)';
+      startButton.style.position = 'fixed';
+      menuCentralizado = true;
+    } else {
+      menu.style.left = '10px';
+      menu.style.transform = 'none';
+      startButton.style.left = '10px';
+      startButton.style.transform = 'none';
+      startButton.style.position = 'fixed';
+      menuCentralizado = false;
+    }
+  }*/
+  
   let menuCentralizado = false;
 
   function aplicarPosicaoMenu(centralizado) {

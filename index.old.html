@@ -217,10 +217,10 @@
       display: flex;
       align-items: center;
       justify-content: flex-start;
+      gap: 6px;
       padding: 0 10px;
       z-index: 10000;
       box-shadow: 0 15px 35px rgba(0,0,0,0.4);
-
     }
 
     .start-button {
@@ -237,17 +237,35 @@
       flex-shrink: 0;
     }
 
-    .start-button:hover {
-      background: rgba(255,255,255,0.25);
-      transform: scale(1.05);
+    .taskbar.menu-centro {
+      justify-content: flex-start;
     }
+
+    .taskbar.menu-centro .start-button {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .taskbar.menu-centro #tasks-container {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      flex: none;
+      max-width: 40%;
+    }
+
+    /* zoom-control sempre visível mesmo com menu centralizado */
 
     /* Atalhos fixos da taskbar */
     .taskbar-shortcuts {
       display: flex;
       align-items: center;
       gap: 2px;
-      margin-left: 8px;
+      flex-shrink: 0;
+      padding-right: 8px;
+      border-right: 1px solid rgba(255,255,255,0.15);
     }
 
     .shortcut-taskbar {
@@ -264,6 +282,33 @@
     }
 
     .shortcut-taskbar:hover { background: rgba(255,255,255,0.1); }
+
+    /* No mobile: mostra só emoji, esconde o texto dos atalhos fixos */
+    @media (max-width: 600px) {
+      .taskbar {
+        gap: 4px;
+        padding: 0 6px;
+      }
+      .start-button {
+        padding: 0 10px;
+        flex-shrink: 0;
+      }
+      .taskbar-shortcuts {
+        gap: 0;
+        padding-right: 4px;
+      }
+      .shortcut-taskbar {
+        padding: 0 6px;
+        font-size: 20px;
+      }
+      .shortcut-taskbar span {
+        font-size: 0;
+      }
+      .shortcut-taskbar span::first-letter {
+        font-size: 20px;
+      }
+      /* zoom-control sempre visível no mobile */
+    }
 
     /* Botões de janelas minimizadas na taskbar (do kernel2 — task-item) */
     .task-item {
@@ -293,6 +338,7 @@
       gap: 4px;
       overflow-x: auto;
       flex: 1;
+      min-width: 0;
       margin: 0 6px;
     }
 
@@ -336,10 +382,13 @@
       background: rgba(12,12,12,0.6);
       backdrop-filter: blur(15px) saturate(160%);
       -webkit-backdrop-filter: blur(15px) saturate(160%);
-      bottom: 65px;
+      /* taskbar: bottom = 10px + safe-area, height = 50px → topo da taskbar = 60px + safe-area
+         adicionamos 8px de folga visual */
+      bottom: calc(68px + env(safe-area-inset-bottom));
       left: 10px;
-      width: 350px;
-      max-height: 50%;
+      width: 390px;
+      /* nunca crescer mais que o espaço entre o topo da taskbar e o topo da tela, com margens */
+      max-height: calc(100dvh - 68px - env(safe-area-inset-bottom) - 16px);
       padding: 10px;
       display: none;
       border-radius: 8px;
@@ -380,6 +429,177 @@
     /* ── Filtros ── */
     .sepia-filter { filter: sepia(1); }
     .grey-filter  { filter: grayscale(1) invert(1); }
+
+    /* ── Modo Grade ── */
+    .menu.grade-mode {
+      width: 460px;
+    }
+
+    /* No modo grade, esconde apenas os links de apps (não strong, hr, form, buttons, details) */
+    .menu.grade-mode > a {
+      display: none !important;
+    }
+
+    .grade-grid {
+      display: none;
+      grid-template-columns: 1fr;
+      gap: 0;
+      padding: 8px 4px;
+    }
+
+    .menu.grade-mode .grade-grid {
+      display: grid;
+    }
+
+    .grade-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 10px 4px;
+      border-radius: 10px;
+      cursor: pointer;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      text-align: center;
+      color: white;
+      text-decoration: none;
+      transition: background 0.15s, transform 0.1s;
+      min-height: 75px;
+    }
+
+    .grade-item:hover {
+      background: rgba(255,255,255,0.18);
+      transform: scale(1.06);
+    }
+
+    .grade-item .grade-emoji {
+      font-size: 30px;
+      line-height: 1;
+    }
+
+    .grade-item .grade-label {
+      font-size: 10px;
+      line-height: 1.2;
+      max-width: 85px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      opacity: 0.85;
+    }
+
+    /* Seção de categoria dentro do grid */
+    .grade-section {
+      grid-column: 1 / -1;
+    }
+
+    .grade-cat-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 8px 2px 4px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 4px;
+    }
+
+    .grade-section-items {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      padding-bottom: 8px;
+    }
+
+    /* ── Relógio na taskbar ── */
+    .clock-widget {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 2px 10px;
+      border-radius: 8px;
+      flex-shrink: 0;
+      line-height: 1.2;
+      transition: background 0.15s;
+      user-select: none;
+    }
+    .clock-widget:hover { background: rgba(255,255,255,0.1); }
+    #clock-time { font-size: 15px; font-weight: 600; }
+    #clock-date { font-size: 10px; opacity: 0.7; white-space: nowrap; }
+
+    /* ── Calendário Popover ── */
+    .calendar-popover {
+      position: fixed;
+      bottom: calc(68px + env(safe-area-inset-bottom));
+      right: 10px;
+      width: 260px;
+      background: rgba(20, 20, 20, 0.85);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 12px;
+      z-index: 200000;
+      display: none;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      animation: openApp 0.2s ease;
+    }
+    .calendar-popover.show { display: block; }
+
+    .cal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .cal-header span {
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+    .cal-header button {
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: white;
+      font-size: 18px;
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .cal-header button:hover { background: rgba(255,255,255,0.25); }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+    }
+    .cal-dia-semana {
+      text-align: center;
+      font-size: 10px;
+      opacity: 0.5;
+      padding: 2px 0 6px;
+      font-weight: 600;
+    }
+    .cal-dia {
+      text-align: center;
+      padding: 5px 2px;
+      font-size: 12px;
+      border-radius: 6px;
+      cursor: default;
+      transition: background 0.1s;
+    }
+    .cal-dia:hover { background: rgba(255,255,255,0.1); }
+    .cal-dia.hoje {
+      background: rgba(0,120,215,0.7);
+      font-weight: 700;
+      border-radius: 50%;
+    }
+    .cal-dia.outro-mes { opacity: 0.3; }
 
     #iframe-relogio {
       position: absolute;
@@ -457,16 +677,38 @@
       <label for="zoomSlider">Zoom:</label>
       <input id="zoomSlider" type="range" min="50" max="150" value="100">
     </div>
-	<!-- <div class="calendario">
-  <h3 id="data-atual"></h3>
-  <label>📅 Calendário</label><br>
-  <input id="calendario" class="form-control" type="date" />
-</div>-->
-</div>
+
+    <!-- Relógio + Calendário -->
+    <div class="clock-widget" id="clockWidget" onclick="toggleCalendar(event)">
+      <div id="clock-time">00:00</div>
+      <div id="clock-date">seg, 1 jan</div>
+    </div>
+  </div>
+
+  <!-- Popover Calendário -->
+  <div class="calendar-popover" id="calendarPopover">
+    <div class="cal-header">
+      <button onclick="mudaMes(-1)">&#8249;</button>
+      <span id="cal-mes-ano"></span>
+      <button onclick="mudaMes(1)">&#8250;</button>
+    </div>
+    <div class="cal-grid">
+      <div class="cal-dia-semana">Dom</div>
+      <div class="cal-dia-semana">Seg</div>
+      <div class="cal-dia-semana">Ter</div>
+      <div class="cal-dia-semana">Qua</div>
+      <div class="cal-dia-semana">Qui</div>
+      <div class="cal-dia-semana">Sex</div>
+      <div class="cal-dia-semana">Sáb</div>
+      <div id="cal-dias" style="display:contents"></div>
+    </div>
+  </div>
 
   <!-- Menu Iniciar -->
   <div class="menu" id="startMenu">
     <input type="text" id="searchInput" placeholder="Pesquisar apps...">
+    <!-- Grade Mode Grid -->
+    <div class="grade-grid" id="gradeGrid"></div>
 
     <strong>🌐 Web Apps (PWAs and Others):</strong>
     <a href="#" data-id="stedit"       onclick="openApp({url:'https://stedit.app', title:'Smart Text Editor 🗒️'})">🗒️ Smart Text Editor</a>
@@ -571,6 +813,7 @@
     <button class="button" onclick="toggleHUD()">🕶️ Alternar Modo HUD/Holográfico</button>
     <script src="offline_apps/hud-toggle.js"></script>
     <button onclick="alternarMenuCentro()" class="button">Alternar Menu: Centro/Esquerda</button>
+    <button class="button" onclick="toggleGradeMode()">⊞ Modo Grade</button>
 	</details>
 	<hr>
     <strong>📢 Público:</strong>
@@ -901,14 +1144,37 @@
     // Pesquisa no menu
     document.getElementById('searchInput').addEventListener('input', function() {
       const f = this.value.toLowerCase();
-      document.querySelectorAll('#startMenu a').forEach(a => {
+
+      // Filtra todos os links da lista (href="#" e nativos)
+      document.querySelectorAll('#startMenu > a').forEach(a => {
         a.style.display = a.textContent.toLowerCase().includes(f) ? '' : 'none';
+      });
+
+      // Filtra itens do modo grade
+      document.querySelectorAll('#gradeGrid .grade-section').forEach(section => {
+        let algumVisivel = false;
+        section.querySelectorAll('.grade-item').forEach(item => {
+          const visivel = item.dataset.label.toLowerCase().includes(f);
+          item.style.display = visivel ? '' : 'none';
+          if (visivel) algumVisivel = true;
+        });
+        section.querySelector('.grade-cat-title').style.display = algumVisivel ? '' : 'none';
       });
     });
 
     carregarAtalhos();
     aplicarOcultos();
     adicionarBotaoOcultar();
+
+    // Restaura posição do menu
+    menuCentralizado = localStorage.getItem('menuCentralizado') === '1';
+    aplicarPosicaoMenu(menuCentralizado);
+
+    // Restaura modo grade
+    if (localStorage.getItem('gradeMode') === '1') {
+      gradeModeAtivo = false; // toggleGradeMode vai inverter
+      toggleGradeMode();
+    }
   });
 
   // ═══════════════════════════════════════════════════════════════
@@ -1033,30 +1299,183 @@
 
   <script>
     function alternarFundo() { document.body.classList.toggle('fundo-imagem'); }
+
+  // ── Relógio ──
+  (function relogio() {
+    const timeEl = document.getElementById('clock-time');
+    const dateEl = document.getElementById('clock-date');
+    const dias = ['dom','seg','ter','qua','qui','sex','sáb'];
+    const meses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+    function tick() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2,'0');
+      const m = String(now.getMinutes()).padStart(2,'0');
+      timeEl.textContent = h + ':' + m;
+      dateEl.textContent = dias[now.getDay()] + ', ' + now.getDate() + ' ' + meses[now.getMonth()];
+    }
+    tick();
+    setInterval(tick, 1000);
+  })();
+
+  // ── Calendário Popover ──
+  let calVisivel = false;
+  let calAno, calMes;
+
+  function toggleCalendar(e) {
+    e.stopPropagation();
+    calVisivel = !calVisivel;
+    const pop = document.getElementById('calendarPopover');
+    if (calVisivel) {
+      const hoje = new Date();
+      calAno = hoje.getFullYear();
+      calMes = hoje.getMonth();
+      renderCalendario();
+      pop.classList.add('show');
+    } else {
+      pop.classList.remove('show');
+    }
+  }
+
+  function mudaMes(delta) {
+    calMes += delta;
+    if (calMes < 0)  { calMes = 11; calAno--; }
+    if (calMes > 11) { calMes = 0;  calAno++; }
+    renderCalendario();
+  }
+
+  function renderCalendario() {
+    const mesesNomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                        'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    document.getElementById('cal-mes-ano').textContent = mesesNomes[calMes] + ' ' + calAno;
+
+    const hoje = new Date();
+    const container = document.getElementById('cal-dias');
+    container.innerHTML = '';
+
+    const primeiro = new Date(calAno, calMes, 1).getDay(); // 0=dom
+    const ultimoDia = new Date(calAno, calMes + 1, 0).getDate();
+    const ultimoMesAnterior = new Date(calAno, calMes, 0).getDate();
+
+    // Dias do mês anterior
+    for (let i = primeiro - 1; i >= 0; i--) {
+      const d = document.createElement('div');
+      d.className = 'cal-dia outro-mes';
+      d.textContent = ultimoMesAnterior - i;
+      container.appendChild(d);
+    }
+    // Dias do mês atual
+    for (let i = 1; i <= ultimoDia; i++) {
+      const d = document.createElement('div');
+      d.className = 'cal-dia';
+      if (i === hoje.getDate() && calMes === hoje.getMonth() && calAno === hoje.getFullYear()) {
+        d.classList.add('hoje');
+      }
+      d.textContent = i;
+      container.appendChild(d);
+    }
+    // Dias do próximo mês
+    const total = primeiro + ultimoDia;
+    const resto = total % 7 === 0 ? 0 : 7 - (total % 7);
+    for (let i = 1; i <= resto; i++) {
+      const d = document.createElement('div');
+      d.className = 'cal-dia outro-mes';
+      d.textContent = i;
+      container.appendChild(d);
+    }
+  }
+
+  // Fecha calendário ao clicar fora
+  document.addEventListener('click', function(e) {
+    if (calVisivel && !document.getElementById('calendarPopover').contains(e.target)) {
+      calVisivel = false;
+      document.getElementById('calendarPopover').classList.remove('show');
+    }
+  });
   </script>
 
   <script>
   let menuCentralizado = false;
 
-  function alternarMenuCentro() {
+  function aplicarPosicaoMenu(centralizado) {
     const menu = document.querySelector('.menu');
-    const startButton = document.querySelector('.start-button');
-
-    if (!menuCentralizado) {
+    const taskbar = document.querySelector('.taskbar');
+    if (centralizado) {
       menu.style.left = '50%';
       menu.style.transform = 'translateX(-50%)';
-      startButton.style.left = '50%';
-      startButton.style.transform = 'translateX(-50%)';
-      startButton.style.position = 'fixed';
-      menuCentralizado = true;
+      taskbar.classList.add('menu-centro');
     } else {
       menu.style.left = '10px';
       menu.style.transform = 'none';
-      startButton.style.left = '10px';
-      startButton.style.transform = 'none';
-      startButton.style.position = 'fixed';
-      menuCentralizado = false;
+      taskbar.classList.remove('menu-centro');
     }
+  }
+
+  function alternarMenuCentro() {
+    menuCentralizado = !menuCentralizado;
+    aplicarPosicaoMenu(menuCentralizado);
+    localStorage.setItem('menuCentralizado', menuCentralizado ? '1' : '0');
+  }
+
+  // ── Modo Grade ──
+  let gradeModeAtivo = false;
+
+  function construirGrid() {
+    const menu = document.getElementById('startMenu');
+    const grid = document.getElementById('gradeGrid');
+    if (grid.children.length > 0) return; // já construído
+
+    const children = Array.from(menu.childNodes);
+    let currentItems = null;
+
+    children.forEach(node => {
+      if (node.nodeName === 'STRONG') {
+        const section = document.createElement('div');
+        section.className = 'grade-section';
+
+        const title = document.createElement('div');
+        title.className = 'grade-cat-title';
+        title.textContent = node.textContent;
+        section.appendChild(title);
+
+        const itemsRow = document.createElement('div');
+        itemsRow.className = 'grade-section-items';
+        section.appendChild(itemsRow);
+
+        grid.appendChild(section);
+        currentItems = itemsRow;
+      }
+      else if (node.nodeName === 'A') {
+        if (!currentItems) return;
+        const raw = node.textContent.trim();
+        const emojiMatch = raw.match(/^([\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}⌚-⌛⏩-⏳🀄-🃏🌀-🗿🚀-🛿🤀-🤿🥀-🿿\u{FE00}-\u{FE0F}]+)/u);
+        const emoji = emojiMatch ? emojiMatch[1] : '📌';
+        const label = raw.replace(emoji, '').trim();
+
+        const item = document.createElement('div');
+        item.className = 'grade-item';
+        item.dataset.label = raw;
+        item.innerHTML = `<span class="grade-emoji">${emoji}</span><span class="grade-label">${label}</span>`;
+        const href = node.getAttribute('href');
+        if (href && href !== '#') {
+          item.onclick = () => { window.location.href = href; };
+        } else {
+          item.onclick = () => { node.click(); };
+        }
+        currentItems.appendChild(item);
+      }
+    });
+  }
+
+  function toggleGradeMode() {
+    const menu = document.getElementById('startMenu');
+    gradeModeAtivo = !gradeModeAtivo;
+    if (gradeModeAtivo) {
+      construirGrid();
+      menu.classList.add('grade-mode');
+    } else {
+      menu.classList.remove('grade-mode');
+    }
+    localStorage.setItem('gradeMode', gradeModeAtivo ? '1' : '0');
   }
 </script>
 
