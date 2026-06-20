@@ -51,6 +51,7 @@
       overflow: hidden;
       touch-action: none;
       padding-bottom: env(safe-area-inset-bottom);
+      overscroll-behavior: none;
     }
 
     body.fundo-imagem {
@@ -253,12 +254,12 @@
     }
 
     .taskbar.menu-centro #tasks-container {
-      position: static;
-      transform: none;
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
       flex: none;
       max-width: 40%;
-      margin-left: auto;
-      margin-right: 8px;
     }
 
     /* Atalhos fixos da taskbar */
@@ -341,14 +342,15 @@
       gap: 4px;
       overflow-x: auto;
       flex: 1;
-      min-width: 0;
       margin: 0 6px;
+      overscroll-behavior-x: contain;
     }
 
     #tasks-container::-webkit-scrollbar { display: none; }
 
     /* Zoom */
     .zoom-control {
+      margin-left: auto;
       color: white;
       display: flex;
       align-items: center;
@@ -357,8 +359,10 @@
       touch-action: none;
     }
 
-    .zoom-control input[type="range"] { width: 100px; touch-action: none; }
-    #tasks-container { overscroll-behavior-x: contain; }
+    .zoom-control input[type="range"] { 
+    width: 100px; 
+    touch-action: none;
+    }
 
     /* ── Menu Iniciar ── */
     #searchInput {
