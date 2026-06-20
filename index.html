@@ -617,13 +617,361 @@
       border-radius: 50%;
     }
     .cal-dia.outro-mes { opacity: 0.3; }
-	
+
+    /* ═══════════════════════════════════════════════════════════════
+       TEMA: QUADRINHO / MANGÁ ENVELHECIDO (sépia "docinho" de herói)
+       Ativado via body.comic-mode — toggle em comic-toggle.js
+       As fontes Bangers/Comic Neue (base64) são injetadas pelo
+       próprio comic-toggle.js, não ficam neste arquivo.
+       ═══════════════════════════════════════════════════════════════ */
+
+    body.comic-mode {
+      --comic-ink:      #2b1808;
+      --comic-ink-soft:  #4a2c12;
+      --comic-paper-1:  #e8d2a6;
+      --comic-paper-2:  #c9a06a;
+      --comic-paper-3:  #a9774b;
+      --comic-highlight: rgba(255,250,225,0.85);
+      --comic-pop-red:   rgba(176, 60, 35, 0.45);
+      --comic-pop-blue:  rgba(60, 90, 140, 0.30);
+      --glass-bg:      rgba(232, 196, 140, 0.32);
+      --glass-border:  rgba(43, 24, 8, 0.55);
+      --active-accent: rgba(176, 60, 35, 0.55);
+      --comic-halftone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Ccircle cx='3' cy='3' r='1.5' fill='%232b1808' fill-opacity='0.5'/%3E%3C/svg%3E");
+      font-family: 'Comic Neue', 'Comic Sans MS', 'Georgia', serif;
+      background: var(--comic-paper-2) !important;
+    }
+
+    /* ── Papel envelhecido de fundo ── */
+    body.comic-mode::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse at 18% 18%, rgba(255,245,210,0.30), transparent 50%),
+        radial-gradient(ellipse at 82% 86%, rgba(110,60,25,0.40), transparent 55%),
+        radial-gradient(circle at 8% 28%,  rgba(90,55,20,0.22) 0%, transparent 7%),
+        radial-gradient(circle at 72% 12%, rgba(90,55,20,0.16) 0%, transparent 9%),
+        radial-gradient(circle at 55% 78%, rgba(90,55,20,0.20) 0%, transparent 10%),
+        radial-gradient(circle at 92% 55%, rgba(90,55,20,0.14) 0%, transparent 8%),
+        radial-gradient(circle at 28% 92%, rgba(90,55,20,0.18) 0%, transparent 10%),
+        linear-gradient(135deg, var(--comic-paper-1) 0%, var(--comic-paper-2) 45%, var(--comic-paper-3) 100%);
+    }
+
+    /* vinheta + retícula de impressão sobre tudo */
+    body.comic-mode::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse at center, transparent 55%, rgba(35,18,6,0.45) 100%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Ccircle cx='3' cy='3' r='1.5' fill='%232b1808' fill-opacity='0.5'/%3E%3C/svg%3E");
+      background-size: auto, 6px 6px;
+      mix-blend-mode: multiply;
+      opacity: 0.16;
+    }
+
+    body.comic-mode .desktop,
+    body.comic-mode #zoomRoot {
+      z-index: 2;
+    }
+
+    body.comic-mode .taskbar,
+    body.comic-mode .menu,
+    body.comic-mode .calendar-popover {
+      z-index: 2;
+    }
+
+    body.comic-mode .shortcut,
+    body.comic-mode .shortcut-taskbar,
+    body.comic-mode .task-item,
+    body.comic-mode .start-button,
+    body.comic-mode .menu a,
+    body.comic-mode .clock-widget,
+    body.comic-mode .zoom-control,
+    body.comic-mode .cal-header span {
+      color: var(--comic-ink);
+      text-shadow: 1px 1px 0 rgba(255,240,210,0.5);
+    }
+
+    body.comic-mode #startMenu strong,
+    body.comic-mode .grade-cat-title {
+      font-family: 'Bangers', cursive;
+      font-weight: 400;
+      letter-spacing: 0.5px;
+      color: var(--comic-ink);
+    }
+
+    /* ── Filtro de feathering (definido no SVG injetado no body) aplicado às superfícies ── */
+    body.comic-mode .window,
+    body.comic-mode .taskbar,
+    body.comic-mode .menu,
+    body.comic-mode .calendar-popover {
+      filter: url(#comicInkFeather);
+    }
+
+    /* ── Janelas: glassmorfismo "docinho" sépia ── */
+    body.comic-mode .window {
+      background:
+        radial-gradient(ellipse 60% 35% at 22% 8%, var(--comic-highlight), transparent 55%),
+        radial-gradient(ellipse 55% 30% at 88% 92%, var(--comic-pop-red), transparent 65%),
+        linear-gradient(160deg, rgba(255,238,205,0.55) 0%, rgba(220,170,110,0.40) 45%, rgba(170,105,55,0.42) 100%);
+      backdrop-filter: blur(18px) saturate(160%) sepia(0.55);
+      -webkit-backdrop-filter: blur(18px) saturate(160%) sepia(0.55);
+      border: none;
+      border-radius: 14px;
+      /* traço de pena: contorno base + acúmulos assimétricos de tinta
+         (mais grosso em alguns trechos, mais fino em outros) */
+      box-shadow:
+        0 0 0 1.5px var(--comic-ink),
+        2.8px 0.5px 0 0 #150b03,
+        0.3px 2.6px 0.7px 0 #150b03,
+        -2.4px 0.2px 0.6px 0 rgba(21,11,3,0.75),
+        0.2px -2.2px 0.4px 0 rgba(21,11,3,0.6),
+        2px 1.8px 0.9px 0 rgba(21,11,3,0.45),
+        0 0 0 5px rgba(255,225,170,0.30),
+        0 16px 32px rgba(20,10,2,0.55);
+    }
+
+    body.comic-mode .window::before {
+      background:
+        radial-gradient(ellipse 55% 30% at 20% 10%, rgba(255,255,255,0.5), transparent 60%),
+        radial-gradient(ellipse 45% 25% at 90% 88%, var(--comic-pop-blue), transparent 65%);
+      mix-blend-mode: overlay;
+    }
+
+    body.comic-mode .window.ativa {
+      box-shadow:
+        0 0 0 1.8px var(--comic-ink),
+        3.2px 0.6px 0 0 #150b03,
+        0.4px 3px 0.8px 0 #150b03,
+        -2.8px 0.3px 0.7px 0 rgba(21,11,3,0.8),
+        0.3px -2.6px 0.5px 0 rgba(21,11,3,0.65),
+        2.4px 2.2px 1px 0 rgba(21,11,3,0.5),
+        0 0 0 6px rgba(255,225,170,0.4),
+        0 20px 40px rgba(20,10,2,0.65);
+    }
+
+    body.comic-mode .titlebar {
+      background-image:
+        var(--comic-halftone),
+        linear-gradient(180deg, rgba(255,244,215,0.55), rgba(180,120,65,0.30));
+      background-size: 6px 6px, auto;
+      background-blend-mode: multiply, normal;
+      border-bottom: 2.4px solid var(--comic-ink);
+      color: var(--comic-ink);
+      font-family: 'Bangers', 'Comic Neue', cursive;
+      font-weight: 400;
+      font-size: 17px;
+      letter-spacing: 0.6px;
+    }
+
+    body.comic-mode .window-controls span {
+      border: 1.6px solid var(--comic-ink);
+      box-shadow: 1px 1px 0 rgba(43,24,8,0.4);
+    }
+    body.comic-mode .btn-close    { background: #b03c23; }
+    body.comic-mode .btn-minimize { background: #d8a534; }
+    body.comic-mode .btn-maximize { background: #5c8a4a; }
+
+    body.comic-mode .window .resizer {
+      background: rgba(43,24,8,0.18);
+      border-top-left-radius: 6px;
+    }
+
+    /* Conteúdo das janelas: evita caixa preta destoando do papel sépia
+       quando o app embutido (iframe) ainda não tem fundo próprio claro */
+    body.comic-mode .window-content {
+      background: linear-gradient(160deg, #f0ddb8, #d9b888);
+    }
+
+    /* ── Taskbar ── */
+    body.comic-mode .taskbar {
+      background-image:
+        var(--comic-halftone),
+        radial-gradient(ellipse 50% 60% at 50% 0%, rgba(255,244,215,0.35), transparent 60%),
+        linear-gradient(180deg, rgba(220,178,120,0.55), rgba(150,95,55,0.55));
+      background-size: 6px 6px, auto, auto;
+      background-blend-mode: multiply, normal, normal;
+      backdrop-filter: blur(16px) saturate(150%) sepia(0.4);
+      -webkit-backdrop-filter: blur(16px) saturate(150%) sepia(0.4);
+      border: none;
+      box-shadow:
+        0 0 0 1.5px var(--comic-ink),
+        0.3px -2.4px 0.5px 0 #150b03,
+        2.6px 0.3px 0.7px 0 rgba(21,11,3,0.7),
+        -2.2px 0.3px 0.6px 0 rgba(21,11,3,0.55),
+        0.2px 2.4px 0.8px 0 rgba(21,11,3,0.6),
+        0 12px 28px rgba(20,10,2,0.5);
+    }
+
+    body.comic-mode .start-button {
+      background: linear-gradient(160deg, rgba(255,240,210,0.7), rgba(190,130,75,0.55));
+      border: 1.8px solid var(--comic-ink);
+      box-shadow: 1.5px 1.5px 0 rgba(43,24,8,0.35);
+      color: var(--comic-ink);
+      font-family: 'Bangers', 'Comic Neue', cursive;
+      font-size: 16px;
+      letter-spacing: 0.5px;
+    }
+    body.comic-mode .start-button:hover {
+      background: linear-gradient(160deg, rgba(255,250,225,0.85), rgba(210,150,90,0.65));
+    }
+
+    body.comic-mode #clock-time {
+      font-family: 'Bangers', 'Comic Neue', cursive;
+      font-size: 17px;
+      letter-spacing: 0.5px;
+    }
+
+    body.comic-mode .taskbar-shortcuts { border-right: 1.5px solid rgba(43,24,8,0.4); }
+    body.comic-mode .shortcut-taskbar:hover { background: rgba(43,24,8,0.12); }
+
+    body.comic-mode .task-item {
+      background: rgba(255,238,205,0.45);
+      border: 1.4px solid var(--comic-ink);
+      color: var(--comic-ink);
+    }
+    body.comic-mode .task-item:hover  { background: rgba(255,238,205,0.7); }
+    body.comic-mode .task-item.active {
+      background: var(--active-accent);
+      color: #fff4e0;
+      text-shadow: 1px 1px 0 rgba(43,24,8,0.6);
+    }
+
+    body.comic-mode .clock-widget:hover { background: rgba(43,24,8,0.12); }
+    body.comic-mode #clock-date { opacity: 0.75; }
+
+    /* ── Menu Iniciar ── */
+    body.comic-mode .menu {
+      background-image:
+        var(--comic-halftone),
+        radial-gradient(ellipse 60% 40% at 30% 0%, rgba(255,244,215,0.4), transparent 60%),
+        linear-gradient(165deg, rgba(225,185,128,0.92), rgba(150,95,55,0.92));
+      background-size: 6px 6px, auto, auto;
+      background-blend-mode: multiply, normal, normal;
+      backdrop-filter: blur(20px) saturate(150%) sepia(0.4);
+      -webkit-backdrop-filter: blur(20px) saturate(150%) sepia(0.4);
+      border: none;
+      box-shadow:
+        0 0 0 1.6px var(--comic-ink),
+        2.8px 0.4px 0.6px 0 #150b03,
+        0.3px 2.6px 0.7px 0 rgba(21,11,3,0.7),
+        -2.4px 0.3px 0.5px 0 rgba(21,11,3,0.55),
+        0.2px -2.2px 0.4px 0 rgba(21,11,3,0.5),
+        0 0 40px rgba(255,225,170,0.15);
+    }
+
+    body.comic-mode .menu a:hover { background: rgba(43,24,8,0.14); }
+
+    body.comic-mode #searchInput {
+      border: 1.6px solid var(--comic-ink);
+      background: rgba(255,244,222,0.7);
+      color: var(--comic-ink);
+      font-family: 'Comic Neue', 'Comic Sans MS', sans-serif;
+      font-weight: 700;
+    }
+
+    body.comic-mode .button {
+      background: linear-gradient(160deg, rgba(255,240,210,0.85), rgba(190,130,75,0.8));
+      border: 1.6px solid var(--comic-ink);
+      color: var(--comic-ink);
+      box-shadow: 1.5px 1.5px 0 rgba(43,24,8,0.35);
+      font-family: 'Comic Neue', 'Comic Sans MS', sans-serif;
+      font-weight: 700;
+    }
+    body.comic-mode .button:hover { background: rgba(255,250,225,0.95); }
+
+    body.comic-mode .grade-item {
+      background: rgba(255,238,205,0.35);
+      border: 1.4px solid rgba(43,24,8,0.45);
+      color: var(--comic-ink);
+    }
+    body.comic-mode .grade-item:hover { background: rgba(255,238,205,0.6); }
+    body.comic-mode .grade-cat-title {
+      color: rgba(43,24,8,0.65);
+      border-bottom: 1.4px solid rgba(43,24,8,0.3);
+    }
+
+    /* ── Calendário ── */
+    body.comic-mode .calendar-popover {
+      background-image:
+        var(--comic-halftone),
+        linear-gradient(165deg, rgba(225,185,128,0.95), rgba(150,95,55,0.95));
+      background-size: 6px 6px, auto;
+      background-blend-mode: multiply, normal;
+      backdrop-filter: blur(18px) saturate(150%) sepia(0.4);
+      -webkit-backdrop-filter: blur(18px) saturate(150%) sepia(0.4);
+      border: none;
+      box-shadow:
+        0 0 0 1.5px var(--comic-ink),
+        2.6px 0.3px 0.6px 0 #150b03,
+        0.2px 2.4px 0.6px 0 rgba(21,11,3,0.65),
+        -2.2px 0.2px 0.5px 0 rgba(21,11,3,0.5),
+        0 10px 30px rgba(20,10,2,0.5);
+      color: var(--comic-ink);
+    }
+    body.comic-mode .cal-header button {
+      background: rgba(43,24,8,0.12);
+      color: var(--comic-ink);
+      border: 1.4px solid rgba(43,24,8,0.4);
+    }
+    body.comic-mode .cal-header button:hover { background: rgba(43,24,8,0.22); }
+    body.comic-mode .cal-dia { color: var(--comic-ink); }
+    body.comic-mode .cal-dia:hover { background: rgba(43,24,8,0.12); }
+    body.comic-mode .cal-dia.hoje {
+      background: var(--active-accent);
+      color: #fff4e0;
+    }
+
+    /* ── Onomatopeia decorativa flutuante (efeito "docinho" no canto da taskbar) ── */
+    body.comic-mode .taskbar::after {
+      content: "POW!";
+      position: absolute;
+      top: -18px;
+      right: 18px;
+      font-family: 'Bangers', cursive;
+      font-weight: 400;
+      font-size: 24px;
+      color: #f2dca0;
+      -webkit-text-stroke: 1.3px var(--comic-ink);
+      text-shadow: 2px 2px 0 #6b3a14;
+      transform: rotate(6deg);
+      pointer-events: none;
+      opacity: 0.9;
+      z-index: 3;
+    }
+
+    /* No mobile, contornos um pouco mais finos para não pesar a leitura */
+    @media (max-width: 600px) {
+      body.comic-mode .window {
+        box-shadow:
+          0 0 0 1.6px var(--comic-ink),
+          2px 1.5px 0 0.8px #150b03,
+          0 0 0 3.5px rgba(255,225,170,0.3),
+          0 12px 24px rgba(20,10,2,0.5);
+      }
+    }
+
   </style>
 
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4818539305804157" crossorigin="anonymous"></script>
 </head>
 
 <body onload="onLoad()">
+  <!-- Filtro SVG: traço de pena (mão livre, sem tremor) para o tema Quadrinho/Mangá -->
+  <svg width="0" height="0" style="position:absolute; overflow:hidden;">
+    <defs>
+      <filter id="comicInkFeather" x="-10%" y="-10%" width="120%" height="120%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.017 0.024" numOctaves="2" seed="9" result="turb"/>
+        <feDisplacementMap in="SourceGraphic" in2="turb" scale="4.5" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+    </defs>
+  </svg>
   <div id="snapPreview" class="snap-preview"></div>
   <div id="zoomRoot" style="position:fixed;top:0;left:0;width:100vw;height:100dvh;transform-origin:top left;">
 
@@ -808,6 +1156,8 @@
     <script src="offline_apps/grey-toggle.js"></script>
     <button class="button" onclick="toggleHUD()">🕶️ Alternar Modo HUD/Holográfico</button>
     <script src="offline_apps/hud-toggle.js"></script>
+    <button class="button" onclick="toggleComic()">💥 Modo Quadrinho/Mangá</button>
+    <script src="offline_apps/comic-toggle.js"></script>
     <button onclick="alternarMenuCentro()" class="button">Alternar Menu: Centro/Esquerda</button>
 	<button class="button" onclick="toggleGradeMode()">⊞ Modo Grade</button>
 	</details>
@@ -895,6 +1245,7 @@
 
     if (typeof applySepiaToElement === 'function') applySepiaToElement(win);
     if (typeof applyGreyToElement  === 'function') applyGreyToElement(win);
+    if (typeof applyComicToElement === 'function') applyComicToElement(win);
 
     initResizer(win);
     focusWindow(id);

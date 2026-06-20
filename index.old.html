@@ -50,7 +50,20 @@
       background-position: center;
       overflow: hidden;
       touch-action: none;
+      overscroll-behavior: none;
       padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* Previne zoom e swipe de navegação em toda a área do desktop */
+    #zoomRoot {
+      touch-action: none;
+      overscroll-behavior: none;
+    }
+
+    /* Corrige tamanho do touchpad virtual injetado pelo touchpad.js */
+    #custom-touchpad {
+      height: 160px !important;
+      bottom: calc(60px + env(safe-area-inset-bottom)) !important;
     }
 
     body.fundo-imagem {
