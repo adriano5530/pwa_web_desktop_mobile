@@ -731,10 +731,10 @@
          mais grosso no canto inferior-direito, afinando suavemente
          até o canto superior-esquerdo, como pressão real de pena */
       box-shadow:
-        0 0 0 1.3px var(--comic-ink),
-        2.6px 2.2px 0 0.4px #150b03,
-        -1.2px -1px 0 0.2px rgba(21,11,3,0.35),
-        0 0 0 5px rgba(255,225,170,0.30),
+        0 0 0 2px var(--comic-ink),
+        3.6px 3px 0 1px #150b03,
+        -1.8px -1.4px 0 0.5px rgba(21,11,3,0.5),
+        0 0 0 5.5px rgba(255,225,170,0.30),
         0 16px 32px rgba(20,10,2,0.55);
     }
 
@@ -753,10 +753,10 @@
 
     body.comic-mode .window.ativa::before {
       box-shadow:
-        0 0 0 1.5px var(--comic-ink),
-        3px 2.5px 0 0.5px #150b03,
-        -1.4px -1.2px 0 0.25px rgba(21,11,3,0.4),
-        0 0 0 6px rgba(255,225,170,0.4),
+        0 0 0 2.3px var(--comic-ink),
+        4.2px 3.6px 0 1.1px #150b03,
+        -2px -1.7px 0 0.6px rgba(21,11,3,0.55),
+        0 0 0 6.5px rgba(255,225,170,0.4),
         0 20px 40px rgba(20,10,2,0.65);
     }
 
@@ -818,7 +818,7 @@
       position: absolute;
       inset: 0;
       z-index: -1;
-      border-radius: inherit;
+      border-radius: 15px;
       pointer-events: none;
       filter: url(#comicInkFeather);
       background-image:
@@ -885,7 +885,7 @@
       position: absolute;
       inset: 0;
       z-index: -1;
-      border-radius: inherit;
+      border-radius: 8px;
       pointer-events: none;
       filter: url(#comicInkFeather);
       background-image:
@@ -896,9 +896,9 @@
       background-repeat: repeat, no-repeat, no-repeat;
       background-blend-mode: multiply, normal, normal;
       box-shadow:
-        0 0 0 1.4px var(--comic-ink),
-        2.4px 0.4px 0 0.4px #150b03,
-        -1.2px -0.2px 0 0.2px rgba(21,11,3,0.4),
+        0 0 0 2.1px var(--comic-ink),
+        3.6px 0.6px 0 0.9px #150b03,
+        -1.8px -0.3px 0 0.45px rgba(21,11,3,0.5),
         0 0 40px rgba(255,225,170,0.15);
     }
 
@@ -948,7 +948,7 @@
       position: absolute;
       inset: 0;
       z-index: -1;
-      border-radius: inherit;
+      border-radius: 12px;
       pointer-events: none;
       filter: url(#comicInkFeather);
       background-image:
@@ -958,9 +958,9 @@
       background-repeat: repeat, no-repeat;
       background-blend-mode: multiply, normal;
       box-shadow:
-        0 0 0 1.3px var(--comic-ink),
-        2.2px 0.3px 0 0.35px #150b03,
-        -1.1px -0.2px 0 0.2px rgba(21,11,3,0.4),
+        0 0 0 2px var(--comic-ink),
+        3.2px 0.5px 0 0.8px #150b03,
+        -1.6px -0.3px 0 0.4px rgba(21,11,3,0.5),
         0 10px 30px rgba(20,10,2,0.5);
     }
     body.comic-mode .cal-header button {
@@ -992,17 +992,6 @@
       pointer-events: none;
       opacity: 0.9;
       z-index: 3;
-    }
-
-    /* No mobile, contornos um pouco mais finos para não pesar a leitura */
-    @media (max-width: 600px) {
-      body.comic-mode .window::before {
-        box-shadow:
-          0 0 0 1.2px var(--comic-ink),
-          1.8px 1.5px 0 0.3px #150b03,
-          0 0 0 3.5px rgba(255,225,170,0.3),
-          0 12px 24px rgba(20,10,2,0.5);
-      }
     }
 
   </style>
