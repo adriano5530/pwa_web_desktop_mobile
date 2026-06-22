@@ -635,13 +635,10 @@
       --glass-border:  rgba(43, 24, 8, 0.55);
       --active-accent: rgba(176, 60, 35, 0.55);
       --comic-halftone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cdefs%3E%3Cpattern id='p' width='6' height='6' patternUnits='userSpaceOnUse' patternTransform='rotate(-30)'%3E%3Ccircle cx='3' cy='3' r='1.4' fill='%232b1808' fill-opacity='0.5'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='40' height='40' fill='url(%23p)'/%3E%3C/svg%3E");
-      /* Três tiles de retícula simples (sem gradação interna, cada um
-         repete infinitamente sem artefatos de emenda). A "gradação de
-         tamanho" é feita combinando as três camadas com mask-image no
-         próprio elemento (ver uso em .menu/.calendar-popover/.window),
-         que escala com a altura REAL do elemento — diferente da técnica
-         antiga (gradação dentro de um tile fixo de 480px), que quebrava
-         a continuidade ao repetir em painéis mais altos que isso. */
+      /* Três tiles de retícula com pontos de tamanhos crescentes
+         (pequeno/médio/grande). Combinados com mask-image num
+         pseudo-elemento dedicado, criam a gradação vertical que
+         acompanha a altura REAL do elemento (não um tile fixo). */
       --comic-halftone-sm: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30'%3E%3Cdefs%3E%3Cpattern id='hs' width='6' height='6' patternUnits='userSpaceOnUse' patternTransform='rotate(-30)'%3E%3Ccircle cx='3' cy='3' r='1.1' fill='%232b1808' fill-opacity='0.55'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='30' height='30' fill='url(%23hs)'/%3E%3C/svg%3E");
       --comic-halftone-md: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='45' height='45'%3E%3Cdefs%3E%3Cpattern id='hm' width='9' height='9' patternUnits='userSpaceOnUse' patternTransform='rotate(-30)'%3E%3Ccircle cx='4.5' cy='4.5' r='1.9' fill='%232b1808' fill-opacity='0.55'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='45' height='45' fill='url(%23hm)'/%3E%3C/svg%3E");
       --comic-halftone-lg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='65' height='65'%3E%3Cdefs%3E%3Cpattern id='hl' width='13' height='13' patternUnits='userSpaceOnUse' patternTransform='rotate(-30)'%3E%3Ccircle cx='6.5' cy='6.5' r='2.8' fill='%232b1808' fill-opacity='0.55'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='65' height='65' fill='url(%23hl)'/%3E%3C/svg%3E");
@@ -656,10 +653,22 @@
       inset: 0;
       z-index: 1;
       pointer-events: none;
-      background:
-        radial-gradient(ellipse at center, transparent 55%, rgba(35,18,6,0.45) 100%),
-        var(--comic-halftone-grad);
-      background-size: auto, 110px 480px;
+      background-image:
+        var(--comic-halftone-sm),
+        var(--comic-halftone-md),
+        var(--comic-halftone-lg),
+        radial-gradient(ellipse at center, transparent 55%, rgba(35,18,6,0.45) 100%);
+      background-blend-mode: multiply, multiply, multiply, normal;
+      -webkit-mask-image:
+        linear-gradient(to bottom, black 0%, black 35%, transparent 55%),
+        linear-gradient(to bottom, transparent 5%, black 30%, black 65%, transparent 85%),
+        linear-gradient(to bottom, transparent 45%, transparent 60%, black 85%, black 100%),
+        linear-gradient(black, black);
+      mask-image:
+        linear-gradient(to bottom, black 0%, black 35%, transparent 55%),
+        linear-gradient(to bottom, transparent 5%, black 30%, black 65%, transparent 85%),
+        linear-gradient(to bottom, transparent 45%, transparent 60%, black 85%, black 100%),
+        linear-gradient(black, black);
       mix-blend-mode: multiply;
       opacity: 0.16;
     }
@@ -732,11 +741,10 @@
       pointer-events: none;
       filter: url(#comicInkFeather);
       background-image:
-        var(--comic-halftone-grad),
+        var(--comic-halftone-md),
         radial-gradient(ellipse 60% 35% at 22% 8%, var(--comic-highlight), transparent 55%),
         radial-gradient(ellipse 55% 30% at 88% 92%, var(--comic-pop-red), transparent 65%),
         linear-gradient(160deg, rgba(255,238,205,0.55) 0%, rgba(220,170,110,0.40) 45%, rgba(170,105,55,0.42) 100%);
-      background-size: 110px 480px, auto, auto, auto;
       background-blend-mode: multiply, normal, normal, normal;
     }
 
@@ -754,16 +762,16 @@
       border-radius: 14px;
       pointer-events: none;
       box-shadow:
-        inset 0 0 0 3px var(--comic-ink),
-        inset 5px 4px 0 1.5px #150b03,
-        inset -2.5px -2px 0 0.8px rgba(21,11,3,0.6);
+        inset 0 0 0 2px var(--comic-ink),
+        inset 3.5px 3px 0 1px #150b03,
+        inset -1.8px -1.4px 0 0.5px rgba(21,11,3,0.55);
     }
 
     body.comic-mode .window.ativa::after {
       box-shadow:
-        inset 0 0 0 3.4px var(--comic-ink),
-        inset 5.6px 4.6px 0 1.8px #150b03,
-        inset -3px -2.4px 0 1px rgba(21,11,3,0.65);
+        inset 0 0 0 2.4px var(--comic-ink),
+        inset 4px 3.4px 0 1.3px #150b03,
+        inset -2.2px -1.7px 0 0.7px rgba(21,11,3,0.7);
     }
 
     /* Brilho "candy" colorido por cima do conteúdo — fica num elemento
@@ -914,6 +922,26 @@
       content: "";
       position: absolute;
       inset: 0;
+      z-index: -2;
+      border-radius: 8px;
+      pointer-events: none;
+      background-image:
+        radial-gradient(ellipse 60% 40% at 30% 0%, rgba(255,244,215,0.4), transparent 60%),
+        linear-gradient(165deg, rgba(225,185,128,0.92), rgba(150,95,55,0.92));
+      box-shadow:
+        0 0 0 2.1px var(--comic-ink),
+        3.6px 0.6px 0 0.9px #150b03,
+        -1.8px -0.3px 0 0.45px rgba(21,11,3,0.5),
+        0 0 40px rgba(255,225,170,0.15);
+    }
+
+    /* Retícula com gradação isolada num pseudo-elemento próprio, sem
+       mask compartilhada com o contorno — assim um eventual problema
+       de mask-image nunca afeta a visibilidade do traço de pena. */
+    body.comic-mode .menu::after {
+      content: "";
+      position: absolute;
+      inset: 0;
       z-index: -1;
       border-radius: 8px;
       pointer-events: none;
@@ -921,31 +949,17 @@
       background-image:
         var(--comic-halftone-sm),
         var(--comic-halftone-md),
-        var(--comic-halftone-lg),
-        radial-gradient(ellipse 60% 40% at 30% 0%, rgba(255,244,215,0.4), transparent 60%),
-        linear-gradient(165deg, rgba(225,185,128,0.92), rgba(150,95,55,0.92));
-      background-blend-mode: multiply, multiply, multiply, normal, normal;
-      /* Cada camada de retícula (pequena/média/grande) é mascarada numa
-         faixa em % da altura REAL do elemento, com transição suave entre
-         elas — cobre 100% de qualquer altura de painel, sem repetir um
-         tile de tamanho fixo (que falhava em painéis muito altos). */
+        var(--comic-halftone-lg);
+      background-blend-mode: multiply, multiply, multiply;
+      mix-blend-mode: multiply;
       -webkit-mask-image:
-        linear-gradient(to bottom, black 0%, black 35%, transparent 60%),
-        linear-gradient(to bottom, transparent 0%, black 30%, black 65%, transparent 90%),
-        linear-gradient(to bottom, transparent 0%, transparent 55%, black 80%, black 100%),
-        linear-gradient(black, black),
-        linear-gradient(black, black);
+        linear-gradient(to bottom, black 0%, black 35%, transparent 55%),
+        linear-gradient(to bottom, transparent 5%, black 30%, black 65%, transparent 85%),
+        linear-gradient(to bottom, transparent 45%, transparent 60%, black 85%, black 100%);
       mask-image:
-        linear-gradient(to bottom, black 0%, black 35%, transparent 60%),
-        linear-gradient(to bottom, transparent 0%, black 30%, black 65%, transparent 90%),
-        linear-gradient(to bottom, transparent 0%, transparent 55%, black 80%, black 100%),
-        linear-gradient(black, black),
-        linear-gradient(black, black);
-      box-shadow:
-        0 0 0 2.1px var(--comic-ink),
-        3.6px 0.6px 0 0.9px #150b03,
-        -1.8px -0.3px 0 0.45px rgba(21,11,3,0.5),
-        0 0 40px rgba(255,225,170,0.15);
+        linear-gradient(to bottom, black 0%, black 35%, transparent 55%),
+        linear-gradient(to bottom, transparent 5%, black 30%, black 65%, transparent 85%),
+        linear-gradient(to bottom, transparent 45%, transparent 60%, black 85%, black 100%);
     }
 
     body.comic-mode .menu a:hover { background: rgba(43,24,8,0.14); }
@@ -1009,10 +1023,8 @@
       pointer-events: none;
       filter: url(#comicInkFeather);
       background-image:
-        var(--comic-halftone-grad),
+        var(--comic-halftone-md),
         linear-gradient(165deg, rgba(225,185,128,0.95), rgba(150,95,55,0.95));
-      background-size: 220px 480px, auto;
-      background-repeat: repeat, no-repeat;
       background-blend-mode: multiply, normal;
       box-shadow:
         0 0 0 2px var(--comic-ink),
