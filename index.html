@@ -635,13 +635,6 @@
       --glass-border:  rgba(43, 24, 8, 0.55);
       --active-accent: rgba(176, 60, 35, 0.55);
       --comic-halftone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cdefs%3E%3Cpattern id='p' width='6' height='6' patternUnits='userSpaceOnUse' patternTransform='rotate(-30)'%3E%3Ccircle cx='3' cy='3' r='1.4' fill='%232b1808' fill-opacity='0.5'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='40' height='40' fill='url(%23p)'/%3E%3C/svg%3E");
-      /* Três tiles de retícula com pontos de tamanhos crescentes
-         (pequeno/médio/grande). Combinados com mask-image num
-         pseudo-elemento dedicado, criam a gradação vertical que
-         acompanha a altura REAL do elemento (não um tile fixo). */
-      --comic-halftone-sm: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30'%3E%3Cdefs%3E%3Cpattern id='hs' width='6' height='6' patternUnits='userSpaceOnUse' patternTransform='rotate(-30)'%3E%3Ccircle cx='3' cy='3' r='1.1' fill='%232b1808' fill-opacity='0.55'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='30' height='30' fill='url(%23hs)'/%3E%3C/svg%3E");
-      --comic-halftone-md: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='45' height='45'%3E%3Cdefs%3E%3Cpattern id='hm' width='9' height='9' patternUnits='userSpaceOnUse' patternTransform='rotate(-30)'%3E%3Ccircle cx='4.5' cy='4.5' r='1.9' fill='%232b1808' fill-opacity='0.55'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='45' height='45' fill='url(%23hm)'/%3E%3C/svg%3E");
-      --comic-halftone-lg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='65' height='65'%3E%3Cdefs%3E%3Cpattern id='hl' width='13' height='13' patternUnits='userSpaceOnUse' patternTransform='rotate(-30)'%3E%3Ccircle cx='6.5' cy='6.5' r='2.8' fill='%232b1808' fill-opacity='0.55'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='65' height='65' fill='url(%23hl)'/%3E%3C/svg%3E");
       font-family: 'Comic Neue', 'Comic Sans MS', 'Georgia', serif;
     }
 
@@ -654,21 +647,10 @@
       z-index: 1;
       pointer-events: none;
       background-image:
-        var(--comic-halftone-sm),
-        var(--comic-halftone-md),
-        var(--comic-halftone-lg),
+        var(--comic-halftone),
         radial-gradient(ellipse at center, transparent 55%, rgba(35,18,6,0.45) 100%);
-      background-blend-mode: multiply, multiply, multiply, normal;
-      -webkit-mask-image:
-        linear-gradient(to bottom, black 0%, black 35%, transparent 55%),
-        linear-gradient(to bottom, transparent 5%, black 30%, black 65%, transparent 85%),
-        linear-gradient(to bottom, transparent 45%, transparent 60%, black 85%, black 100%),
-        linear-gradient(black, black);
-      mask-image:
-        linear-gradient(to bottom, black 0%, black 35%, transparent 55%),
-        linear-gradient(to bottom, transparent 5%, black 30%, black 65%, transparent 85%),
-        linear-gradient(to bottom, transparent 45%, transparent 60%, black 85%, black 100%),
-        linear-gradient(black, black);
+      background-size: 40px 40px, auto;
+      background-blend-mode: multiply, normal;
       mix-blend-mode: multiply;
       opacity: 0.16;
     }
@@ -741,10 +723,11 @@
       pointer-events: none;
       filter: url(#comicInkFeather);
       background-image:
-        var(--comic-halftone-md),
+        var(--comic-halftone),
         radial-gradient(ellipse 60% 35% at 22% 8%, var(--comic-highlight), transparent 55%),
         radial-gradient(ellipse 55% 30% at 88% 92%, var(--comic-pop-red), transparent 65%),
         linear-gradient(160deg, rgba(255,238,205,0.55) 0%, rgba(220,170,110,0.40) 45%, rgba(170,105,55,0.42) 100%);
+      background-size: 40px 40px, auto, auto, auto;
       background-blend-mode: multiply, normal, normal, normal;
     }
 
@@ -912,54 +895,39 @@
     body.comic-mode .menu {
       position: fixed;
       isolation: isolate;
-      background: transparent;
+      background-image:
+        var(--comic-halftone),
+        radial-gradient(ellipse 60% 40% at 30% 0%, rgba(255,244,215,0.4), transparent 60%),
+        linear-gradient(165deg, rgba(225,185,128,0.92), rgba(150,95,55,0.92));
+      background-size: 40px 40px, auto, auto;
+      /* "local": a retícula rola JUNTO com o conteúdo do menu, cobrindo
+         toda a altura real (inclusive itens abaixo da área visível),
+         em vez de cobrir só os primeiros ~400px como um pseudo-elemento
+         absolute/inset:0 faria dentro de um container com scroll. */
+      background-attachment: local, local, local;
+      background-blend-mode: multiply, normal, normal;
       backdrop-filter: blur(20px) saturate(150%) sepia(0.4);
       -webkit-backdrop-filter: blur(20px) saturate(150%) sepia(0.4);
       border: none;
     }
 
+    /* Contorno (traço de pena) num pseudo-elemento próprio: cobre só a
+       moldura VISÍVEL do menu (não rola com o conteúdo, como convém a
+       uma borda), e tem o filtro de feathering isolado aqui — sem
+       nunca tocar o texto, que fica no elemento principal acima. */
     body.comic-mode .menu::before {
       content: "";
       position: absolute;
       inset: 0;
-      z-index: -2;
+      z-index: 1;
       border-radius: 8px;
       pointer-events: none;
-      background-image:
-        radial-gradient(ellipse 60% 40% at 30% 0%, rgba(255,244,215,0.4), transparent 60%),
-        linear-gradient(165deg, rgba(225,185,128,0.92), rgba(150,95,55,0.92));
+      filter: url(#comicInkFeather);
       box-shadow:
         0 0 0 2.1px var(--comic-ink),
         3.6px 0.6px 0 0.9px #150b03,
         -1.8px -0.3px 0 0.45px rgba(21,11,3,0.5),
         0 0 40px rgba(255,225,170,0.15);
-    }
-
-    /* Retícula com gradação isolada num pseudo-elemento próprio, sem
-       mask compartilhada com o contorno — assim um eventual problema
-       de mask-image nunca afeta a visibilidade do traço de pena. */
-    body.comic-mode .menu::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      z-index: -1;
-      border-radius: 8px;
-      pointer-events: none;
-      filter: url(#comicInkFeather);
-      background-image:
-        var(--comic-halftone-sm),
-        var(--comic-halftone-md),
-        var(--comic-halftone-lg);
-      background-blend-mode: multiply, multiply, multiply;
-      mix-blend-mode: multiply;
-      -webkit-mask-image:
-        linear-gradient(to bottom, black 0%, black 35%, transparent 55%),
-        linear-gradient(to bottom, transparent 5%, black 30%, black 65%, transparent 85%),
-        linear-gradient(to bottom, transparent 45%, transparent 60%, black 85%, black 100%);
-      mask-image:
-        linear-gradient(to bottom, black 0%, black 35%, transparent 55%),
-        linear-gradient(to bottom, transparent 5%, black 30%, black 65%, transparent 85%),
-        linear-gradient(to bottom, transparent 45%, transparent 60%, black 85%, black 100%);
     }
 
     body.comic-mode .menu a:hover { background: rgba(43,24,8,0.14); }
@@ -1023,8 +991,9 @@
       pointer-events: none;
       filter: url(#comicInkFeather);
       background-image:
-        var(--comic-halftone-md),
+        var(--comic-halftone),
         linear-gradient(165deg, rgba(225,185,128,0.95), rgba(150,95,55,0.95));
+      background-size: 40px 40px, auto;
       background-blend-mode: multiply, normal;
       box-shadow:
         0 0 0 2px var(--comic-ink),
