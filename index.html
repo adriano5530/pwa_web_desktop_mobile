@@ -1007,12 +1007,12 @@
     }
     body.comic-mode .button:hover { background: rgba(35,24,13,0.95); }
 
+    /* Sem halftone próprio: o .menu (pai) já tem sua própria retícula de
+       fundo, e como o card é semi-transparente essa retícula aparecia
+       por trás somada à do card, dobrando a densidade de pontos numa
+       mesma área — só o gradiente liso já dá profundidade suficiente. */
     body.comic-mode .grade-item {
-      background-image:
-        var(--comic-halftone),
-        linear-gradient(160deg, rgba(15,10,4,0.45), rgba(15,10,4,0.32));
-      background-size: 40px 40px, auto;
-      background-blend-mode: screen, normal;
+      background: linear-gradient(160deg, rgba(15,10,4,0.45), rgba(15,10,4,0.32));
       border: 1.4px solid rgba(244,230,200,0.45);
       color: var(--comic-ink);
     }
@@ -1030,11 +1030,7 @@
          1px  1px 0 rgba(0,0,0,0.85);
     }
     body.comic-mode .grade-item:hover {
-      background-image:
-        var(--comic-halftone),
-        linear-gradient(160deg, rgba(15,10,4,0.7), rgba(15,10,4,0.55));
-      background-size: 40px 40px, auto;
-      background-blend-mode: screen, normal;
+      background: linear-gradient(160deg, rgba(15,10,4,0.7), rgba(15,10,4,0.55));
     }
     body.comic-mode .grade-cat-title {
       color: rgba(244,230,200,0.92);
