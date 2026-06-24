@@ -688,15 +688,44 @@
     body.comic-mode .zoom-control,
     body.comic-mode .cal-header span {
       color: var(--comic-ink);
-      text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+      /* Contorno escuro em 4 direções (simula text-stroke, com mais
+         compatibilidade) em vez de uma sombra simples 1px: o texto
+         claro precisa se destacar tanto sobre o wallpaper do usuário
+         (que pode ser claro, como céu/trigo) quanto sobre os fundos
+         escuros do menu/taskbar/janelas — uma sombra só na diagonal
+         inferior-direita não dá contraste nas outras bordas da letra. */
+      text-shadow:
+        -1px -1px 0 rgba(0,0,0,0.75),
+         1px -1px 0 rgba(0,0,0,0.75),
+        -1px  1px 0 rgba(0,0,0,0.75),
+         1px  1px 0 rgba(0,0,0,0.75),
+         0    2px 3px rgba(0,0,0,0.6);
     }
 
-    body.comic-mode #startMenu strong,
-    body.comic-mode .grade-cat-title {
+    /* Títulos de app no menu (modo lista) mais grossos: peso de fonte
+       maior + contorno um pouco mais forte para acompanhar o traço,
+       já que aumentar só o font-weight sem reforçar a sombra deixa as
+       pontas mais largas da letra "vazando" contraste nas bordas. */
+    body.comic-mode .menu a {
+      font-weight: 700;
+      text-shadow:
+        -1.2px -1.2px 0 rgba(0,0,0,0.8),
+         1.2px -1.2px 0 rgba(0,0,0,0.8),
+        -1.2px  1.2px 0 rgba(0,0,0,0.8),
+         1.2px  1.2px 0 rgba(0,0,0,0.8),
+         0      2px   3px rgba(0,0,0,0.6);
+    }
+
+    body.comic-mode #startMenu strong {
       font-family: 'Bangers', cursive;
       font-weight: 400;
       letter-spacing: 0.5px;
       color: var(--comic-ink);
+      text-shadow:
+        -1px -1px 0 rgba(0,0,0,0.85),
+         1px -1px 0 rgba(0,0,0,0.85),
+        -1px  1px 0 rgba(0,0,0,0.85),
+         1px  1px 0 rgba(0,0,0,0.85);
     }
 
     /* O filtro de traço de pena (comicInkFeather) é aplicado individualmente
@@ -806,6 +835,11 @@
       font-weight: 400;
       font-size: 17px;
       letter-spacing: 0.6px;
+      text-shadow:
+        -1px -1px 0 rgba(0,0,0,0.8),
+         1px -1px 0 rgba(0,0,0,0.8),
+        -1px  1px 0 rgba(0,0,0,0.8),
+         1px  1px 0 rgba(0,0,0,0.8);
     }
 
     body.comic-mode .titlebar::before {
@@ -982,6 +1016,19 @@
       border: 1.4px solid rgba(244,230,200,0.45);
       color: var(--comic-ink);
     }
+    body.comic-mode .grade-item .grade-label {
+      opacity: 1;
+      font-weight: 700;
+      /* Contorno em 4 direções (mesmo padrão usado nos outros textos
+         claros): uma sombra só de um lado (0 1px 2px) não basta contra
+         o ruído visual da textura halftone por trás, que quebra a
+         silhueta das letras pequenas (10px) em vários pontos. */
+      text-shadow:
+        -1px -1px 0 rgba(0,0,0,0.85),
+         1px -1px 0 rgba(0,0,0,0.85),
+        -1px  1px 0 rgba(0,0,0,0.85),
+         1px  1px 0 rgba(0,0,0,0.85);
+    }
     body.comic-mode .grade-item:hover {
       background-image:
         var(--comic-halftone),
@@ -990,8 +1037,13 @@
       background-blend-mode: screen, normal;
     }
     body.comic-mode .grade-cat-title {
-      color: rgba(244,230,200,0.65);
-      border-bottom: 1px solid rgba(244,230,200,0.18);
+      color: rgba(244,230,200,0.92);
+      border-bottom: 1px solid rgba(244,230,200,0.3);
+      text-shadow:
+        -1px -1px 0 rgba(0,0,0,0.85),
+         1px -1px 0 rgba(0,0,0,0.85),
+        -1px  1px 0 rgba(0,0,0,0.85),
+         1px  1px 0 rgba(0,0,0,0.85);
     }
 
     body.comic-mode hr {
@@ -1036,11 +1088,44 @@
       border: 1.4px solid rgba(244,230,200,0.4);
     }
     body.comic-mode .cal-header button:hover { background: rgba(244,230,200,0.22); }
-    body.comic-mode .cal-dia { color: var(--comic-ink); }
-    body.comic-mode .cal-dia:hover { background: rgba(244,230,200,0.12); }
+    /* Fundo sutil "respiradouro" + contorno: a textura halftone tem
+       tanto pontos claros quanto vãos escuros, então um texto claro
+       com contorno escuro ainda se mistura visualmente nela (ruído na
+       mesma faixa de contraste dos dois lados). Um fundo semi-opaco
+       atrás do número "limpa" essa área antes do texto, o que funciona
+       melhor do que só aumentar o contorno. */
+    body.comic-mode .cal-dia-semana {
+      color: rgba(244,230,200,0.85);
+      background: rgba(8,5,2,0.7);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+      border-radius: 4px;
+      text-shadow:
+        -1px -1px 0 rgba(0,0,0,0.8),
+         1px -1px 0 rgba(0,0,0,0.8),
+        -1px  1px 0 rgba(0,0,0,0.8),
+         1px  1px 0 rgba(0,0,0,0.8);
+    }
+    body.comic-mode .cal-dia {
+      color: var(--comic-ink);
+      background: rgba(8,5,2,0.7);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+      text-shadow:
+        -1px -1px 0 rgba(0,0,0,0.8),
+         1px -1px 0 rgba(0,0,0,0.8),
+        -1px  1px 0 rgba(0,0,0,0.8),
+         1px  1px 0 rgba(0,0,0,0.8);
+    }
+    body.comic-mode .cal-dia:hover { background: rgba(244,230,200,0.22); }
     body.comic-mode .cal-dia.hoje {
       background: var(--active-accent);
       color: #1c1208;
+      text-shadow: none;
+    }
+    body.comic-mode .cal-dia.outro-mes {
+      background: rgba(8,5,2,0.4);
+      opacity: 0.45;
     }
 
     /* ── Onomatopeia decorativa flutuante (efeito "docinho" no canto da taskbar) ── */
