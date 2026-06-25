@@ -195,6 +195,49 @@
 	  border: none;
     }
 
+    /* Aviso discreto quando o iframe não confirma carregamento dentro
+       do tempo esperado (possível bloqueio por X-Frame-Options/CSP).
+       Fica escondido por padrão e oculto novamente se o usuário fechar;
+       não bloqueia interação com o restante da janela. */
+    .iframe-blocked-hint {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translate(-50%, -8px);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(20,20,20,0.92);
+      color: white;
+      font-size: 12.5px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 5;
+      white-space: nowrap;
+    }
+
+    .iframe-blocked-hint.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+      pointer-events: auto;
+    }
+
+    .iframe-blocked-hint button {
+      background: rgba(255,255,255,0.15);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .iframe-blocked-hint button:hover { background: rgba(255,255,255,0.28); }
+
     /* Resizer (do index) */
     .window .resizer {
       position: absolute;
@@ -374,16 +417,79 @@
     #tasks-container { overscroll-behavior-x: contain; }
 
     /* ── Menu Iniciar ── */
+    .search-wrap {
+      flex-shrink: 0;
+      margin-top: 8px;
+      padding-top: 8px;
+      /* Separador sutil: marca visualmente que esta é uma camada fixa
+         por cima do conteúdo que rola, e não apenas o próximo item da
+         lista. */
+      border-top: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .search-inner {
+      position: relative;
+    }
+
     #searchInput {
       width: 100%;
-      padding: 6px 8px;
-      margin-bottom: 8px;
+      box-sizing: border-box;
+      padding: 6px 30px 6px 30px;
       font-size: 14px;
       border: 1px solid #ccc;
       border-radius: 4px;
+      background: rgba(20,20,20,0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: white;
     }
 
-    .menu.show { display: block; }
+    .search-icon {
+      position: absolute;
+      left: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 13px;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .search-clear {
+      position: absolute;
+      right: 4px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.55);
+      font-size: 12px;
+      cursor: pointer;
+      padding: 4px 6px;
+      display: none;
+      line-height: 1;
+    }
+
+    .search-clear:hover { color: white; }
+    .search-clear.show { display: block; }
+
+    .menu-scroll {
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+      /* Fade no topo para indicar que há conteúdo acima fora da vista
+         ao rolar — só aparece quando .menu-scroll não está no topo
+         (classe alternada via JS no evento de scroll). */
+      mask-image: linear-gradient(to bottom, transparent 0, black 14px);
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 14px);
+      transition: mask-image 0.15s, -webkit-mask-image 0.15s;
+    }
+
+    .menu-scroll.at-top {
+      mask-image: none;
+      -webkit-mask-image: none;
+    }
+
+    .menu.show { display: flex; }
 
     .menu a {
       display: block;
@@ -405,9 +511,9 @@
       max-height: 50%;
       padding: 10px;
       display: none;
+      flex-direction: column;
       border-radius: 8px;
       z-index: 100000;
-      overflow-y: auto;
       box-shadow:
         inset 0 0 0.5px rgba(255,255,255,0.4),
         0 0 30px rgba(255,255,255,0.05);
@@ -452,7 +558,7 @@
     }
 
     /* No modo grade, esconde apenas os links de apps (não strong, hr, form, buttons, details) */
-    .menu.grade-mode > a {
+    .menu.grade-mode .menu-scroll > a {
       display: none !important;
     }
 
@@ -948,43 +1054,43 @@
       position: fixed;
       isolation: isolate;
       will-change: transform;
+      /* Contorno (traço de pena duplo) via border + box-shadow inset NO
+         PRÓPRIO ELEMENTO — não num pseudo-elemento ::before absoluto.
+         Essa troca é o que resolve a "linha perdida": um ::before com
+         position:absolute;inset:0 é filho do .menu e portanto ROLA junto
+         com o conteúdo interno (o .menu-scroll, filho, é quem tem
+         overflow-y:auto); ele cobre só os ~450px visíveis no scroll=0 e,
+         ao rolar, sai de vista, expondo sua antiga borda inferior como
+         uma linha solta no meio do menu e deixando tudo abaixo dela sem
+         contorno. Já a `border` (e box-shadow no próprio elemento, não
+         num filho) faz parte da box do elemento, não do seu conteúdo
+         rolável — fica sempre fixa na moldura visível, em qualquer
+         posição de scroll. box-sizing: border-box (global) garante que
+         a border não altera o tamanho total do menu. */
+      border: 1.6px solid var(--comic-ink);
+      box-shadow:
+        inset 0 0 0 3.4px rgba(15,10,4,0.85),
+        inset 0 0 0 4.9px var(--comic-ink);
+      backdrop-filter: blur(20px) saturate(140%) brightness(0.5);
+      -webkit-backdrop-filter: blur(20px) saturate(140%) brightness(0.5);
+    }
+
+    /* A retícula/halftone precisa estar no elemento que de fato rola
+       (.menu-scroll), não no .menu (pai, que agora só serve de moldura
+       fixa). background-attachment:local rola a textura JUNTO com o
+       conteúdo interno, cobrindo toda a altura real — exatamente a
+       mesma lógica de antes, só que aplicada um nível abaixo. */
+    body.comic-mode .menu-scroll {
       background-image:
         var(--comic-halftone),
         radial-gradient(ellipse 60% 40% at 30% 0%, rgba(15,10,4,0.4), transparent 60%),
         linear-gradient(165deg, rgba(20,14,8,0.92), rgba(45,30,17,0.92));
       background-size: 40px 40px, auto, auto;
-      /* no-repeat nas camadas 2 e 3: sem isso (default é "repeat"), um
-         gradiente bem menor que a altura real do conteúdo rolável (com
-         background-attachment:local) se repete ao chegar no fim da
-         "página" visível e cria uma costura/emenda — essa era a linha
-         perdida cruzando o menu. A retícula (camada 1) continua
-         repetindo de propósito (é o padrão de pontos). */
+      /* no-repeat nas camadas 2 e 3: ver comentário original — evita
+         costura/emenda quando o gradiente é menor que o conteúdo. */
       background-repeat: repeat, no-repeat, no-repeat;
-      /* "local": a retícula rola JUNTO com o conteúdo do menu, cobrindo
-         toda a altura real (inclusive itens abaixo da área visível),
-         em vez de cobrir só os primeiros ~400px como um pseudo-elemento
-         absolute/inset:0 faria dentro de um container com scroll. */
       background-attachment: local, local, local;
       background-blend-mode: screen, normal, normal;
-      backdrop-filter: blur(20px) saturate(140%) brightness(0.5);
-      -webkit-backdrop-filter: blur(20px) saturate(140%) brightness(0.5);
-      /* Contorno (traço de pena duplo) via border + box-shadow inset NO
-         PRÓPRIO ELEMENTO — não num pseudo-elemento ::before absoluto.
-         Essa troca é o que resolve a "linha perdida": um ::before com
-         position:absolute;inset:0 é filho do .menu e portanto ROLA junto
-         com o conteúdo interno (o .menu tem overflow-y:auto); ele cobre
-         só os ~450px visíveis no scroll=0 e, ao rolar, sai de vista,
-         expondo sua antiga borda inferior como uma linha solta no meio
-         do menu e deixando tudo abaixo dela sem contorno. Já a `border`
-         (e box-shadow no próprio elemento, não num filho) faz parte da
-         box do elemento, não do seu conteúdo rolável — fica sempre fixa
-         na moldura visível, em qualquer posição de scroll. box-sizing:
-         border-box (global) garante que a border não altera o tamanho
-         total do menu. */
-      border: 1.6px solid var(--comic-ink);
-      box-shadow:
-        inset 0 0 0 3.4px rgba(15,10,4,0.85),
-        inset 0 0 0 4.9px var(--comic-ink);
     }
 
     body.comic-mode .menu a:hover { background: rgba(244,230,200,0.14); }
@@ -997,6 +1103,13 @@
       font-weight: 700;
     }
 
+    body.comic-mode .search-wrap {
+      border-top-color: rgba(244,230,200,0.25);
+    }
+
+    body.comic-mode .search-clear { color: rgba(244,230,200,0.55); }
+    body.comic-mode .search-clear:hover { color: var(--comic-ink); }
+
     body.comic-mode .button {
       background: linear-gradient(160deg, rgba(20,14,8,0.85), rgba(60,40,22,0.8));
       border: 1.6px solid var(--comic-ink);
@@ -1007,10 +1120,11 @@
     }
     body.comic-mode .button:hover { background: rgba(35,24,13,0.95); }
 
-    /* Sem halftone próprio: o .menu (pai) já tem sua própria retícula de
-       fundo, e como o card é semi-transparente essa retícula aparecia
-       por trás somada à do card, dobrando a densidade de pontos numa
-       mesma área — só o gradiente liso já dá profundidade suficiente. */
+    /* Sem halftone próprio: o .menu-scroll (ancestral) já tem sua própria
+       retícula de fundo, e como o card é semi-transparente essa retícula
+       apareceria por trás somada à do card, dobrando a densidade de
+       pontos numa mesma área — só o gradiente liso já dá profundidade
+       suficiente. */
     body.comic-mode .grade-item {
       background: linear-gradient(160deg, rgba(15,10,4,0.45), rgba(15,10,4,0.32));
       border: 1.4px solid rgba(244,230,200,0.45);
@@ -1142,6 +1256,18 @@
       z-index: 3;
     }
 
+    /* Durante arrastar/redimensionar uma janela, os iframes de TODAS as
+       janelas ficam com pointer-events:none. Sem isso, se o cursor passar
+       rápido por cima de um iframe no meio do gesto, o navegador entrega
+       o mousemove/mouseup pro DOCUMENTO INTERNO do iframe (outro contexto
+       de eventos) em vez do documento principal, e o listener que está
+       arrastando a janela para de receber updates — a janela "trava" até
+       o mouse sair de cima do iframe. Bloquear pointer-events nos iframes
+       enquanto o gesto dura resolve, porque o próprio elemento iframe
+       passa a ser transparente a eventos de mouse. */
+    body.interagindo-janela iframe {
+      pointer-events: none;
+    }
   </style>
 
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4818539305804157" crossorigin="anonymous"></script>
@@ -1236,7 +1362,7 @@
 
   <!-- Menu Iniciar -->
   <div class="menu" id="startMenu">
-    <input type="text" id="searchInput" placeholder="Pesquisar apps...">
+   <div class="menu-scroll at-top" id="menuScroll">
 	<!-- Grade Mode Grid -->
     <div class="grade-grid" id="gradeGrid"></div>
 
@@ -1350,6 +1476,14 @@
     <strong>📢 Público:</strong>
     <a href="#" onclick="openApp({url:'public/privacidade.html', title:'Privacidade'})">🔏 Privacidade</a>
     <a href="#" onclick="openApp({url:'public/sobre.html', title:'Sobre'})">📖 Sobre</a>
+   </div>
+    <div class="search-wrap">
+     <div class="search-inner">
+      <span class="search-icon">🔎</span>
+      <input type="text" id="searchInput" placeholder="Pesquisar apps...">
+      <button type="button" id="searchClear" class="search-clear" title="Limpar busca" aria-label="Limpar busca">✖</button>
+     </div>
+    </div>
   </div>
 
   <script>
@@ -1369,7 +1503,7 @@
   function openApp(config) {
     if (typeof config === 'string') config = { url: config, title: arguments[1] || config };
 
-    const id  = 'win-' + Date.now();
+    const id  = 'win-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
     const win = document.createElement('div');
     win.className = 'window';
     win.id = id;
@@ -1410,10 +1544,35 @@
 
     const iframe = document.createElement('iframe');
     iframe.src = config.url;
-    iframe.onerror = () => {
-      alert('Este site pode ter restrições de segurança. Abrindo em nova aba...');
-      window.open(config.url, '_blank');
-    };
+
+    // onerror praticamente nunca dispara para bloqueios de
+    // X-Frame-Options/CSP — esses costumam falhar silenciosamente,
+    // deixando o iframe em branco sem lançar nenhum evento de erro.
+    // Como não é possível inspecionar o conteúdo do iframe entre
+    // origens diferentes (same-origin policy), a forma prática de
+    // sinalizar uma possível falha é por TEMPO: se o 'load' não disparar
+    // dentro de alguns segundos, mostramos um aviso discreto (não um
+    // alert bloqueante) oferecendo abrir em nova aba — sem fechar a
+    // janela automaticamente, pra não gerar falso positivo em sites só
+    // um pouco mais lentos. IMPORTANTE: cobertura é parcial — alguns
+    // navegadores disparam 'load' mesmo numa página de erro interna de
+    // bloqueio (o iframe "carregou" uma página vazia/de erro), caso em
+    // que este aviso não aparece. Não há solução 100% confiável a partir
+    // de JS sem a cooperação do site de destino.
+    let iframeCarregou = false;
+    iframe.addEventListener('load', () => { iframeCarregou = true; });
+
+    const avisoBloqueio = document.createElement('div');
+    avisoBloqueio.className = 'iframe-blocked-hint';
+    avisoBloqueio.innerHTML = `
+      <span>Este site pode não permitir ser exibido aqui.</span>
+      <button type="button">Abrir em nova aba</button>`;
+    avisoBloqueio.querySelector('button').onclick = () => window.open(config.url, '_blank');
+    content.appendChild(avisoBloqueio);
+
+    setTimeout(() => {
+      if (!iframeCarregou) avisoBloqueio.classList.add('show');
+    }, 5000);
 
     content.appendChild(iframe);
 
@@ -1515,10 +1674,18 @@
   // Com scale() no zoomRoot, clientX/Y e getBoundingClientRect já chegam
   // em coordenadas do espaço escalado, então dividimos pelo scale para
   // converter de volta ao espaço de layout (px do elemento).
+  // Salvaguarda: se o usuário soltar o botão do mouse fora da viewport
+  // do navegador (ex: arrasta até sair da janela), o mouseup pode não
+  // disparar em alguns navegadores, deixando 'interagindo-janela' travada
+  // para sempre e bloqueando todos os iframes permanentemente. blur cobre
+  // esse caso.
+  window.addEventListener('blur', () => document.body.classList.remove('interagindo-janela'));
+
   function dragMouseDown(e, win) {
     e.preventDefault();
     e.stopPropagation();
     focusWindow(win.id);
+    document.body.classList.add('interagindo-janela');
 
     const preview = document.getElementById('snapPreview');
     let lastX = e.clientX ?? e.touches?.[0].clientX;
@@ -1552,6 +1719,7 @@
         win.dataset.maximized = '0';
         preview.style.display = 'none';
       }
+      document.body.classList.remove('interagindo-janela');
       document.removeEventListener('mousemove',  elementDrag);
       document.removeEventListener('mouseup',    stopDrag);
       document.removeEventListener('touchmove',  elementDrag);
@@ -1578,6 +1746,7 @@
 
     function dragStart(e) {
       e.preventDefault();
+      document.body.classList.add('interagindo-janela');
       lastX = e.clientX ?? e.touches?.[0].clientX;
       lastY = e.clientY ?? e.touches?.[0].clientY;
       document.addEventListener('mousemove', drag);
@@ -1599,6 +1768,7 @@
     }
 
     function stopDrag() {
+      document.body.classList.remove('interagindo-janela');
       document.removeEventListener('mousemove', drag);
       document.removeEventListener('mouseup',   stopDrag);
       document.removeEventListener('touchmove', drag);
@@ -1639,7 +1809,14 @@
 
   // ── Menu Iniciar ──
   function toggleMenu() {
-    document.getElementById('startMenu').classList.toggle('show');
+    const menu = document.getElementById('startMenu');
+    const abrindo = menu.classList.toggle('show');
+    // Foca a busca só ao ABRIR o menu (não ao fechar) e só em telas sem
+    // teclado virtual sempre visível — em mobile isso ainda funciona bem
+    // porque é resultado direto de um toque do usuário no botão.
+    if (abrindo) {
+      requestAnimationFrame(() => document.getElementById('searchInput').focus());
+    }
   }
 
   // ── onLoad ──
@@ -1672,11 +1849,15 @@
     });
 
     // Pesquisa no menu
-        document.getElementById('searchInput').addEventListener('input', function() {
-      const f = this.value.toLowerCase();
+    const searchInputEl = document.getElementById('searchInput');
+    const searchClearBtn = document.getElementById('searchClear');
+
+    function filtrarMenu() {
+      const f = searchInputEl.value.toLowerCase();
+      searchClearBtn.classList.toggle('show', f.length > 0);
 
       // Filtra todos os links da lista (href="#" e nativos)
-      document.querySelectorAll('#startMenu > a').forEach(a => {
+      document.querySelectorAll('#menuScroll > a').forEach(a => {
         a.style.display = a.textContent.toLowerCase().includes(f) ? '' : 'none';
       });
 
@@ -1690,7 +1871,25 @@
         });
         section.querySelector('.grade-cat-title').style.display = algumVisivel ? '' : 'none';
       });
+    }
+
+    searchInputEl.addEventListener('input', filtrarMenu);
+
+    searchClearBtn.addEventListener('click', () => {
+      searchInputEl.value = '';
+      filtrarMenu();
+      searchInputEl.focus();
     });
+
+    // Fade no topo da lista: só aparece quando há conteúdo rolado acima
+    // (scrollTop > 0). Ao chegar no topo, remove o fade pra não cortar
+    // visualmente o primeiro item.
+    const menuScrollEl = document.getElementById('menuScroll');
+    function atualizarFadeScroll() {
+      menuScrollEl.classList.toggle('at-top', menuScrollEl.scrollTop <= 0);
+    }
+    menuScrollEl.addEventListener('scroll', atualizarFadeScroll);
+    atualizarFadeScroll();
 
     carregarAtalhos();
     aplicarOcultos();
@@ -1712,6 +1911,7 @@
   // ═══════════════════════════════════════════════════════════════
   const desktop   = document.getElementById('desktop');
   const startMenu = document.getElementById('startMenu');
+  const menuScroll = document.getElementById('menuScroll');
   const addShortcutForm = document.getElementById('addShortcutForm');
 
   let dadosDesktop  = JSON.parse(localStorage.getItem('desktopData')) || { atalhosExtras: [], ocultos: [] };
@@ -1731,7 +1931,7 @@
     lnk.href = '#';
     lnk.textContent = `🔗 ${name}`;
     lnk.onclick = e => { e.preventDefault(); openApp({ url, title: name }); toggleMenu(); };
-    startMenu.insertBefore(lnk, addShortcutForm);
+    menuScroll.insertBefore(lnk, addShortcutForm);
   }
 
   function salvarAtalhos() {
@@ -1921,28 +2121,6 @@
   </script>
 
   <script>
-  /*let menuCentralizado = false;
-
-  function alternarMenuCentro() {
-    const menu = document.querySelector('.menu');
-    const startButton = document.querySelector('.start-button');
-
-    if (!menuCentralizado) {
-      menu.style.left = '50%';
-      menu.style.transform = 'translateX(-50%)';
-      startButton.style.left = '50%';
-      startButton.style.transform = 'translateX(-50%)';
-      startButton.style.position = 'fixed';
-      menuCentralizado = true;
-    } else {
-      menu.style.left = '10px';
-      menu.style.transform = 'none';
-      startButton.style.left = '10px';
-      startButton.style.transform = 'none';
-      startButton.style.position = 'fixed';
-      menuCentralizado = false;
-    }
-  }*/
   
   let menuCentralizado = false;
 
@@ -1970,7 +2148,7 @@
   let gradeModeAtivo = false;
 
   function construirGrid() {
-    const menu = document.getElementById('startMenu');
+    const menu = document.getElementById('menuScroll');
     const grid = document.getElementById('gradeGrid');
     if (grid.children.length > 0) return; // já construído
 
