@@ -4,47 +4,260 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Mapa</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    body { margin: 0; font-family: sans-serif; }
-    #map { height: 100vh; width: 100%; display: flex; justify-content: center; align-items: center; }
-    iframe { width: 100%; height: 100%; border: none; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+    }
+
+    /* Abas */
+    #tabs {
+      display: flex;
+      background: #eef2f5;
+      border-bottom: 1px solid #ddd;
+      z-index: 10;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 0.85rem 0.5rem;
+      border: none;
+      background: transparent;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #555;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .tab-btn.active {
+      color: #0078d4;
+      border-bottom-color: #0078d4;
+      background: #fff;
+    }
+    .tab-btn:hover { background: #dde4e9; }
+
+    /* Painéis de controle */
+    .panel {
+      display: none;
+      padding: 0.75rem;
+      gap: 0.5rem;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      flex-wrap: wrap;
+      z-index: 10;
+    }
+    .panel.active { display: flex; }
+
+    .panel input[type="text"] {
+      flex: 1;
+      min-width: 140px;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+    .panel input[type="text"]:focus {
+      outline: none;
+      border-color: #0078d4;
+    }
+
+    .panel select {
+      padding: 0.6rem 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      background: #fff;
+    }
+
+    .panel button {
+      padding: 0.6rem 1.1rem;
+      border: none;
+      border-radius: 6px;
+      background: #0078d4;
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .panel button:hover { background: #005ea3; }
+
+    #status {
+      font-size: 0.85rem;
+      color: #555;
+      padding: 0 0.75rem 0.5rem;
+      min-height: 1.2em;
+      z-index: 10;
+      background: #fff;
+    }
+    #status.error { color: #d93025; }
+    #status.success { color: #1a7f37; }
+
+    #map-wrapper {
+      flex: 1;
+      position: relative;
+    }
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+    #map-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #555;
+      background: #fff;
+      z-index: 5;
+    }
+
+    /* Caixa de informações da rota */
+    #rota-info {
+      position: absolute;
+      bottom: 1rem;
+      left: 1rem;
+      right: 1rem;
+      max-width: 320px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      z-index: 999;
+      display: none;
+    }
+    #rota-info strong { color: #0078d4; }
   </style>
 </head>
 <body>
 
-<div id="map">
-  <p>Obtendo localização...</p>
+<div id="tabs">
+  <button class="tab-btn active" data-tab="busca">🔍 Buscar local</button>
+  <button class="tab-btn" data-tab="rota">🧭 Traçar rota</button>
 </div>
 
+<!-- Painel: Buscar local -->
+<div class="panel active" id="panel-busca">
+  <input type="text" id="input-busca" placeholder="Digite um local ou endereço..." />
+  <button onclick="buscarLocal()">Buscar</button>
+</div>
+
+<!-- Painel: Traçar rota -->
+<div class="panel" id="panel-rota">
+  <input type="text" id="input-destino" placeholder="Destino..." />
+  <select id="modo-transporte">
+    <option value="driving">🚗 Carro</option>
+    <option value="foot">🚶 A pé</option>
+    <option value="bike">🚲 Bicicleta</option>
+  </select>
+  <button onclick="tracarRota()">Traçar rota</button>
+</div>
+
+<div id="status"></div>
+
+<div id="map-wrapper">
+  <div id="map-placeholder"><p>Obtendo localização...</p></div>
+  <div id="map"></div>
+  <div id="rota-info"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-  function exibirMapa(lat, lon) {
-    const bboxSize = 0.005; // reduzido para dar mais precisão
-    const left = lon - bboxSize;
-    const right = lon + bboxSize;
-    const top = lat + bboxSize;
-    const bottom = lat - bboxSize;
+  let minhaLat = null;
+  let minhaLon = null;
+  let ultimoLocalBuscado = "";
 
-    const url = `https://www.openstreetmap.org/export/embed.html?bbox=${left},${bottom},${right},${top}&layer=mapnik&marker=${lat},${lon}`;
-    
-    const iframe = document.createElement("iframe");
-    iframe.src = url;
+  let map = null;
+  let marcadorOrigem = null;
+  let marcadorDestino = null;
+  let linhaRota = null;
 
-    const mapDiv = document.getElementById("map");
-    mapDiv.innerHTML = ""; // limpa o "Obtendo localização..."
-    mapDiv.appendChild(iframe);
+  // ---------- Utilitários ----------
+
+  function setStatus(msg, tipo = "") {
+    const el = document.getElementById("status");
+    el.textContent = msg;
+    el.className = tipo;
   }
+
+  function escondePlaceholder() {
+    const ph = document.getElementById("map-placeholder");
+    if (ph) ph.style.display = "none";
+  }
+
+  function geocodificar(local) {
+    return fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(local)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.length === 0) return null;
+        return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), nome: data[0].display_name };
+      });
+  }
+
+  function limparRota() {
+    if (linhaRota) { map.removeLayer(linhaRota); linhaRota = null; }
+    if (marcadorDestino) { map.removeLayer(marcadorDestino); marcadorDestino = null; }
+    document.getElementById("rota-info").style.display = "none";
+  }
+
+  // ---------- Mapa ----------
+
+  function inicializarMapa(lat, lon) {
+    map = L.map("map").setView([lat, lon], 15);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; colaboradores do OpenStreetMap"
+    }).addTo(map);
+
+    marcadorOrigem = L.marker([lat, lon]).addTo(map).bindPopup("Você está aqui").openPopup();
+    escondePlaceholder();
+  }
+
+  // ---------- Abas ----------
+
+  function trocarAba(tab) {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+    document.querySelectorAll(".panel").forEach(p => p.classList.toggle("active", p.id === `panel-${tab}`));
+    setStatus("");
+    if (tab === "busca") limparRota();
+
+    if (tab === "rota") {
+      const inputDestino = document.getElementById("input-destino");
+      if (!inputDestino.value.trim() && ultimoLocalBuscado) {
+        inputDestino.value = ultimoLocalBuscado;
+      }
+    }
+  }
+
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => trocarAba(btn.dataset.tab));
+  });
+
+  // ---------- Localização ----------
 
   function obterLocalizacao() {
     if (!navigator.geolocation) {
-      document.getElementById("map").innerText = "Geolocalização não suportada.";
+      setStatus("Geolocalização não suportada neste navegador.", "error");
+      document.getElementById("map-placeholder").innerHTML = "<p>Geolocalização não suportada.</p>";
       return;
     }
 
     navigator.geolocation.getCurrentPosition(pos => {
       const { latitude, longitude } = pos.coords;
-      exibirMapa(latitude, longitude);
+      minhaLat = latitude;
+      minhaLon = longitude;
+      inicializarMapa(latitude, longitude);
     }, err => {
-      document.getElementById("map").innerText = "Permissão de localização negada ou erro ao obter posição.";
+      setStatus("Permissão de localização negada ou erro ao obter posição.", "error");
+      document.getElementById("map-placeholder").innerHTML = "<p>Permissão de localização negada ou erro ao obter posição.</p>";
     }, {
       enableHighAccuracy: true,
       timeout: 10000,
@@ -52,9 +265,114 @@
     });
   }
 
+  // ---------- Buscar local ----------
+
+  function buscarLocal() {
+    const local = document.getElementById("input-busca").value.trim();
+    if (!local) {
+      setStatus("Digite um local!", "error");
+      return;
+    }
+    if (!map) {
+      setStatus("O mapa ainda está carregando, aguarde um instante.", "error");
+      return;
+    }
+
+    setStatus("Buscando local...");
+    limparRota();
+
+    geocodificar(local).then(res => {
+      if (!res) {
+        setStatus("Local não encontrado.", "error");
+        return;
+      }
+      map.setView([res.lat, res.lon], 16);
+      if (marcadorDestino) map.removeLayer(marcadorDestino);
+      marcadorDestino = L.marker([res.lat, res.lon]).addTo(map).bindPopup(res.nome).openPopup();
+      ultimoLocalBuscado = local;
+      setStatus(`Local encontrado: ${res.nome}`, "success");
+    }).catch(err => {
+      console.error(err);
+      setStatus("Erro ao buscar local.", "error");
+    });
+  }
+
+  document.getElementById("input-busca").addEventListener("keydown", e => {
+    if (e.key === "Enter") buscarLocal();
+  });
+
+  // ---------- Traçar rota (via OSRM) ----------
+
+  function tracarRota() {
+    const destino = document.getElementById("input-destino").value.trim();
+    const perfil = document.getElementById("modo-transporte").value;
+
+    if (!destino) {
+      setStatus("Digite um destino!", "error");
+      return;
+    }
+    if (!map) {
+      setStatus("O mapa ainda está carregando, aguarde um instante.", "error");
+      return;
+    }
+    if (minhaLat === null || minhaLon === null) {
+      setStatus("Ainda não foi possível obter sua localização atual. Aguarde ou verifique a permissão de GPS.", "error");
+      return;
+    }
+
+    setStatus("Calculando rota...");
+    limparRota();
+
+    geocodificar(destino).then(res => {
+      if (!res) {
+        setStatus("Destino não encontrado.", "error");
+        return;
+      }
+
+      const url = `https://router.project-osrm.org/route/v1/${perfil}/${minhaLon},${minhaLat};${res.lon},${res.lat}?overview=full&geometries=geojson`;
+
+      return fetch(url)
+        .then(r => r.json())
+        .then(data => {
+          if (!data.routes || data.routes.length === 0) {
+            setStatus("Não foi possível calcular uma rota para esse destino.", "error");
+            return;
+          }
+
+          const rota = data.routes[0];
+          const coords = rota.geometry.coordinates.map(c => [c[1], c[0]]); // [lon,lat] -> [lat,lon]
+
+          linhaRota = L.polyline(coords, { color: "#0078d4", weight: 5, opacity: 0.8 }).addTo(map);
+          marcadorDestino = L.marker([res.lat, res.lon]).addTo(map).bindPopup(res.nome);
+
+          map.fitBounds(linhaRota.getBounds(), { padding: [40, 40] });
+
+          const km = (rota.distance / 1000).toFixed(1);
+          const minutos = Math.round(rota.duration / 60);
+          const horas = Math.floor(minutos / 60);
+          const minRestantes = minutos % 60;
+          const tempoTexto = horas > 0 ? `${horas}h ${minRestantes}min` : `${minutos} min`;
+
+          const infoBox = document.getElementById("rota-info");
+          infoBox.innerHTML = `<strong>${km} km</strong> · ${tempoTexto}<br>Até: ${res.nome}`;
+          infoBox.style.display = "block";
+
+          setStatus(`Rota traçada até: ${res.nome}`, "success");
+        });
+    }).catch(err => {
+      console.error(err);
+      setStatus("Erro ao calcular rota.", "error");
+    });
+  }
+
+  document.getElementById("input-destino").addEventListener("keydown", e => {
+    if (e.key === "Enter") tracarRota();
+  });
+
+  // ---------- Início ----------
+
   obterLocalizacao();
 </script>
 
 </body>
 </html>
-
