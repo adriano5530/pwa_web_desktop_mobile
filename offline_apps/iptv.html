@@ -1,67 +1,33 @@
 <!-- Interface -->
- <style>
- /* #Reset & Basics (Inspired by E. Meyers)
+<style>
+/* #Reset básico — apenas para as tags realmente usadas neste wrapper
 ================================================== */
-html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video {
-	margin-left: 10px;
-    	margin-right: 10px;
-	border: 0;
-	font-size: 100%;
-	font: inherit;
-       font-family: 'Open Sans', "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
-	font-weight: 500;
-	text-shadow: 0px 1.3px 0px #fff;
-	vertical-align: baseline; }
-article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section {
-	display: block; }
-body {
-	line-height: 1; }
-ol, ul {
-	list-style: none; }
-blockquote, q {
-	quotes: none; }
-blockquote:before, blockquote:after,
-q:before, q:after {
-	content: '';
-	content: none; }
-table {
-	border-collapse: collapse;
-	border-spacing: 0; }
-sub, sup { font-size: 100%; line-height: 0; position: relative; vertical-align: baseline; }
-sup { top: -0.5em; }
-sub { bottom: -0.25em; }
-.ie7 img { -ms-interpolation-mode: bicubic; }
-
-.green { color: green; }
-.red { color: red; }
-.orange { color: orange; }
+div, span, button, input, ul, li, video {
+  margin-left: 10px;
+  margin-right: 10px;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  font-family: 'Open Sans', "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 500;
+  text-shadow: 0px 1.3px 0px #fff;
+  vertical-align: baseline;
+}
+body { line-height: 1; }
+ul { list-style: none; }
 
 /* #Basic Styles
 ================================================== */
 body {
-	background: #878686;
-	font: 30px 'Open Sans', "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
-	color: #4c4c4c;
-	-webkit-font-smoothing: antialiased; /* Fix for webkit rendering */
-	-webkit-text-size-adjust: 100%;
+  background: #eee url(data:image/png;base64,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);
+  font: 30px 'Open Sans', "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: #4c4c4c;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
 }
 
-.title {
-  text-align: center;
-}
-
-.input{
-width: 70px;
-display: inline;
-justify-content: center;
-margin-bottom: 8px;
-text-align: justify;
-padding-left: 8px;
-padding-right: 8px;
-}
-
-
-
+/* botões metálicos / skeuomórficos
+================================================== */
 .custom-btn {
   width: 190px;
   height: 40px;
@@ -82,12 +48,11 @@ padding-right: 8px;
   outline: none;
   border: 1px solid #ba6;
 }
-.custom-btn:active{
+.custom-btn:active {
   -webkit-transform: translateY(2px);
   transform: translateY(2px);
 }
 
-/* 5 */
 .button {
   backface-visibility: hidden;
   position: relative;
@@ -100,189 +65,169 @@ padding-right: 8px;
   margin-bottom: 25px;
 }
 
-
-/* #Typography
+/* divisores em relevo
 ================================================== */
-h1, h2, h3, h4, h5, h6 {
-	color: #404040;
-	font-family: 'Open Sans', "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
-	font-weight: 600;
-	text-shadow: 0px 1px 0px #fff;
-}
-.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
-	color: #efefef;
-	text-shadow: 0px 2px #000;
-}
-h1 a, h2 a, h3 a, h4 a, h5 a, h6 a { font-weight: inherit; }
-h1 { font-size: 33px; line-height: 33px; margin-bottom: 10px; }
-h2 { font-size: 28px; line-height: 34px; margin-bottom: 8px; }
-h3 { font-size: 21px; line-height: 30px; margin-bottom: 4px; }
-h4 { font-size: 33px; line-height: 24px; }
-h5 { font-size: 33px; line-height: 21px; }
-h6 { font-size: 33px; line-height: 19px; }
-.subheader { color: #777; }
-.dark .subheader {
-	color: #ccc;
-	text-shadow: none;
-}
-
-/* #Links
-================================================== */
-a, a:visited, button { 
-	color: #555; 
-	text-decoration: underline; 
-	outline: 0;
-	-webkit-transition: all 1s ease;
-	-moz-transition: all 1s ease;
-	-o-transition: all 1s ease;
-	transition:all 1s ease;
-}
-
-
-
-
-header {
-	background: #eee;
-	border-top: 6px solid #000;
-	position: fixed;
-	z-index: 1000;
-	top: 0;
-	left: 0;
-	right: 0;
-}
-.mobile header {
-	position: relative;
-}
-header h1.logo {	
-	margin-top: 0;
-	margin-bottom: 0;
-}
-header h1 a {
-	display:block;
-	max-height: 80px;
-}
-nav ul {
-	float: right;
-	height: 61px;
-}
-nav li {
-	list-style: none;
-	display: inline-block;	
-	margin-top: -11px;
-	margin-bottom: 0;
-}
-
-
-/* gradients */
 .bottom-gradient {
-	position:relative;
-	height:0;
-	border-top:1px solid #ddd;
-	border-bottom:1px solid #fff;
-	z-index:-99;
-	clear:both;
-	margin:0;
-}
-.bottom-gradient.between-rows {
-	margin: -15px 0 15px 0;
-}
-.bottom-gradient .container {
-	height: 0;
+  position: relative;
+  height: 0;
+  border-top: 1px solid #ddd;
+  border-bottom: 1px solid #fff;
+  z-index: -99;
+  clear: both;
+  margin: 15px 0;
 }
 .bottom-gradient span {
-    border: medium none;
-    display: block;
-    height: 80px;
-    margin: 0;
-    padding: 0;
-    position: absolute;
-    top: -80px;
-    z-index: -100;
-}	
+  border: medium none;
+  display: block;
+  height: 80px;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  top: -80px;
+  z-index: -100;
+}
 .bottom-gradient .left {
-	background:no-repeat url(../images/combined_gradient.png) 0 0;
-	background:-webkit-radial-gradient(bottom right,circle,rgba(0,0,0,0.06),rgba(0,0,0,0) 80px);
-	background:-moz-radial-gradient(bottom right,rgba(0,0,0,0.06),rgba(0,0,0,0) 80px);
-	width:80px;
-	left:0;
+  background: -webkit-radial-gradient(bottom right, circle, rgba(0,0,0,0.06), rgba(0,0,0,0) 80px);
+  background: -moz-radial-gradient(bottom right, rgba(0,0,0,0.06), rgba(0,0,0,0) 80px);
+  width: 80px;
+  left: 0;
 }
-
 .bottom-gradient .center {
-	background:no-repeat url(../images/combined_gradient.png) -114px 0;
-	background:-webkit-radial-gradient(bottom left,circle,rgba(0,0,0,0.06),rgba(0,0,0,0) 80px);
-	background:-moz-radial-gradient(bottom left,rgba(0,0,0,0.06),rgba(0,0,0,0) 80px);
-	width:80px;
-	right:0;
+  background: -webkit-radial-gradient(bottom left, circle, rgba(0,0,0,0.06), rgba(0,0,0,0) 80px);
+  background: -moz-radial-gradient(bottom left, rgba(0,0,0,0.06), rgba(0,0,0,0) 80px);
+  width: 80px;
+  right: 0;
 }
-
 .bottom-gradient .right {
-	position:relative;
-	margin-left:80px;
-	margin-right:80px;
-	top:-80px;
-	background:url(../images/gradient.png);
-	background:-webkit-linear-gradient(bottom,rgba(0,0,0,0.06),rgba(0,0,0,0) 80px);
-	background:-moz-linear-gradient(bottom,rgba(0,0,0,0.06),rgba(0,0,0,0) 80px);
+  position: relative;
+  margin-left: 80px;
+  margin-right: 80px;
+  top: -80px;
+  background: -webkit-linear-gradient(bottom, rgba(0,0,0,0.06), rgba(0,0,0,0) 80px);
+  background: -moz-linear-gradient(bottom, rgba(0,0,0,0.06), rgba(0,0,0,0) 80px);
 }
 
-.dark .bottom-gradient {
-	border-top: 1px solid #000;
-	border-bottom: 1px solid #2c2c2c;
-	z-index: 0;
+/* status de erro do player */
+.player-status {
+  margin: 8px 10px;
+  font-size: 16px;
+  min-height: 20px;
 }
-.dark .bottom-gradient span {
-	display: none;
-}
+.player-status.error { color: #b33; text-shadow: 0px 1px 0px #fff; }
+.player-status.loading { color: #777; }
 
-/* content-specific containers */
-.welcome-container {
-	padding: 10px 20px;
-}
-
-
-/* End of file to load in last */
-header, body {
-		background: #eee url(data:image/png;base64,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);
+#channel-list li.active {
+  font-weight: 700;
+  text-decoration: underline;
 }
 
-.socialMediaContainer { height: 70px; }
-.socialMediaContainer2 { height: 70px; width: 230px; margin: 30px auto 0px auto;}
-.addthis_inline_follow_toolbox p {margin:0}
+/* abas de fonte (IPTV / Torrent) */
+.source-tabs {
+  margin: 10px;
+}
+.tab-btn {
+  width: auto;
+  height: auto;
+  padding: 8px 20px;
+  font-size: 18px;
+  opacity: 0.6;
+}
+.tab-btn.active {
+  opacity: 1;
+  box-shadow: inset 0px 1px 4px rgba(0,0,0,0.35), 0px 1px 0px rgba(255,255,255,0.6);
+}
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
 
-
-  </style>
-<div>
-  <input type="file" id="upload-m3u" />
-  <input type="text" id="m3u-url" placeholder="Ou insira a URL da lista M3U" />
-  <button class="custom-btn button" id="load-url">Carregar URL</button>
+/* painel torrent */
+.torrent-info {
+  margin: 8px 10px;
+  font-size: 15px;
+  color: #555;
+}
+.torrent-progress {
+  width: calc(100% - 20px);
+  margin: 8px 10px;
+  height: 18px;
+  border-radius: 4px;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.torrent-progress::-webkit-progress-bar {
+  background: #ddd;
+  border-radius: 4px;
+  box-shadow: inset 0px 1px 2px rgba(0,0,0,0.3);
+}
+.torrent-progress::-webkit-progress-value {
+  background: linear-gradient(180deg, #cde 0%, #89a 100%);
+  border-radius: 4px;
+}
+#torrent-files li {
+  cursor: pointer;
+  margin-bottom: 0.4em;
+}
+#torrent-files li.active {
+  font-weight: 700;
+  text-decoration: underline;
+}
+</style>
+<div class="source-tabs">
+  <button class="custom-btn button tab-btn active" id="tab-btn-iptv" data-tab="iptv">📡 IPTV</button>
+  <button class="custom-btn button tab-btn" id="tab-btn-torrent" data-tab="torrent">🧲 Torrent</button>
 </div>
 <div class="bottom-gradient">
+  <span class="left"></span>
+  <span class="center"></span>
+  <span class="right"></span>
+</div>
+
+<div id="tab-panel-iptv" class="tab-panel active">
+  <div>
+    <input type="file" id="upload-m3u" />
+    <input type="text" class="input" id="m3u-url" placeholder="Ou insira a URL da lista M3U" style="width: 260px;" />
+    <button class="custom-btn button" id="load-url">Carregar URL</button>
+  </div>
+  <div class="bottom-gradient">
     <span class="left"></span>
     <span class="center"></span>
     <span class="right"></span>
   </div>
-<input type="text" id="search" placeholder="Buscar canal..." />
-<div id="shortcuts"></div>
-<div class="bottom-gradient">
+  <input type="text" class="input" id="search" placeholder="Buscar canal..." style="width: 200px;" />
+  <div id="shortcuts"></div>
+  <div class="bottom-gradient">
     <span class="left"></span>
     <span class="center"></span>
     <span class="right"></span>
   </div>
-<div id="categories"></div>
-<div class="bottom-gradient">
+  <div id="categories"></div>
+  <div class="bottom-gradient">
     <span class="left"></span>
     <span class="center"></span>
     <span class="right"></span>
   </div>
-<ul id="channel-list" style="max-height: 300px; overflow-y: auto;"></ul>
+  <ul id="channel-list" style="max-height: 300px; overflow-y: auto;"></ul>
+</div>
+
+<div id="tab-panel-torrent" class="tab-panel">
+  <div>
+    <input type="text" class="input" id="magnet-input" placeholder="Cole o magnet link aqui" style="width: 320px;" />
+    <button class="custom-btn button" id="load-magnet">Carregar Torrent</button>
+  </div>
+  <div class="torrent-info" id="torrent-info"></div>
+  <progress class="torrent-progress" id="torrent-progress" value="0" max="100"></progress>
+  <ul id="torrent-files" style="max-height: 200px; overflow-y: auto;"></ul>
+</div>
+
+<div id="player-status" class="player-status"></div>
 <video id="iptv-player" controls autoplay style="width: 100%; max-height: 400px; margin-top: 1em;"></video>
 <div class="bottom-gradient">
-    <span class="left"></span>
-    <span class="center"></span>
-    <span class="right"></span>
-  </div>
-<!-- Dependência -->
+  <span class="left"></span>
+  <span class="center"></span>
+  <span class="right"></span>
+</div>
+<!-- Dependências -->
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
 
 <script>
   const inputFile = document.getElementById('upload-m3u');
@@ -293,13 +238,64 @@ header, body {
   const categoriesDiv = document.getElementById('categories');
   const shortcutsDiv = document.getElementById('shortcuts');
   const video = document.getElementById('iptv-player');
+  const statusDiv = document.getElementById('player-status');
+
+  const tabBtnIptv = document.getElementById('tab-btn-iptv');
+  const tabBtnTorrent = document.getElementById('tab-btn-torrent');
+  const tabPanelIptv = document.getElementById('tab-panel-iptv');
+  const tabPanelTorrent = document.getElementById('tab-panel-torrent');
+
+  const magnetInput = document.getElementById('magnet-input');
+  const loadMagnetBtn = document.getElementById('load-magnet');
+  const torrentInfoDiv = document.getElementById('torrent-info');
+  const torrentProgress = document.getElementById('torrent-progress');
+  const torrentFilesList = document.getElementById('torrent-files');
 
   let allChannels = [];
   let currentCategory = null;
   let shortcuts = [];
+  let activeChannelUrl = null;
+  let hls = null; // instância única do HLS, reutilizada/destruída a cada troca de canal
+
+  let webTorrentClient = null; // cliente WebTorrent único, criado sob demanda
+  let activeTorrent = null;
+  let activeTorrentFilePath = null;
+
+  // ---------- Abas ----------
+  function switchTab(tab) {
+    stopAllPlayback();
+    const isIptv = tab === 'iptv';
+    tabBtnIptv.classList.toggle('active', isIptv);
+    tabBtnTorrent.classList.toggle('active', !isIptv);
+    tabPanelIptv.classList.toggle('active', isIptv);
+    tabPanelTorrent.classList.toggle('active', !isIptv);
+    setStatus('');
+  }
+  tabBtnIptv.addEventListener('click', () => switchTab('iptv'));
+  tabBtnTorrent.addEventListener('click', () => switchTab('torrent'));
+
+  // Para qualquer reprodução ativa (HLS ou torrent) antes de iniciar outra,
+  // evitando que dois streams competam pelo mesmo elemento <video>.
+  function stopAllPlayback() {
+    if (hls) {
+      hls.destroy();
+      hls = null;
+    }
+    if (activeTorrent) {
+      activeTorrent.destroy();
+      activeTorrent = null;
+      activeTorrentFilePath = null;
+      torrentInfoDiv.textContent = '';
+      torrentProgress.value = 0;
+      torrentFilesList.innerHTML = '';
+    }
+    video.removeAttribute('src');
+    video.load();
+  }
 
   inputFile.addEventListener('change', async (e) => {
     const file = e.target.files[0];
+    if (!file) return;
     const text = await file.text();
     loadM3U(text);
   });
@@ -308,32 +304,43 @@ header, body {
     const url = urlInput.value.trim();
     if (!url) return alert("Informe a URL M3U");
 
+    setStatus('Carregando lista...', 'loading');
     try {
       const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const text = await res.text();
       loadM3U(text);
+      setStatus('');
     } catch (err) {
-      alert("Erro ao carregar a URL");
+      console.error(err);
+      setStatus('Erro ao carregar a lista M3U. Verifique a URL ou problemas de CORS.', 'error');
     }
   });
 
   searchInput.addEventListener('input', renderChannels);
 
+  function setStatus(message, kind) {
+    statusDiv.textContent = message;
+    statusDiv.className = 'player-status' + (kind ? ' ' + kind : '');
+  }
+
   function loadM3U(text) {
     allChannels = [];
     shortcuts = [];
     currentCategory = null;
+    activeChannelUrl = null;
 
     const lines = text.split('\n');
     for (let i = 0; i < lines.length; i++) {
       if (lines[i].startsWith('#EXTINF')) {
         const infoLine = lines[i];
         const url = lines[i + 1]?.trim();
+        if (!url) continue;
 
         const nameMatch = infoLine.match(/,(.*)$/);
         const groupMatch = infoLine.match(/group-title="(.*?)"/i);
 
-        const name = nameMatch ? nameMatch[1] : 'Sem Nome';
+        const name = nameMatch ? nameMatch[1].trim() : 'Sem Nome';
         const group = groupMatch ? groupMatch[1] : 'Sem Categoria';
 
         const isFavorite = /#FAV/i.test(infoLine);
@@ -359,8 +366,13 @@ header, body {
 
     shortcuts.forEach(channel => {
       const btn = document.createElement('button');
+      btn.className = 'custom-btn button';
       btn.textContent = channel.name;
+      btn.style.width = 'auto';
+      btn.style.height = 'auto';
       btn.style.margin = '0 0.5em 0.5em 0';
+      btn.style.fontSize = '16px';
+      btn.style.padding = '6px 14px';
       btn.onclick = () => playChannel(channel.url);
       shortcutsDiv.appendChild(btn);
     });
@@ -371,10 +383,17 @@ header, body {
     categoriesDiv.innerHTML = '';
     categories.forEach(cat => {
       const btn = document.createElement('button');
+      btn.className = 'custom-btn button';
       btn.textContent = cat;
+      btn.style.width = 'auto';
+      btn.style.height = 'auto';
       btn.style.margin = '0 0.5em 0.5em 0';
+      btn.style.fontSize = '16px';
+      btn.style.padding = '6px 14px';
+      if (cat === currentCategory) btn.style.fontWeight = '700';
       btn.onclick = () => {
         currentCategory = cat === currentCategory ? null : cat;
+        renderCategories();
         renderChannels();
       };
       categoriesDiv.appendChild(btn);
@@ -395,21 +414,169 @@ header, body {
       li.textContent = channel.name;
       li.style.cursor = 'pointer';
       li.style.marginBottom = '0.5em';
+      if (channel.url === activeChannelUrl) li.className = 'active';
       li.onclick = () => playChannel(channel.url);
       list.appendChild(li);
     }
   }
 
   function playChannel(url) {
+    activeChannelUrl = url;
+    renderChannels();
+    setStatus('Carregando canal...', 'loading');
+
+    // Garante que nenhum outro stream (HLS anterior ou torrent) continue ativo.
+    stopAllPlayback();
+
     if (Hls.isSupported()) {
-      const hls = new Hls();
+      hls = new Hls();
       hls.loadSource(url);
       hls.attachMedia(video);
+
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        setStatus('');
+        video.play().catch(() => {
+          // autoplay pode ser bloqueado pelo navegador; o usuário pode dar play manualmente
+          setStatus('Canal carregado. Toque em play para iniciar.', '');
+        });
+      });
+
+      hls.on(Hls.Events.ERROR, (event, data) => {
+        if (!data.fatal) return;
+        console.error('Erro HLS:', data);
+        switch (data.type) {
+          case Hls.ErrorTypes.NETWORK_ERROR:
+            setStatus('Erro de rede ao carregar o canal (link inválido, offline ou CORS).', 'error');
+            break;
+          case Hls.ErrorTypes.MEDIA_ERROR:
+            setStatus('Erro de mídia ao reproduzir este canal.', 'error');
+            break;
+          default:
+            setStatus('Não foi possível reproduzir este canal.', 'error');
+            break;
+        }
+        hls.destroy();
+        hls = null;
+      });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = url;
+      video.addEventListener('error', () => {
+        setStatus('Não foi possível reproduzir este canal.', 'error');
+      }, { once: true });
+      video.addEventListener('loadedmetadata', () => setStatus(''), { once: true });
     } else {
-      alert("Seu navegador não suporta HLS.");
+      setStatus('Seu navegador não suporta HLS.', 'error');
     }
   }
-</script>
 
+  // ---------- Torrent (P2P via WebTorrent) ----------
+  function getWebTorrentClient() {
+    if (!webTorrentClient) {
+      webTorrentClient = new WebTorrent();
+      webTorrentClient.on('error', (err) => {
+        console.error('Erro WebTorrent:', err);
+        setStatus('Erro no cliente de torrent: ' + (err.message || err), 'error');
+      });
+    }
+    return webTorrentClient;
+  }
+
+  function formatBytes(bytes) {
+    if (!bytes) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let i = 0;
+    while (bytes >= 1024 && i < units.length - 1) {
+      bytes /= 1024;
+      i++;
+    }
+    return `${bytes.toFixed(1)} ${units[i]}`;
+  }
+
+  function isVideoFile(file) {
+    return /\.(mp4|webm|mkv|m4v|ogv)$/i.test(file.name);
+  }
+
+  loadMagnetBtn.addEventListener('click', () => {
+    const magnetURI = magnetInput.value.trim();
+    if (!magnetURI) return alert('Cole um magnet link.');
+    if (!magnetURI.startsWith('magnet:')) {
+      return alert('Isso não parece ser um magnet link válido (deve começar com "magnet:").');
+    }
+    loadTorrent(magnetURI);
+  });
+
+  function loadTorrent(magnetURI) {
+    stopAllPlayback();
+    setStatus('Conectando aos peers...', 'loading');
+    torrentInfoDiv.textContent = 'Buscando metadados do torrent...';
+
+    const client = getWebTorrentClient();
+
+    client.add(magnetURI, (torrent) => {
+      activeTorrent = torrent;
+      renderTorrentFiles(torrent);
+
+      // Seleciona automaticamente o primeiro arquivo de vídeo reconhecido
+      const firstVideo = torrent.files.find(isVideoFile);
+      if (firstVideo) {
+        playTorrentFile(firstVideo);
+      } else {
+        setStatus('Nenhum arquivo de vídeo reconhecido neste torrent. Escolha um arquivo na lista.', 'error');
+      }
+
+      torrent.on('download', () => {
+        if (torrent !== activeTorrent) return; // torrent antigo, ignora
+        const pct = (torrent.progress * 100).toFixed(1);
+        torrentProgress.value = pct;
+        torrentInfoDiv.textContent =
+          `Peers: ${torrent.numPeers} · Baixado: ${formatBytes(torrent.downloaded)} / ${formatBytes(torrent.length)} ` +
+          `· Velocidade: ${formatBytes(torrent.downloadSpeed)}/s · ${pct}%`;
+      });
+
+      torrent.on('done', () => {
+        if (torrent !== activeTorrent) return;
+        torrentInfoDiv.textContent = 'Download completo. Reprodução não depende mais da rede.';
+      });
+
+      torrent.on('error', (err) => {
+        console.error('Erro no torrent:', err);
+        setStatus('Erro ao processar o torrent: ' + (err.message || err), 'error');
+      });
+    });
+  }
+
+  function renderTorrentFiles(torrent) {
+    torrentFilesList.innerHTML = '';
+    torrent.files.forEach((file) => {
+      const li = document.createElement('li');
+      li.textContent = `${file.name} (${formatBytes(file.length)})`;
+      if (file.path === activeTorrentFilePath) li.className = 'active';
+      li.onclick = () => playTorrentFile(file);
+      torrentFilesList.appendChild(li);
+    });
+  }
+
+  function playTorrentFile(file) {
+    activeTorrentFilePath = file.path;
+    if (activeTorrent) renderTorrentFiles(activeTorrent);
+
+    if (!isVideoFile(file)) {
+      setStatus(`"${file.name}" não parece ser um formato de vídeo suportado pelo navegador.`, 'error');
+    }
+
+    setStatus('Preparando streaming do arquivo...', 'loading');
+    video.removeAttribute('src');
+    video.load();
+
+    // renderTo faz o streaming progressivo direto no elemento <video>,
+    // sem precisar esperar o torrent terminar de baixar.
+    file.renderTo(video, { autoplay: true }, (err) => {
+      if (err) {
+        console.error('Erro ao renderizar arquivo do torrent:', err);
+        setStatus('Não foi possível reproduzir este arquivo (formato/codec pode não ser suportado pelo navegador).', 'error');
+        return;
+      }
+      setStatus('');
+    });
+  }
+</script>
