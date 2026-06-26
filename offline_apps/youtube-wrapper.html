@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Assistir YouTube</title>
   <style>
+    * { box-sizing: border-box; }
     body {
       font-family: sans-serif;
       background: #111;
@@ -16,37 +17,295 @@
       font-size: 16px;
       margin: 8px;
     }
+    input#ytlink, input#search {
+      width: min(420px, 70vw);
+    }
+    button {
+      background: #222;
+      color: white;
+      border: 1px solid #444;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover { background: #2c2c2c; }
+    button:disabled { opacity: 0.5; cursor: default; }
+
+    .divider {
+      max-width: 800px;
+      margin: 28px auto;
+      border: none;
+      border-top: 1px solid #2a2a2a;
+    }
+
+    .search-status {
+      min-height: 20px;
+      font-size: 13px;
+      color: #888;
+      margin-top: 4px;
+    }
+    .search-status.error { color: #e06060; }
+
+    #results {
+      max-width: 800px;
+      margin: 16px auto 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+      text-align: left;
+    }
+    .result-card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .result-card:hover {
+      border-color: #555;
+      transform: translateY(-2px);
+    }
+    .result-card img {
+      width: 100%;
+      display: block;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      background: #000;
+    }
+    .result-meta {
+      padding: 8px 10px;
+    }
+    .result-title {
+      font-size: 13px;
+      line-height: 1.35;
+      max-height: 2.7em;
+      overflow: hidden;
+      margin: 0 0 4px;
+    }
+    .result-channel {
+      font-size: 11px;
+      color: #999;
+      margin: 0;
+    }
+
     iframe {
       margin-top: 20px;
       width: 100%;
       max-width: 800px;
       height: 450px;
       border: none;
+      border-radius: 6px;
+      background: #000;
     }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #444;
+      border-top-color: #ccc;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
   <h1>Assistir vídeo do YouTube</h1>
 
-  <input id="ytlink" type="text" placeholder="Cole o link do YouTube aqui" size="50"/>
-  <button onclick="embed()">Carregar vídeo</button>
+  <div>
+    <input id="ytlink" type="text" placeholder="Cole o link do YouTube aqui" size="50"/>
+    <button onclick="embedFromLink()">Carregar vídeo</button>
+  </div>
 
   <div id="player-area">
     <iframe id="player" allowfullscreen></iframe>
   </div>
 
+  <hr class="divider" />
+
+  <div>
+    <input id="search" type="text" placeholder="Buscar vídeos no YouTube..." size="50" />
+    <button id="searchBtn" onclick="searchVideos()">Buscar</button>
+  </div>
+  <div id="searchStatus" class="search-status"></div>
+  <div id="results"></div>
+
   <script>
-    function embed() {
+    // ---------- Embed por link direto ----------
+    function extractVideoId(input) {
+      const match = input.match(/(?:v=|\/shorts\/|\/embed\/|youtu\.be\/)([0-9A-Za-z_-]{11})/);
+      return match ? match[1] : null;
+    }
+
+    function loadVideo(videoId) {
+      document.getElementById("player").src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+      document.getElementById("player").scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    function embedFromLink() {
       const input = document.getElementById("ytlink").value.trim();
-      const match = input.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
-      if (!match) {
+      const videoId = extractVideoId(input);
+      if (!videoId) {
         alert("Link inválido. Cole um link direto de vídeo do YouTube.");
         return;
       }
-      const videoId = match[1];
-      document.getElementById("player").src = `https://www.youtube.com/embed/${videoId}`;
+      loadVideo(videoId);
     }
+
+    document.getElementById("ytlink").addEventListener("keypress", (e) => {
+      if (e.key === "Enter") embedFromLink();
+    });
+
+    // ---------- Busca (sem API key — workaround) ----------
+    // Aviso: isto depende da estrutura interna das páginas do YouTube
+    // e de proxies CORS públicos de terceiros. Pode parar de funcionar
+    // sem aviso se o YouTube mudar o HTML ou os proxies caírem.
+
+    const CORS_PROXIES = [
+      (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+      (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+      (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+    ];
+
+    function setStatus(msg, isError = false) {
+      const el = document.getElementById("searchStatus");
+      el.innerHTML = msg;
+      el.className = "search-status" + (isError ? " error" : "");
+    }
+
+    async function fetchViaProxies(targetUrl) {
+      let lastError = null;
+      for (const buildProxyUrl of CORS_PROXIES) {
+        try {
+          const res = await fetch(buildProxyUrl(targetUrl));
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const text = await res.text();
+          if (text && text.length > 500) return text;
+          throw new Error("Resposta vazia ou suspeita");
+        } catch (err) {
+          lastError = err;
+          // tenta o próximo proxy da lista
+        }
+      }
+      throw lastError || new Error("Todos os proxies falharam");
+    }
+
+    function parseYoutubeResults(html) {
+      // O YouTube embute os dados dos resultados num objeto JS chamado ytInitialData
+      const marker = "var ytInitialData = ";
+      const startIdx = html.indexOf(marker);
+      if (startIdx === -1) {
+        throw new Error("Não foi possível localizar dados de resultados na página.");
+      }
+      const jsonStart = startIdx + marker.length;
+      const scriptCloseTag = "</" + "script>";
+      const jsonEnd = html.indexOf(";" + scriptCloseTag, jsonStart);
+      const jsonStr = html.slice(jsonStart, jsonEnd);
+
+      let data;
+      try {
+        data = JSON.parse(jsonStr);
+      } catch (e) {
+        throw new Error("Falha ao interpretar dados de resultados.");
+      }
+
+      const videos = [];
+      try {
+        const sections =
+          data.contents.twoColumnSearchResultsRenderer.primaryContents
+            .sectionListRenderer.contents;
+
+        for (const section of sections) {
+          const items = section.itemSectionRenderer?.contents;
+          if (!items) continue;
+          for (const item of items) {
+            const vr = item.videoRenderer;
+            if (!vr) continue;
+            const videoId = vr.videoId;
+            const title = vr.title?.runs?.map(r => r.text).join("") || "(sem título)";
+            const channel = vr.ownerText?.runs?.map(r => r.text).join("") || "";
+            const thumb = vr.thumbnail?.thumbnails?.slice(-1)[0]?.url || "";
+            if (videoId) videos.push({ videoId, title, channel, thumb });
+          }
+        }
+      } catch (e) {
+        throw new Error("Estrutura de resultados inesperada (YouTube pode ter mudado o layout).");
+      }
+
+      return videos;
+    }
+
+    function renderResults(videos) {
+      const container = document.getElementById("results");
+      container.innerHTML = "";
+
+      if (videos.length === 0) {
+        setStatus("Nenhum vídeo encontrado.");
+        return;
+      }
+
+      videos.slice(0, 12).forEach(v => {
+        const card = document.createElement("div");
+        card.className = "result-card";
+        card.onclick = () => loadVideo(v.videoId);
+
+        const img = document.createElement("img");
+        img.src = v.thumb;
+        img.loading = "lazy";
+        img.alt = v.title;
+
+        const meta = document.createElement("div");
+        meta.className = "result-meta";
+
+        const title = document.createElement("p");
+        title.className = "result-title";
+        title.textContent = v.title;
+
+        const channel = document.createElement("p");
+        channel.className = "result-channel";
+        channel.textContent = v.channel;
+
+        meta.appendChild(title);
+        meta.appendChild(channel);
+        card.appendChild(img);
+        card.appendChild(meta);
+        container.appendChild(card);
+      });
+    }
+
+    async function searchVideos() {
+      const query = document.getElementById("search").value.trim();
+      if (!query) return;
+
+      const btn = document.getElementById("searchBtn");
+      btn.disabled = true;
+      document.getElementById("results").innerHTML = "";
+      setStatus('<span class="spinner"></span>Buscando...');
+
+      const targetUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+
+      try {
+        const html = await fetchViaProxies(targetUrl);
+        const videos = parseYoutubeResults(html);
+        renderResults(videos);
+        if (videos.length > 0) setStatus(`${videos.length} resultado(s) encontrado(s).`);
+      } catch (err) {
+        console.error(err);
+        setStatus(
+          "Busca indisponível agora (workaround sem API pode falhar). Tente novamente ou cole o link direto do vídeo acima.",
+          true
+        );
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById("search").addEventListener("keypress", (e) => {
+      if (e.key === "Enter") searchVideos();
+    });
   </script>
 </body>
 </html>
-
