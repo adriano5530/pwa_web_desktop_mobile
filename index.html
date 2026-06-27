@@ -67,7 +67,9 @@
     }
 
     body.fundo-imagem {
-      background: url("images/trigo.jpg") no-repeat center center;
+      background-image: var(--wallpaper-url, url("images/trigo.jpg"));
+      background-repeat: no-repeat;
+      background-position: center center;
       background-size: cover;
       background-attachment: fixed;
     }
@@ -671,6 +673,83 @@
       animation: openApp 0.2s ease;
     }
     .calendar-popover.show { display: block; }
+
+    /* ── Seletor de Plano de Fundo (Wallpapers) ── */
+    .wallpaper-popover {
+      position: fixed;
+      bottom: calc(68px + env(safe-area-inset-bottom));
+      right: 10px;
+      width: 280px;
+      background: rgba(20, 20, 20, 0.85);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 12px;
+      z-index: 200000;
+      display: none;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      animation: openApp 0.2s ease;
+    }
+    .wallpaper-popover.show { display: block; }
+
+    .wallpaper-popover .wp-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .wallpaper-popover .wp-header button {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      opacity: 0.7;
+      line-height: 1;
+    }
+    .wallpaper-popover .wp-header button:hover { opacity: 1; }
+
+    .wp-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .wp-thumb {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      border-radius: 8px;
+      background-size: cover;
+      background-position: center;
+      cursor: pointer;
+      border: 2px solid rgba(255,255,255,0.15);
+      transition: border-color 0.15s ease, transform 0.15s ease;
+    }
+    .wp-thumb:hover { transform: scale(1.05); border-color: rgba(255,255,255,0.5); }
+    .wp-thumb.selected { border-color: var(--active-accent, #0078d7); box-shadow: 0 0 0 1px var(--active-accent, #0078d7); }
+    .wp-thumb.selected::after {
+      content: "✓";
+      position: absolute;
+      top: 2px;
+      right: 4px;
+      font-size: 12px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    }
+    .wp-none {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 6px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.08);
+      cursor: pointer;
+      font-size: 12px;
+      border: 2px solid rgba(255,255,255,0.15);
+    }
+    .wp-none:hover { background: rgba(255,255,255,0.15); }
+    .wp-none.selected { border-color: var(--active-accent, #0078d7); }
 
     .cal-header {
       display: flex;
@@ -1360,6 +1439,24 @@
     </div>
   </div>
 
+  <!-- Seletor de Plano de Fundo -->
+  <div class="wallpaper-popover" id="wallpaperPopover">
+    <div class="wp-header">
+      <span>🌄 Plano de Fundo</span>
+      <button onclick="toggleWallpaperPopover(event)">✕</button>
+    </div>
+    <div class="wp-grid" id="wp-grid">
+      <div class="wp-none" onclick="desativarFundoImagem()">Sem imagem (padrão)</div>
+      <div class="wp-thumb" data-file="trigo.jpg" style="background-image:url('images/trigo.jpg')" onclick="selecionarFundo('trigo.jpg')"></div>
+      <div class="wp-thumb" data-file="relaxing.jpg" style="background-image:url('images/relaxing.jpg')" onclick="selecionarFundo('relaxing.jpg')"></div>
+      <div class="wp-thumb" data-file="1730682.jpg" style="background-image:url('images/1730682.jpg')" onclick="selecionarFundo('1730682.jpg')"></div>
+      <div class="wp-thumb" data-file="7002342.jpg" style="background-image:url('images/7002342.jpg')" onclick="selecionarFundo('7002342.jpg')"></div>
+      <div class="wp-thumb" data-file="7002361.jpg" style="background-image:url('images/7002361.jpg')" onclick="selecionarFundo('7002361.jpg')"></div>
+      <div class="wp-thumb" data-file="1798287.jpg" style="background-image:url('images/1798287.jpg')" onclick="selecionarFundo('1798287.jpg')"></div>
+      <div class="wp-thumb" data-file="38598.jpg" style="background-image:url('images/38598.jpg')" onclick="selecionarFundo('38598.jpg')"></div>
+    </div>
+  </div>
+
   <!-- Menu Iniciar -->
   <div class="menu" id="startMenu">
    <div class="menu-scroll at-top" id="menuScroll">
@@ -1460,7 +1557,7 @@
 	<summary>⚙ Configurações</summary>
     <button class="button" onclick="toggleTouchpad()">🖱️ Ativar/Desativar Touchpad</button>
     <script src="offline_apps/touchpad.js"></script><br>
-    <button class="button" onclick="alternarFundo()">🌄 Alternar Fundo</button>
+    <button class="button" onclick="toggleWallpaperPopover(event)">🌄 Plano de Fundo</button>
     <button class="button" onclick="toggleSepia()">🟤 Modo Sépia</button>
     <script src="offline_apps/sepia-toggle.js"></script>
     <button class="button" onclick="toggleGrey()">⚫ Modo P&B Negativo</button>
@@ -2024,7 +2121,40 @@
 
 
   <script>
-    function alternarFundo() { document.body.classList.toggle('fundo-imagem'); }
+    // ── Seletor de Plano de Fundo ──
+    let wallpaperVisivel = false;
+
+    function toggleWallpaperPopover(e) {
+      e.stopPropagation();
+      wallpaperVisivel = !wallpaperVisivel;
+      const pop = document.getElementById('wallpaperPopover');
+      if (wallpaperVisivel) {
+        atualizarSelecaoWallpaper();
+        pop.classList.add('show');
+      } else {
+        pop.classList.remove('show');
+      }
+    }
+
+    function selecionarFundo(arquivo) {
+      document.body.style.setProperty('--wallpaper-url', `url("images/${arquivo}")`);
+      document.body.classList.add('fundo-imagem');
+      atualizarSelecaoWallpaper(arquivo);
+    }
+
+    function desativarFundoImagem() {
+      document.body.classList.remove('fundo-imagem');
+      document.body.style.removeProperty('--wallpaper-url');
+      atualizarSelecaoWallpaper();
+    }
+
+    function atualizarSelecaoWallpaper(arquivoSelecionado) {
+      const ativo = document.body.classList.contains('fundo-imagem');
+      document.querySelectorAll('#wp-grid .wp-thumb').forEach(el => {
+        el.classList.toggle('selected', ativo && el.dataset.file === arquivoSelecionado);
+      });
+      document.querySelector('#wp-grid .wp-none').classList.toggle('selected', !ativo);
+    }
 	
 	  // ── Relógio ──
   (function relogio() {
@@ -2115,6 +2245,14 @@
     if (calVisivel && !document.getElementById('calendarPopover').contains(e.target)) {
       calVisivel = false;
       document.getElementById('calendarPopover').classList.remove('show');
+    }
+  });
+
+  // Fecha seletor de plano de fundo ao clicar fora
+  document.addEventListener('click', function(e) {
+    if (wallpaperVisivel && !document.getElementById('wallpaperPopover').contains(e.target)) {
+      wallpaperVisivel = false;
+      document.getElementById('wallpaperPopover').classList.remove('show');
     }
   });
   
