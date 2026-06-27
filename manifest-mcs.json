@@ -1,0 +1,23 @@
+{
+  "id": "/index-mcs.html",
+  "name": "Web Desktop (macOS)",
+  "short_name": "Desktop mac",
+  "start_url": "./index-mcs.html",
+  "scope": "./index-mcs.html",
+  "display": "standalone",
+  "background_color": "#1e1e1e",
+  "theme_color": "#1e1e1e",
+  "description": "Um desktop web simples, com visual estilo macOS",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
