@@ -114,26 +114,26 @@
 </head>
 <body>
   <h1>Assistir vídeo do YouTube</h1>
-
-  <div>
-    <input id="search" type="text" placeholder="Buscar vídeos no YouTube..." size="50" />
-    <button id="searchBtn" onclick="searchVideos()">Buscar</button>
-  </div>
-
+  
   <div id="player-area">
     <iframe id="player" allowfullscreen></iframe>
   </div>
 
   <hr class="divider" />
+
+  <div>
+    <input id="search" type="text" placeholder="Buscar vídeos no YouTube..." size="50" />
+    <button id="searchBtn" onclick="searchVideos()">Buscar</button>
+  </div>
+  <div id="searchStatus" class="search-status"></div>
+  <div id="results"></div>
   
+   
   <div>
     <input id="ytlink" type="text" placeholder="Ou cole o link do YouTube aqui" size="50"/>
     <button onclick="embedFromLink()">Carregar vídeo</button>
   </div>
-
   
-  <div id="searchStatus" class="search-status"></div>
-  <div id="results"></div>
 
   <script>
     // ---------- Embed por link direto ----------
