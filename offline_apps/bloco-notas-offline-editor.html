@@ -38,6 +38,20 @@
   }
   .top-right{margin-left:auto;display:flex;gap:8px;align-items:center}
   .btn{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:6px 10px;border-radius:6px;color:var(--text);cursor:pointer}
+
+  /* abas */
+  .tabs{display:flex;gap:6px;padding:0 18px;margin-top:4px}
+  .tab{background:transparent;border:1px solid rgba(255,255,255,0.06);border-bottom:none;padding:7px 14px;border-radius:8px 8px 0 0;color:var(--text);cursor:pointer;opacity:.6;font-size:13px}
+  .tab.active{opacity:1;background:rgba(255,255,255,0.05)}
+
+  /* barra de contexto (linguagem / intenção) */
+  .context-bar{width:100%;max-width:1100px;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:0 4px}
+  .lang-select{background:#111217;color:var(--text);border:1px solid rgba(255,255,255,0.06);padding:6px 10px;border-radius:6px;font-size:13px;cursor:pointer}
+  .blocks-bar{width:100%;max-width:1100px;display:flex;flex-wrap:wrap;gap:6px;padding:0 4px;min-height:30px}
+  .sem-block{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.06);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text);white-space:nowrap}
+  .sem-block:hover{background:rgba(255,255,255,0.16)}
+  .sem-block:active{transform:scale(0.96)}
+  .hidden{display:none !important}
 </style>
 </head>
 <body>
@@ -53,13 +67,45 @@
         <a onclick="exportarHTML()">⬇️ Exportar .html</a>
         <a onclick="document.getElementById('arquivoInput').click()">📄 Abrir .txt</a>
         <a onclick="alternarTema()">🌓 Alternar Tema</a>
+        <a onclick="refine('simplify')" id="menuSimplificar" class="hidden">🔧 Simplificar texto</a>
+        <a onclick="refine('formalize')" id="menuFormalizar" class="hidden">🎓 Formalizar texto</a>
+        <a onclick="shareText()" id="menuCompartilhar" class="hidden">📤 Compartilhar</a>
       </div>
     </div>
     <button class="btn" onclick="mostrarSobre()">❔</button>
   </div>
 </header>
 
+<div class="tabs">
+  <button class="tab active" id="tabCodigo" onclick="trocarAba('codigo')">💻 Código</button>
+  <button class="tab" id="tabSemantico" onclick="trocarAba('semantico')">🧩 Semântico</button>
+</div>
+
 <main>
+  <div class="context-bar" id="contextBarCodigo">
+    <label for="langSelect" style="font-size:13px;opacity:.8">Linguagem:</label>
+    <select class="lang-select" id="langSelect" onchange="mudarLinguagemManual(this.value)">
+      <option value="">Texto simples</option>
+      <option value="html">HTML</option>
+      <option value="css">CSS</option>
+      <option value="javascript">JavaScript</option>
+      <option value="python">Python</option>
+      <option value="java">Java</option>
+      <option value="c">C</option>
+      <option value="cpp">C++</option>
+      <option value="csharp">C#</option>
+      <option value="rust">Rust</option>
+    </select>
+  </div>
+
+  <div class="context-bar hidden" id="contextBarSemantico">
+    <button class="btn" onclick="setIntent('message')">✉️ Mensagem</button>
+    <button class="btn" onclick="setIntent('note')">📝 Nota</button>
+    <button class="btn" onclick="setIntent('task')">✔️ Tarefa</button>
+  </div>
+
+  <div class="blocks-bar" id="blocksBar"></div>
+
   <div class="editor-wrap">
     <div class="panel">
       <div id="fallback" class="fallback-editor">
@@ -80,6 +126,18 @@ const fallbackText = document.getElementById('fallback-text');
 const fallbackHighlight = document.getElementById('fallback-highlight');
 const menuBtn = document.getElementById('menuBtn');
 const menuContent = document.getElementById('menuContent');
+const tabCodigo = document.getElementById('tabCodigo');
+const tabSemantico = document.getElementById('tabSemantico');
+const contextBarCodigo = document.getElementById('contextBarCodigo');
+const contextBarSemantico = document.getElementById('contextBarSemantico');
+const blocksBar = document.getElementById('blocksBar');
+const langSelect = document.getElementById('langSelect');
+const menuSimplificar = document.getElementById('menuSimplificar');
+const menuFormalizar = document.getElementById('menuFormalizar');
+const menuCompartilhar = document.getElementById('menuCompartilhar');
+
+let abaAtual = 'codigo';
+let intentAtual = null;
 
 menuBtn.addEventListener('click', ()=>{
   menuContent.classList.toggle('show');
@@ -92,7 +150,174 @@ document.addEventListener('click',(e)=>{
 
 const LANGS = { js:'javascript', jsx:'javascript', ts:'javascript', tsx:'javascript', html:'html', htm:'html', css:'css', json:'json', py:'python', java:'java', c:'c', cpp:'cpp', cs:'csharp', rs:'rust' };
 
+// blocos semânticos de TEXTO, por intenção
+const TEXT_BLOCKS = {
+  message: ["Saudação", "Contexto", "Pedido", "Conclusão"],
+  note: ["Ideia", "Detalhe", "Exemplo"],
+  task: ["O que fazer", "Prazo", "Observações"]
+};
+
+// blocos semânticos de CÓDIGO, por linguagem. value = snippet inserido no cursor.
+const CODE_BLOCKS = {
+  html: [
+    { label:'Esqueleto HTML5', value:'<!DOCTYPE html>\n<html lang="pt-BR">\n<head>\n<meta charset="UTF-8">\n<title>Documento</title>\n</head>\n<body>\n\n</body>\n</html>\n' },
+    { label:'<div>', value:'<div>\n\n</div>\n' },
+    { label:'<a> link', value:'<a href="#">texto</a>' },
+    { label:'<img>', value:'<img src="" alt="">' }
+  ],
+  css: [
+    { label:'Regra de seletor', value:'.classe {\n  \n}\n' },
+    { label:'Media query', value:'@media (max-width: 768px) {\n  \n}\n' },
+    { label:'Flexbox container', value:'.container {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n' }
+  ],
+  javascript: [
+    { label:'Função', value:'function nome() {\n  \n}\n' },
+    { label:'Arrow function', value:'const nome = () => {\n  \n};\n' },
+    { label:'If/else', value:'if (condicao) {\n  \n} else {\n  \n}\n' },
+    { label:'For', value:'for (let i = 0; i < array.length; i++) {\n  \n}\n' },
+    { label:'Try/catch', value:'try {\n  \n} catch (erro) {\n  \n}\n' },
+    { label:'console.log', value:'console.log();' }
+  ],
+  python: [
+    { label:'Função (def)', value:'def nome():\n    \n' },
+    { label:'Classe', value:'class Nome:\n    def __init__(self):\n        \n' },
+    { label:'If/else', value:'if condicao:\n    \nelse:\n    \n' },
+    { label:'For', value:'for item in lista:\n    \n' },
+    { label:'Try/except', value:'try:\n    \nexcept Exception as erro:\n    \n' },
+    { label:'print', value:'print()' }
+  ],
+  java: [
+    { label:'Método', value:'public void nome() {\n    \n}\n' },
+    { label:'If/else', value:'if (condicao) {\n    \n} else {\n    \n}\n' },
+    { label:'For', value:'for (int i = 0; i < n; i++) {\n    \n}\n' },
+    { label:'Try/catch', value:'try {\n    \n} catch (Exception erro) {\n    \n}\n' },
+    { label:'System.out.println', value:'System.out.println();' }
+  ],
+  c: [
+    { label:'Função', value:'void nome() {\n    \n}\n' },
+    { label:'If/else', value:'if (condicao) {\n    \n} else {\n    \n}\n' },
+    { label:'For', value:'for (int i = 0; i < n; i++) {\n    \n}\n' },
+    { label:'Verificação de erro', value:'if (resultado != 0) {\n    // tratar erro\n}\n' },
+    { label:'printf', value:'printf("");' }
+  ],
+  cpp: [
+    { label:'Função', value:'void nome() {\n    \n}\n' },
+    { label:'If/else', value:'if (condicao) {\n    \n} else {\n    \n}\n' },
+    { label:'For', value:'for (int i = 0; i < n; i++) {\n    \n}\n' },
+    { label:'Try/catch', value:'try {\n    \n} catch (const std::exception& erro) {\n    \n}\n' },
+    { label:'std::cout', value:'std::cout << "" << std::endl;' }
+  ],
+  csharp: [
+    { label:'Método', value:'public void Nome()\n{\n    \n}\n' },
+    { label:'If/else', value:'if (condicao)\n{\n    \n}\nelse\n{\n    \n}\n' },
+    { label:'For', value:'for (int i = 0; i < n; i++)\n{\n    \n}\n' },
+    { label:'Try/catch', value:'try\n{\n    \n}\ncatch (Exception erro)\n{\n    \n}\n' },
+    { label:'Console.WriteLine', value:'Console.WriteLine();' }
+  ],
+  rust: [
+    { label:'Função', value:'fn nome() {\n    \n}\n' },
+    { label:'If/else', value:'if condicao {\n    \n} else {\n    \n}\n' },
+    { label:'For', value:'for item in lista {\n    \n}\n' },
+    { label:'match/Result', value:'match resultado {\n    Ok(valor) => {\n        \n    },\n    Err(erro) => {\n        \n    },\n}\n' },
+    { label:'println!', value:'println!("");' }
+  ]
+};
+
 function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ---------- Abas ---------- */
+function trocarAba(aba){
+  abaAtual = aba;
+  tabCodigo.classList.toggle('active', aba==='codigo');
+  tabSemantico.classList.toggle('active', aba==='semantico');
+  contextBarCodigo.classList.toggle('hidden', aba!=='codigo');
+  contextBarSemantico.classList.toggle('hidden', aba!=='semantico');
+  menuSimplificar.classList.toggle('hidden', aba!=='semantico');
+  menuFormalizar.classList.toggle('hidden', aba!=='semantico');
+  menuCompartilhar.classList.toggle('hidden', aba!=='semantico');
+  renderBlocks();
+}
+
+/* ---------- Inserção no cursor ---------- */
+function inserirNoCursor(textarea, texto){
+  const inicio = textarea.selectionStart;
+  const fim = textarea.selectionEnd;
+  const valorAtual = textarea.value;
+  textarea.value = valorAtual.slice(0, inicio) + texto + valorAtual.slice(fim);
+  const novaPosicao = inicio + texto.length;
+  textarea.selectionStart = textarea.selectionEnd = novaPosicao;
+  textarea.focus();
+  // dispara o evento 'input' manualmente pra atualizar highlight + salvar
+  textarea.dispatchEvent(new Event('input'));
+}
+
+/* ---------- Render dos blocos (contextual) ---------- */
+function renderBlocks(){
+  blocksBar.innerHTML = '';
+  if(abaAtual === 'codigo'){
+    const lang = fallbackText.dataset.lang || '';
+    const lista = CODE_BLOCKS[lang];
+    if(!lista) return; // texto simples sem linguagem: sem blocos de código
+    lista.forEach(b=>{
+      const btn = document.createElement('button');
+      btn.className = 'sem-block';
+      btn.textContent = b.label;
+      btn.onclick = ()=> inserirNoCursor(fallbackText, b.value);
+      blocksBar.appendChild(btn);
+    });
+  } else {
+    if(!intentAtual) return;
+    TEXT_BLOCKS[intentAtual].forEach(b=>{
+      const btn = document.createElement('button');
+      btn.className = 'sem-block';
+      btn.textContent = b;
+      btn.onclick = ()=> inserirNoCursor(fallbackText, b);
+      blocksBar.appendChild(btn);
+    });
+  }
+}
+
+/* ---------- Seleção manual de linguagem ---------- */
+function mudarLinguagemManual(lang){
+  fallbackText.dataset.lang = lang;
+  if(lang) localStorage.setItem('lang', lang);
+  else localStorage.removeItem('lang');
+  fallbackHighlight.innerHTML = highlightCode(fallbackText.value, lang);
+  renderBlocks();
+}
+
+/* ---------- Intenção (modo semântico) ---------- */
+function setIntent(i){
+  intentAtual = i;
+  localStorage.setItem('intent', i);
+  renderBlocks();
+}
+
+/* ---------- Refinamentos de texto ---------- */
+function refine(type){
+  const base = fallbackText.value.trim();
+  if(!base){ alert('Adicione blocos ou texto antes de refinar.'); return; }
+  if(type === 'formalize'){
+    fallbackText.value = 'Prezados,\n\n' + base + '\n\nRespeitosamente.';
+  }
+  if(type === 'simplify'){
+    fallbackText.value = base.replace(/•/g, '.').replace(/\s+/g, ' ');
+  }
+  fallbackText.dispatchEvent(new Event('input'));
+  mostrarStatus('✨ Texto refinado');
+}
+
+/* ---------- Compartilhar ---------- */
+async function shareText(){
+  const text = fallbackText.value.trim();
+  if(!text){ alert('Nada para compartilhar.'); return; }
+  if(navigator.share){
+    try{ await navigator.share({ text }); } catch{}
+  } else {
+    await navigator.clipboard.writeText(text);
+    mostrarStatus('📋 Texto copiado para a área de transferência');
+  }
+}
 
 function highlightCode(code, ext){
   let out = escapeHtml(code);
@@ -127,9 +352,12 @@ window.addEventListener('load', ()=>{
   if(s) fallbackText.value = s;
   const savedLang = localStorage.getItem('lang') || '';
   fallbackText.dataset.lang = savedLang;
+  langSelect.value = savedLang;
   fallbackHighlight.innerHTML = highlightCode(fallbackText.value, savedLang);
   const t = localStorage.getItem('tema') || 'dark';
   document.body.setAttribute('data-theme', t);
+  intentAtual = localStorage.getItem('intent') || null;
+  renderBlocks();
 });
 fileInput.addEventListener('change', (ev)=>{
   const f = ev.target.files[0];
@@ -141,9 +369,11 @@ fileInput.addEventListener('change', (ev)=>{
     const ext = (f.name.split('.').pop()||'').toLowerCase();
     const mapped = LANGS[ext] || ext || '';
     fallbackText.dataset.lang = mapped;
+    langSelect.value = mapped;
     localStorage.setItem('minhaNota', txt);
     if(mapped) localStorage.setItem('lang', mapped);
     fallbackHighlight.innerHTML = highlightCode(txt, mapped);
+    renderBlocks();
     mostrarStatus('📄 Arquivo carregado: ' + f.name);
   };
   reader.readAsText(f);
