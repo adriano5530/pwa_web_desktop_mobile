@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Paper Keyboard - Câmera Frontal</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #000;
+      font-family: sans-serif;
+    }
+
+    #video, #template, #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: auto;
+      max-height: 100vh;
+      transform: scaleX(-1);
+    }
+
+    #template {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .zone {
+      position: absolute;
+      border: 2px solid lime;
+      background-color: rgba(0, 255, 0, 0.08);
+      pointer-events: none;
+      box-sizing: border-box;
+    }
+
+    .zone.active {
+      background-color: rgba(255, 255, 0, 0.45);
+      border-color: yellow;
+    }
+
+    #output {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      color: lime;
+      background: rgba(0,0,0,0.6);
+      padding: 8px 12px;
+      font-family: monospace;
+      font-size: 16px;
+      z-index: 10;
+    }
+
+    #toggleBtn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 10;
+      background: rgba(0,0,0,0.6);
+      color: lime;
+      border: 1px solid lime;
+      padding: 6px 10px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <video id="video" autoplay muted playsinline></video>
+  <img id="template" src="../images/paper-keyboardA4.jpg" />
+  <div id="overlay"></div>
+  <div id="output">Aguardando...</div>
+  <button id="toggleBtn">Ocultar guia</button>
+
+  <script>
+    const video = document.getElementById("video");
+    const overlay = document.getElementById("overlay");
+    const output = document.getElementById("output");
+    const template = document.getElementById("template");
+    const toggleBtn = document.getElementById("toggleBtn");
+
+    // Zonas calibradas a partir da imagem real paper-keyboardA4.jpg (610x850px),
+    // respeitando a perspectiva trapezoidal do teclado impresso.
+    // Coordenadas em % da imagem/tela (x,y = canto superior-esquerdo; w,h = largura/altura).
+    const zones = [
+      // Fileira 1: shift, 2nd, simbolos, enter
+      { key: "shift", x: 17.05, y: 73.76, w: 6.39, h: 4.00 },
+      { key: "2nd",   x: 24.10, y: 73.76, w: 6.07, h: 4.00 },
+      { key: "?",     x: 30.98, y: 73.76, w: 6.23, h: 4.00 },
+      { key: "!",     x: 37.87, y: 73.76, w: 6.23, h: 4.00 },
+      { key: ";",     x: 44.75, y: 73.76, w: 6.23, h: 4.00 },
+      { key: "=",     x: 51.64, y: 73.76, w: 6.23, h: 4.00 },
+      { key: "7",     x: 58.69, y: 73.76, w: 6.07, h: 4.00 },
+      { key: "]",     x: 65.57, y: 73.76, w: 6.23, h: 4.00 },
+      { key: "enter", x: 72.46, y: 73.76, w: 6.39, h: 4.00 },
+
+      // Fileira 2: QWERTYUIOP
+      { key: "Q", x: 11.15, y: 77.65, w: 6.89, h: 4.35 },
+      { key: "W", x: 18.85, y: 77.65, w: 6.72, h: 4.35 },
+      { key: "E", x: 26.23, y: 77.65, w: 6.56, h: 4.35 },
+      { key: "R", x: 33.61, y: 77.65, w: 6.56, h: 4.35 },
+      { key: "T", x: 40.98, y: 77.65, w: 6.72, h: 4.35 },
+      { key: "Y", x: 48.36, y: 77.65, w: 6.56, h: 4.35 },
+      { key: "U", x: 55.74, y: 77.65, w: 6.56, h: 4.35 },
+      { key: "I", x: 63.11, y: 77.65, w: 6.72, h: 4.35 },
+      { key: "O", x: 70.49, y: 77.65, w: 6.72, h: 4.35 },
+      { key: "P", x: 78.03, y: 77.65, w: 6.39, h: 4.35 },
+
+      // Fileira 3: ASDFGHJKL
+      { key: "A", x: 13.28, y: 81.65, w: 7.05, h: 4.71 },
+      { key: "S", x: 20.98, y: 81.65, w: 7.05, h: 4.71 },
+      { key: "D", x: 28.85, y: 81.65, w: 7.05, h: 4.71 },
+      { key: "F", x: 36.56, y: 81.65, w: 7.05, h: 4.71 },
+      { key: "G", x: 44.26, y: 81.65, w: 7.05, h: 4.71 },
+      { key: "H", x: 52.13, y: 81.65, w: 7.05, h: 4.71 },
+      { key: "J", x: 59.84, y: 81.65, w: 6.89, h: 4.71 },
+      { key: "K", x: 67.54, y: 81.65, w: 7.05, h: 4.71 },
+      { key: "L", x: 75.25, y: 81.65, w: 6.89, h: 4.71 },
+
+      // Fileira 4: ZXCV, space, NMB, simbolo final
+      { key: "Z",     x: 15.57, y: 85.76, w: 7.38, h: 5.29 },
+      { key: "X",     x: 23.77, y: 85.76, w: 7.38, h: 5.29 },
+      { key: "C",     x: 31.97, y: 85.76, w: 7.38, h: 5.29 },
+      { key: "V",     x: 40.16, y: 85.76, w: 7.38, h: 5.29 },
+      { key: "space", x: 48.36, y: 85.76, w: 9.34, h: 5.29 },
+      { key: "N",     x: 58.52, y: 85.76, w: 7.54, h: 5.29 },
+      { key: "M",     x: 66.89, y: 85.76, w: 7.21, h: 5.29 },
+      { key: "B",     x: 75.08, y: 85.76, w: 7.21, h: 5.29 },
+      { key: "=",     x: 83.11, y: 85.76, w: 7.38, h: 5.29 },
+    ];
+
+    // Cria zonas visuais na tela
+    const zoneEls = {};
+    zones.forEach((z, i) => {
+      const div = document.createElement("div");
+      div.className = "zone";
+      div.style.left = `${z.x}%`;
+      div.style.top = `${z.y}%`;
+      div.style.width = `${z.w}%`;
+      div.style.height = `${z.h}%`;
+      div.dataset.key = z.key;
+      overlay.appendChild(div);
+      zoneEls[i] = div;
+    });
+
+    toggleBtn.addEventListener("click", () => {
+      const hidden = template.style.display === "none";
+      template.style.display = hidden ? "" : "none";
+      overlay.style.display = hidden ? "" : "none";
+      toggleBtn.textContent = hidden ? "Ocultar guia" : "Mostrar guia";
+    });
+
+    // Ativa câmera frontal
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+      .then(stream => video.srcObject = stream)
+      .catch(err => alert("Erro ao acessar câmera: " + err));
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    let lastFrame;
+
+    // Parâmetros de detecção
+    const TOUCH_THRESHOLD = 50000;   // diff acumulado pra considerar "toque"
+    const RELEASE_RATIO = 0.4;       // abaixo desse % do threshold, considera "solto"
+    const HOLD_FRAMES = 2;           // frames consecutivos acima do threshold pra confirmar toque (evita falso positivo de 1 frame de ruído)
+
+    // Estado por zona: contagem de frames em toque e se está atualmente pressionada
+    const zoneState = zones.map(() => ({ holdCount: 0, pressed: false }));
+    let lastKeyShown = null;
+    let lastKeyTimeout = null;
+
+    function setActiveZone(idx) {
+      Object.values(zoneEls).forEach(el => el.classList.remove("active"));
+      if (idx !== null) zoneEls[idx].classList.add("active");
+    }
+
+    function showKey(key) {
+      output.textContent = `[TOQUE: ${key}]`;
+      if (lastKeyTimeout) clearTimeout(lastKeyTimeout);
+      // Some o texto depois de um tempo se não houver novo toque,
+      // só pra deixar claro que o toque foi solto.
+      lastKeyTimeout = setTimeout(() => {
+        output.textContent = "Aguardando...";
+      }, 1200);
+    }
+
+    function detectTouch() {
+      const w = video.videoWidth;
+      const h = video.videoHeight;
+      if (!w || !h) {
+        requestAnimationFrame(detectTouch);
+        return;
+      }
+
+      canvas.width = w;
+      canvas.height = h;
+      ctx.drawImage(video, 0, 0, w, h);
+      const frame = ctx.getImageData(0, 0, w, h);
+
+      if (lastFrame) {
+        let touchedIdx = null;
+        let maxDiff = 0;
+
+        zones.forEach((zone, idx) => {
+          const zx = Math.floor((zone.x / 100) * w);
+          const zy = Math.floor((zone.y / 100) * h);
+          const zw = Math.floor((zone.w / 100) * w);
+          const zh = Math.floor((zone.h / 100) * h);
+          let diff = 0;
+
+          // Passo de 2px pra reduzir custo computacional sem perder sensibilidade
+          for (let y = zy; y < zy + zh; y += 2) {
+            for (let x = zx; x < zx + zw; x += 2) {
+              const i = (y * w + x) * 4;
+              const r1 = frame.data[i], g1 = frame.data[i+1], b1 = frame.data[i+2];
+              const r2 = lastFrame.data[i], g2 = lastFrame.data[i+1], b2 = lastFrame.data[i+2];
+              diff += Math.abs(r1 - r2) + Math.abs(g1 - g2) + Math.abs(b1 - b2);
+            }
+          }
+          // Compensa o passo de 2px (amostra 1/4 dos pixels) pra manter o threshold comparável
+          diff *= 4;
+
+          const state = zoneState[idx];
+          if (diff > TOUCH_THRESHOLD) {
+            state.holdCount++;
+          } else if (diff < TOUCH_THRESHOLD * RELEASE_RATIO) {
+            state.holdCount = 0;
+            state.pressed = false;
+          }
+
+          if (state.holdCount >= HOLD_FRAMES && diff > maxDiff) {
+            maxDiff = diff;
+            touchedIdx = idx;
+          }
+        });
+
+        if (touchedIdx !== null) {
+          const state = zoneState[touchedIdx];
+          if (!state.pressed) {
+            state.pressed = true;
+            showKey(zones[touchedIdx].key);
+          }
+          setActiveZone(touchedIdx);
+        } else {
+          setActiveZone(null);
+        }
+      }
+
+      lastFrame = frame;
+      requestAnimationFrame(detectTouch);
+    }
+
+    detectTouch();
+  </script>
+</body>
+</html>
