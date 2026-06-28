@@ -1507,8 +1507,7 @@
     <a href="#" data-id="console"  onclick="openApp({url:'offline_apps/webdevterminal.html', title:'Console Dev Web 👨🏽‍💻'})">👨🏽‍💻 Console Dev Web</a>
     <a href="#" onclick="openApp({url:'offline_apps/base64.html', title:'Base64 🧑🏽‍💻'})">🧑🏽‍💻 Base64</a>
     <a href="#" onclick="openApp({url:'offline_apps/gravador.html', title:'Gravador 🎤', width: 358, height: 189 })">🎤 Gravador</a>
-    <a href="#" onclick="openApp({url:'offline_apps/webdeckos.html', title:'WebDeckOS 🚀'})">🚀 WebDeckOS</a>
-	<a href="#" onclick="openApp({url:'offline_apps/relogio.html', title:'Relógio ⌚', width: 300, height: 300 })">⌚ Relógio</a>
+    <a href="#" onclick="openApp({url:'offline_apps/relogio.html', title:'Relógio ⌚', width: 300, height: 300 })">⌚ Relógio</a>
     <hr>
 
     <strong>➕ Adicionar novo atalho:</strong>
@@ -1904,6 +1903,50 @@
     }
   });
 
+  // ── Esc: fecha popover/menu aberto, senão minimiza a janela ativa ──
+  // ── Alt+Tab / Alt+Shift+Tab: cicla o foco entre as janelas abertas ──
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      const wallpaperPop = document.getElementById('wallpaperPopover');
+      const calendarPop  = document.getElementById('calendarPopover');
+      const menu          = document.getElementById('startMenu');
+
+      if (wallpaperPop && wallpaperPop.classList.contains('show')) {
+        e.preventDefault();
+        toggleWallpaperPopover(e);
+        return;
+      }
+      if (calendarPop && calendarPop.classList.contains('show')) {
+        e.preventDefault();
+        toggleCalendar(e);
+        return;
+      }
+      if (menu && menu.classList.contains('show')) {
+        e.preventDefault();
+        toggleMenu();
+        return;
+      }
+      const wins = [...document.querySelectorAll('.window')]
+        .filter(w => w.style.display !== 'none');
+      if (wins.length) {
+        const ativa = wins.reduce((a, b) =>
+          parseInt(a.style.zIndex) > parseInt(b.style.zIndex) ? a : b);
+        e.preventDefault();
+        minimizeWindow(ativa.id);
+      }
+      return;
+    }
+
+    if (e.altKey && e.key === 'Tab') {
+      const wins = [...document.querySelectorAll('.window')];
+      if (wins.length < 2) return;
+      e.preventDefault();
+      wins.sort((a, b) => parseInt(a.style.zIndex) - parseInt(b.style.zIndex));
+      const proximo = e.shiftKey ? wins[wins.length - 2] : wins[0];
+      focusWindow(proximo.id);
+    }
+  });
+
   // ── Menu Iniciar ──
   function toggleMenu() {
     const menu = document.getElementById('startMenu');
@@ -1936,6 +1979,20 @@
     root.style.height = (100 / scale) + 'dvh';
   }
 
+  // ── Acessibilidade por teclado: ícones de atalho (.shortcut / .shortcut-taskbar) ──
+  // Dá foco via Tab e aciona o onclick existente com Enter ou Espaço.
+  function tornarFocavel(el) {
+    if (el.hasAttribute('tabindex')) return; // evita duplicar listener
+    el.setAttribute('tabindex', '0');
+    el.setAttribute('role', 'button');
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        el.click();
+      }
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     // Zoom
     const savedZoom = localStorage.getItem('desktopZoom') || 100;
@@ -1944,6 +2001,10 @@
     document.getElementById('zoomSlider').addEventListener('input', function() {
       setGlobalZoom(this.value);
     });
+
+    // Navegação por teclado nos ícones (área de trabalho + taskbar)
+    document.querySelectorAll('.shortcut, .shortcut-taskbar')
+      .forEach(tornarFocavel);
 
     // Pesquisa no menu
     const searchInputEl = document.getElementById('searchInput');
@@ -2022,6 +2083,7 @@
     d.title = name;
     d.onclick = () => openApp({ url, title: name });
     d.innerHTML = `<span>🔗 ${name}</span>`;
+    tornarFocavel(d);
     desktop.appendChild(d);
 
     const lnk = document.createElement('a');
