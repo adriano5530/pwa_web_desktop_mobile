@@ -1,11 +1,13 @@
 {
-  "name": "Apresentação do Web Desktop",
-  "short_name": "Apres. Desktop",
-  "start_url": ".",
+  "id": "/webdesktopmobile.html",
+  "name": "Web Desktop",
+  "short_name": "Desktop",
+  "start_url": "./webdesktopmobile.html",
+  "scope": "./webdesktopmobile.html",
   "display": "standalone",
   "background_color": "#1e1e1e",
   "theme_color": "#1e1e1e",
-  "description": "Apresentando o meu desktop web",
+  "description": "Um desktop web simples",
   "icons": [
     {
       "src": "icon-192.png",
@@ -19,4 +21,3 @@
     }
   ]
 }
-

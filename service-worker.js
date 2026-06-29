@@ -2,32 +2,7 @@ const CACHE_NAME = 'pwa-cache-v1';
 const PRECACHE_URLS = [
  "./",
   "./index.html",
-  "./offline_apps/documentos/documentos.html",
-  "./offline_apps/documentos/jsbib/tinymce.min.js",
-  "./offline_apps/documentos/jsbib/mammoth.browser.min.js",
-  "./offline_apps/documentos/jsbib/webodf.js",
-  "./offline_apps/documentos/jsbib/FileSaver.min.js",
-  "./offline_apps/planilhas/planilhas.html",
-  "./offline_apps/planilhas/jslib/FileSaver.min.js",
-  "./offline_apps/planilhas/jslib/xlsx.full.min.js",
-  "./offline_apps/browser.html",
-  "./offline_apps/iaoff/webllm-chat.html",
-  "./offline_apps/bloco-notas-offline-editor.html",
-  "./offline_apps/notastudoemum.html",
-  "./offline_apps/desenho.html",
-  "./offline_apps/camera.html",
-  "./offline_apps/rotina.html",
-  "./offline_apps/diario/diario.html",
-  "./offline_apps/diario/crypto-js.min.js",
-  "./offline_apps/tarefas.html",
-  "./offline_apps/touchpad.js",
-  "./offline_apps/calculadora.html",
-  "./offline_apps/youtube-wrapper.html",
-  "./offline_apps/filemanager.html",
-  "./offline_apps/player.html",
-  "./offline_apps/porcentagem.html",
-  "./offline_apps/calcdata.html",
-  "./offline_apps/terminal.html"
+  "./offline_apps/bloco-notas-offline-editor.html"
 ];
 
 // Instala e faz o precache

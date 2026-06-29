@@ -1,9 +1,9 @@
 {
-  "id": "/index-mcs.html",
+  "id": "/alternativewebdesktop.html",
   "name": "Web Desktop (macOS)",
   "short_name": "Desktop mac",
-  "start_url": "./index-mcs.html",
-  "scope": "./index-mcs.html",
+  "start_url": "./alternativewebdesktop.html",
+  "scope": "./alternativewebdesktop.html",
   "display": "standalone",
   "background_color": "#1e1e1e",
   "theme_color": "#1e1e1e",

@@ -1,7 +1,7 @@
-const CACHE_NAME = 'pwa-mcs-cache-v1';
+const CACHE_NAME = 'pwa-wdm-cache-v1';
 const PRECACHE_URLS = [
  "./",
-  "./alternativewebdesktop.html",
+  "./webdesktopmobile.html",
   "./offline_apps/documentos/documentos.html",
   "./offline_apps/documentos/jsbib/tinymce.min.js",
   "./offline_apps/documentos/jsbib/mammoth.browser.min.js",
