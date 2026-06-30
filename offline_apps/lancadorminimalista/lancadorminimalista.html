@@ -107,6 +107,89 @@
       opacity: 1;
       pointer-events: auto;
     }
+
+    /* ===== Modo Grade ===== */
+    body.modo-grade {
+      background: #292929;
+    }
+    body.modo-grade section,
+    body.modo-grade #personalizados {
+      max-width: 600px;
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 12px;
+    }
+    body.modo-grade h2 {
+      grid-column: 1 / -1;
+      text-align: center;
+    }
+    body.modo-grade a {
+      background: #3a3a3a;
+      border-radius: 8px;
+      padding: 16px 8px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+      margin: 0;
+      min-height: 80px;
+      font-size: 1rem;
+      letter-spacing: 1px;
+      border: none;
+      transition: background 0.2s, transform 0.1s;
+    }
+    body.modo-grade a:hover {
+      background: #505050;
+      text-decoration: none;
+    }
+    body.modo-grade a:active {
+      transform: scale(0.97);
+      background: #505050;
+    }
+
+    /* ===== Modo Sépia ===== */
+    body.modo-sepia {
+      background: #2b211a;
+      color: #d9c2a3;
+      filter: sepia(100%) saturate(180%) hue-rotate(-10deg) contrast(1.1) brightness(0.9);
+    }
+    body.modo-sepia a {
+      color: #d9c2a3;
+    }
+    body.modo-sepia a:active {
+      background-color: #3a2c20;
+    }
+    body.modo-sepia h2 {
+      border-bottom-color: #5a4632;
+    }
+    body.modo-sepia button,
+    body.modo-sepia input,
+    body.modo-sepia select {
+      border-color: #6b5640;
+      color: #d9c2a3;
+    }
+    body.modo-sepia button:hover {
+      background-color: #3a2c20;
+    }
+    body.modo-sepia #toast {
+      background: #3a2c20;
+      border-color: #6b5640;
+      color: #d9c2a3;
+    }
+    body.modo-sepia.modo-grade {
+      background: #2b211a;
+    }
+    body.modo-sepia.modo-grade a {
+      background: #3a2c20;
+      color: #d9c2a3;
+    }
+    body.modo-sepia.modo-grade a:hover,
+    body.modo-sepia.modo-grade a:active {
+      background: #4a3a2a;
+    }
   </style>
 </head>
 <body>
@@ -124,6 +207,8 @@
     <button onclick="document.getElementById('importar').click()">📥 Importar configurações</button>
     <button onclick="salvarNoGunDB()">☁️ Sincronizar com a nuvem</button>
     <button onclick="alternarFormulario()">➕ Adicionar atalho</button>
+    <button id="alternarModo">▦ Modo Grade</button>
+    <button id="alternarSepia">🟤 Modo Sépia</button>
   </div>
 
   <div id="status" style="margin-top: 10px; font-size: 1.2rem; opacity: 0.7;"></div>
@@ -212,6 +297,39 @@
       const menu = document.getElementById('menuContainer');
       menu.classList.toggle('visible');
     });
+
+    // ===== Modo Grade =====
+    const modoBtn = document.getElementById('alternarModo');
+    function aplicarModoSalvo() {
+      const modo = localStorage.getItem('modoVisual') || 'lista';
+      if (modo === 'grade') {
+        document.body.classList.add('modo-grade');
+        modoBtn.textContent = '☰ Modo Lista';
+      } else {
+        document.body.classList.remove('modo-grade');
+        modoBtn.textContent = '▦ Modo Grade';
+      }
+    }
+    modoBtn.addEventListener('click', () => {
+      const atual = localStorage.getItem('modoVisual') || 'lista';
+      localStorage.setItem('modoVisual', atual === 'grade' ? 'lista' : 'grade');
+      aplicarModoSalvo();
+    });
+    aplicarModoSalvo();
+
+    // ===== Modo Sépia =====
+    const sepiaBtn = document.getElementById('alternarSepia');
+    function aplicarSepiaSalvo() {
+      const ativo = localStorage.getItem('modoSepia') === '1';
+      document.body.classList.toggle('modo-sepia', ativo);
+      sepiaBtn.textContent = ativo ? '⬛ Modo Padrão' : '🟤 Modo Sépia';
+    }
+    sepiaBtn.addEventListener('click', () => {
+      const ativo = localStorage.getItem('modoSepia') === '1';
+      localStorage.setItem('modoSepia', ativo ? '0' : '1');
+      aplicarSepiaSalvo();
+    });
+    aplicarSepiaSalvo();
 
      const gun = Gun('https://gun-manhattan.herokuapp.com/gun');
     const userID = localStorage.getItem('userID') || prompt("Informe seu ID para sincronizar:");
@@ -361,7 +479,7 @@
       const dados = {};
       for (let i = 0; i < localStorage.length; i++) {
         const chave = localStorage.key(i);
-        if (chave.startsWith('oculto_') || chave.startsWith('favorito_') || chave === 'custom_atalhos') {
+        if (chave.startsWith('oculto_') || chave.startsWith('favorito_') || chave === 'custom_atalhos' || chave === 'modoVisual' || chave === 'modoSepia') {
           dados[chave] = localStorage.getItem(chave);
         }
       }
@@ -384,6 +502,8 @@
             Object.keys(dados).forEach(k => localStorage.setItem(k, dados[k]));
             aplicarConfiguracoesLocais();
             renderizarAtalhosPersonalizados();
+            aplicarModoSalvo();
+            aplicarSepiaSalvo();
             salvarNoGunDB();
             mostrarToast('📥 Configurações importadas');
           }
@@ -401,7 +521,7 @@
       const dados = {};
       for (let i = 0; i < localStorage.length; i++) {
         const chave = localStorage.key(i);
-        if (chave.startsWith('oculto_') || chave.startsWith('favorito_') || chave === 'custom_atalhos') {
+        if (chave.startsWith('oculto_') || chave.startsWith('favorito_') || chave === 'custom_atalhos' || chave === 'modoVisual' || chave === 'modoSepia') {
           dados[chave] = localStorage.getItem(chave);
         }
       }
@@ -418,6 +538,8 @@
       aplicarCompatibilidadePorPlataforma();
       aplicarConfiguracoesLocais();
       renderizarAtalhosPersonalizados();
+      aplicarModoSalvo();
+      aplicarSepiaSalvo();
       statusDiv.textContent = '✅ Configurações sincronizadas';
     });
 
