@@ -1,10 +1,23 @@
+<html>
+<head>
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#1e1e1e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Gravador">
+  <meta name="google-site-verification" content="abc123XYZ">
+</head>
+<body>
 <div id="voice-recorder" style="padding: 1rem; align-items: center; background: #1e1e1e; color: white; font-family: sans-serif; border-radius: 1rem; width: 300px;">
   <h2>🎤 Gravador de Voz</h2>
   <button id="start">▶️ Gravar</button>
   <button id="stop" disabled>⏹️ Parar</button>
   <audio id="audio" controls style="display:none; margin-top:1rem;"></audio>
 </div>
-
 <script>
   let mediaRecorder;
   let audioChunks = [];
@@ -47,3 +60,5 @@
     stopBtn.disabled = true;
   };
 </script>
+</body>
+</html>
