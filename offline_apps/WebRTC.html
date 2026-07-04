@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teclado Remoto WebRTC</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body { font-family: sans-serif; max-width: 480px; margin: 20px auto; padding: 0 12px; }
+        textarea, input[type="text"] { width: 100%; box-sizing: border-box; margin: 6px 0; }
+        button { margin: 4px 4px 4px 0; padding: 8px 12px; }
+        #qrcode { margin: 10px 0; }
+        #status { font-weight: bold; }
+        .step { display: none; border-top: 1px solid #ccc; padding-top: 10px; margin-top: 10px; }
+        .step.visible { display: block; }
+        label { display: block; font-size: 0.85em; color: #555; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <h2>Teclado Remoto WebRTC</h2>
+
+    <button onclick="startReceiver()">Iniciar como Receptor</button>
+    <button onclick="startController()">Iniciar como Controlador</button>
+    <button onclick="connectBluetooth()">Testar Bluetooth (só bateria, não é teclado)</button>
+
+    <p id="status">Status: Aguardando...</p>
+    <div id="qrcode"></div>
+
+    <!-- Receptor: mostra a oferta, depois recebe a resposta -->
+    <div id="receiverStep2" class="step">
+        <label>Cole aqui a RESPOSTA gerada pelo Controlador:</label>
+        <textarea id="answerInput" rows="4"></textarea>
+        <button onclick="applyAnswer()">Concluir conexão</button>
+    </div>
+
+    <!-- Controlador: cola a oferta, gera a resposta -->
+    <div id="controllerStep1" class="step visible">
+        <label>Cole aqui a OFERTA do Receptor (ou escaneie o QR):</label>
+        <textarea id="offerInput" rows="4"></textarea>
+        <button onclick="acceptOffer()">Gerar resposta</button>
+    </div>
+    <div id="controllerStep2" class="step">
+        <label>Envie esta RESPOSTA de volta ao Receptor:</label>
+        <textarea id="answerOutput" rows="4" readonly></textarea>
+    </div>
+
+    <textarea id="receiverArea" rows="5" placeholder="Texto recebido..." readonly></textarea>
+    <input type="text" id="textInput" placeholder="Digite aqui..." style="display:none;">
+
+    <script>
+        let peerConnection;
+        let dataChannel;
+        let role = null; // 'receiver' | 'controller'
+
+        // Espera o ICE gathering terminar para garantir que a SDP embutida
+        // no QR/texto já contenha todos os candidates (senão a conexão pode falhar).
+        function waitForIceGathering(pc) {
+            if (pc.iceGatheringState === "complete") return Promise.resolve();
+            return new Promise((resolve) => {
+                function check() {
+                    if (pc.iceGatheringState === "complete") {
+                        pc.removeEventListener("icegatheringstatechange", check);
+                        resolve();
+                    }
+                }
+                pc.addEventListener("icegatheringstatechange", check);
+            });
+        }
+
+        function setStatus(msg) {
+            document.getElementById("status").innerText = "Status: " + msg;
+        }
+
+        function showStep(id) {
+            document.getElementById(id).classList.add("visible");
+        }
+
+        function setupDataChannelReceive(channel) {
+            channel.onmessage = (e) => {
+                document.getElementById("receiverArea").value += e.data;
+            };
+            channel.onopen = () => setStatus("Conectado! Recebendo dados.");
+        }
+
+        async function startReceiver() {
+            role = "receiver";
+            document.getElementById("controllerStep1").classList.remove("visible");
+            document.getElementById("controllerStep2").classList.remove("visible");
+
+            peerConnection = new RTCPeerConnection();
+            peerConnection.ondatachannel = (event) => {
+                dataChannel = event.channel;
+                setupDataChannelReceive(dataChannel);
+            };
+
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            setStatus("Gerando oferta (aguardando ICE)...");
+            await waitForIceGathering(peerConnection);
+
+            const offerStr = JSON.stringify(peerConnection.localDescription);
+            document.getElementById("qrcode").innerHTML = "";
+            new QRCode(document.getElementById("qrcode"), offerStr);
+
+            showStep("receiverStep2");
+            setStatus("Oferta pronta! Escaneie o QR no Controlador, depois cole a resposta dele abaixo.");
+        }
+
+        async function applyAnswer() {
+            try {
+                const answer = JSON.parse(document.getElementById("answerInput").value);
+                await peerConnection.setRemoteDescription(answer);
+                setStatus("Resposta aplicada. Conectando...");
+            } catch (err) {
+                setStatus("Erro ao aplicar resposta: " + err);
+            }
+        }
+
+        async function startController() {
+            role = "controller";
+            document.getElementById("receiverStep2").classList.remove("visible");
+            document.getElementById("qrcode").innerHTML = "";
+
+            peerConnection = new RTCPeerConnection();
+            dataChannel = peerConnection.createDataChannel("keyboard");
+            dataChannel.onopen = () => setStatus("Conectado! Digite no campo abaixo.");
+
+            document.getElementById("textInput").style.display = "block";
+            document.getElementById("textInput").addEventListener("input", (e) => {
+                const char = e.target.value.slice(-1);
+                if (dataChannel.readyState === "open") {
+                    dataChannel.send(char);
+                }
+            });
+
+            showStep("controllerStep1");
+            setStatus("Cole a oferta do Receptor abaixo.");
+        }
+
+        async function acceptOffer() {
+            try {
+                const offer = JSON.parse(document.getElementById("offerInput").value);
+                await peerConnection.setRemoteDescription(offer);
+
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+                setStatus("Gerando resposta (aguardando ICE)...");
+                await waitForIceGathering(peerConnection);
+
+                document.getElementById("answerOutput").value = JSON.stringify(peerConnection.localDescription);
+                showStep("controllerStep2");
+                setStatus("Resposta pronta! Copie e envie de volta ao Receptor.");
+            } catch (err) {
+                setStatus("Erro ao processar oferta: " + err);
+            }
+        }
+
+        async function connectBluetooth() {
+            try {
+                const bluetoothDevice = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: ['battery_service']
+                });
+                const server = await bluetoothDevice.gatt.connect();
+                const service = await server.getPrimaryService('battery_service');
+                await service.getCharacteristic('battery_level');
+                setStatus("Bluetooth conectado (apenas leitura de bateria, não é um teclado real).");
+            } catch (error) {
+                setStatus("Erro no Bluetooth: " + error);
+            }
+        }
+    </script>
+</body>
+</html>

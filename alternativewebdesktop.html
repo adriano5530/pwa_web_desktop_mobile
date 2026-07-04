@@ -68,7 +68,9 @@
     }
 
     body.fundo-imagem {
-      background: url("images/trigo.jpg") no-repeat center center;
+      background-image: var(--wallpaper-url, url("images/trigo.jpg"));
+      background-repeat: no-repeat;
+      background-position: center center;
       background-size: cover;
       background-attachment: fixed;
     }
@@ -167,6 +169,81 @@
 
     .menubar-apple { font-size: 14px; line-height: 1; }
     .menubar-appname { white-space: nowrap; }
+
+    /* ── Menu "Visualização" (estilo File/Edit/View do macOS) ── */
+    .menubar-menu { position: relative; }
+
+    .menubar-menu-label {
+      padding: 4px 9px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .menubar-menu.open .menubar-menu-label,
+    .menubar-menu-label:hover {
+      background: rgba(0,90,215,0.85);
+      color: #fff;
+    }
+
+    .menubar-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      margin-top: 6px;
+      min-width: 240px;
+      background: rgba(246,246,246,0.85);
+      backdrop-filter: blur(25px) saturate(180%);
+      -webkit-backdrop-filter: blur(25px) saturate(180%);
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      padding: 6px;
+      display: none;
+      z-index: 200000;
+    }
+
+    .menubar-dropdown.show { display: block; }
+
+    .menubar-dropdown button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 5px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #1d1d1f;
+      cursor: pointer;
+    }
+
+    .menubar-dropdown button:hover { background: rgba(0,90,215,0.85); color: #fff; }
+
+    .menubar-dropdown hr {
+      border: none;
+      border-top: 1px solid rgba(0,0,0,0.12);
+      margin: 4px 2px;
+    }
+
+    /* ── Ícones compactos de status (Touchpad/Gamepad) ── */
+    .menubar-icon-btn {
+      background: none;
+      border: none;
+      font-size: 15px;
+      line-height: 1;
+      cursor: pointer;
+      color: #1d1d1f;
+      opacity: 0.8;
+      padding: 2px;
+    }
+
+    .menubar-icon-btn:hover { opacity: 1; }
 
     .menubar-right {
       margin-left: auto;
@@ -798,6 +875,85 @@
       animation: openApp 0.2s ease;
     }
     .calendar-popover.show { display: block; }
+
+    /* ── Seletor de Plano de Fundo (Wallpapers) ── */
+    .wallpaper-popover {
+      position: fixed;
+      bottom: calc(78px + env(safe-area-inset-bottom));
+      right: 10px;
+      width: 280px;
+      background: rgba(20, 20, 20, 0.85);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 12px;
+      z-index: 200000;
+      display: none;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      animation: openApp 0.2s ease;
+    }
+    .wallpaper-popover.show { display: block; }
+
+    .wallpaper-popover .wp-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      color: white;
+    }
+    .wallpaper-popover .wp-header button {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      opacity: 0.7;
+      line-height: 1;
+    }
+    .wallpaper-popover .wp-header button:hover { opacity: 1; }
+
+    .wp-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .wp-thumb {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      border-radius: 8px;
+      background-size: cover;
+      background-position: center;
+      cursor: pointer;
+      border: 2px solid rgba(255,255,255,0.15);
+      transition: border-color 0.15s ease, transform 0.15s ease;
+    }
+    .wp-thumb:hover { transform: scale(1.05); border-color: rgba(255,255,255,0.5); }
+    .wp-thumb.selected { border-color: var(--active-accent, #0078d7); box-shadow: 0 0 0 1px var(--active-accent, #0078d7); }
+    .wp-thumb.selected::after {
+      content: "✓";
+      position: absolute;
+      top: 2px;
+      right: 4px;
+      font-size: 12px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    }
+    .wp-none {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 6px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.08);
+      cursor: pointer;
+      font-size: 12px;
+      color: white;
+      border: 2px solid rgba(255,255,255,0.15);
+    }
+    .wp-none:hover { background: rgba(255,255,255,0.15); }
+    .wp-none.selected { border-color: var(--active-accent, #0078d7); }
 
     .cal-header {
       display: flex;
@@ -1442,7 +1598,23 @@
   <div class="menubar">
     <span class="menubar-apple">💽</span>
     <span class="menubar-appname">Web Desktop OS</span>
+    <div class="menubar-menu" id="viewMenu">
+      <span class="menubar-menu-label" onclick="toggleViewMenu(event)">Visualização</span>
+      <div class="menubar-dropdown" id="viewMenuDropdown">
+        <button onclick="toggleViewMenu(event); toggleWallpaperPopover(event)">🌄 Plano de Fundo…</button>
+        <hr>
+        <button onclick="toggleViewMenu(event); toggleSepia()">🟤 Modo Sépia</button>
+        <button onclick="toggleViewMenu(event); toggleGrey()">⚫ Modo P&B Negativo</button>
+        <button onclick="toggleViewMenu(event); toggleHUD()">🕶️ Modo HUD/Holográfico</button>
+        <button onclick="toggleViewMenu(event); toggleComic()">💥 Modo Quadrinho/Mangá</button>
+        <hr>
+        <button onclick="toggleViewMenu(event); toggleGradeMode()">⊞ Modo Grade</button>
+        <button onclick="toggleViewMenu(event); alternarMenuCentro()">↔️ Menu: Centro/Esquerda</button>
+      </div>
+    </div>
     <div class="menubar-right">
+      <button class="menubar-icon-btn" title="Ativar/Desativar Touchpad" onclick="toggleTouchpad()">🖱️</button>
+      <button class="menubar-icon-btn" title="Ativar/Desativar Gamepad" onclick="toggleGamepad()">🎮</button>
       <div class="zoom-control">
         <label for="zoomSlider">Zoom:</label>
         <input id="zoomSlider" type="range" min="50" max="150" value="100">
@@ -1495,6 +1667,24 @@
     </div>
   </div>
 
+  <!-- Seletor de Plano de Fundo -->
+  <div class="wallpaper-popover" id="wallpaperPopover">
+    <div class="wp-header">
+      <span>🌄 Plano de Fundo</span>
+      <button onclick="toggleWallpaperPopover(event)">✕</button>
+    </div>
+    <div class="wp-grid" id="wp-grid">
+      <div class="wp-none" onclick="desativarFundoImagem()">Sem imagem (padrão)</div>
+      <div class="wp-thumb" data-file="trigo.jpg" style="background-image:url('images/trigo.jpg')" onclick="selecionarFundo('trigo.jpg')"></div>
+      <div class="wp-thumb" data-file="relaxing.jpg" style="background-image:url('images/relaxing.jpg')" onclick="selecionarFundo('relaxing.jpg')"></div>
+      <div class="wp-thumb" data-file="1730682.jpg" style="background-image:url('images/1730682.jpg')" onclick="selecionarFundo('1730682.jpg')"></div>
+      <div class="wp-thumb" data-file="7002342.jpg" style="background-image:url('images/7002342.jpg')" onclick="selecionarFundo('7002342.jpg')"></div>
+      <div class="wp-thumb" data-file="7002361.jpg" style="background-image:url('images/7002361.jpg')" onclick="selecionarFundo('7002361.jpg')"></div>
+      <div class="wp-thumb" data-file="1798287.jpg" style="background-image:url('images/1798287.jpg')" onclick="selecionarFundo('1798287.jpg')"></div>
+      <div class="wp-thumb" data-file="38598.jpg" style="background-image:url('images/38598.jpg')" onclick="selecionarFundo('38598.jpg')"></div>
+    </div>
+  </div>
+
   <!-- Menu Iniciar -->
   <div class="menu" id="startMenu">
    <div class="menu-scroll at-top" id="menuScroll">
@@ -1522,6 +1712,7 @@
     <a href="#" data-id="tower"        onclick="openApp({url:'https://www.towergame.app/', title:'TowerGame 🌇'})">🌇 TowerGame</a>
 
     <strong>💽 Local File System HTML with JS Apps:</strong>
+    <a href="#" onclick="openApp({url:'offline_apps/webpaperkeyboard.html', title:'Paper Keyboard ⌨️'})">⌨️ Paper Keyboard</a>
     <a href="#" onclick="openApp({url:'offline_apps/browser.html', title:'Browser 🌎'})">🌎 Browser</a>
     <a href="#" onclick="openApp({url:'offline_apps/openmaps.html', title:'Open Maps 🗺️'})">🗺️ Open Maps</a>
     <a href="#" onclick="openApp({url:'offline_apps/googlemaps.html', title:'Google Maps 🧭'})">🧭 Google Maps</a>
@@ -1534,7 +1725,6 @@
     <a href="#" onclick="openApp({url:'offline_apps/slides/slides.html', title:'Slides 📽️'})">📽️ Slides</a>
     <a href="#" onclick="openApp({url:'offline_apps/multileitor/multileitor.html', title:'Leitor de PDF, ePub e md 📄'})">📄 Leitor de PDF, ePub e md</a>
     <a href="#" onclick="openApp({url:'offline_apps/bloco-notas-offline-editor.html', title:'Bloco de Notas 📄'})">📄 Bloco de Notas</a>
-    <a href="#" onclick="openApp({url:'offline_apps/editorsemantico.html', title:'Editor Semântico 📄'})">📄 Editor Semântico</a>
     <a href="#" onclick="openApp({url:'offline_apps/recortaimagem.html', title:'Recortador Offline de Imagem 🖼️'})">🖼️ Recortador Offline de Imagem</a>
     <a href="#" onclick="openApp({url:'offline_apps/desenho.html', title:'Desenho 🖌️'})">🖌️ Desenho</a>
     <a href="#" data-id="diario"   onclick="openApp({url:'offline_apps/diario/diario.html', title:'Diário 📓'})">📓 Diário</a>
@@ -1545,7 +1735,6 @@
     <a href="#" data-id="console"  onclick="openApp({url:'offline_apps/webdevterminal.html', title:'Console Dev Web 👨🏽‍💻'})">👨🏽‍💻 Console Dev Web</a>
     <a href="#" onclick="openApp({url:'offline_apps/base64.html', title:'Base64 🧑🏽‍💻'})">🧑🏽‍💻 Base64</a>
     <a href="#" onclick="openApp({url:'offline_apps/gravador.html', title:'Gravador 🎤', width: 358, height: 189 })">🎤 Gravador</a>
-    <a href="#" onclick="openApp({url:'offline_apps/webdeckos.html', title:'WebDeckOS 🚀'})">🚀 WebDeckOS</a>
 	<a href="#" onclick="openApp({url:'offline_apps/relogio.html', title:'Relógio ⌚', width: 300, height: 300 })">⌚ Relógio</a>
     <hr>
 
@@ -1591,22 +1780,12 @@
     <a href="sms://">💬 Mensagens</a>
     <a href="tg://resolve?domain=SeuUsuario">💬 Telegram</a>
     <a href="sgnl://signal.me/#p/+55119999">🔒 Signal</a>
-	<details open>
-	<summary>⚙ Configurações</summary>
-    <button class="button" onclick="toggleTouchpad()">🖱️ Ativar/Desativar Touchpad</button>
-    <script src="offline_apps/touchpad.js"></script><br>
-    <button class="button" onclick="alternarFundo()">🌄 Alternar Fundo</button>
-    <button class="button" onclick="toggleSepia()">🟤 Modo Sépia</button>
+    <script src="offline_apps/touchpad.js"></script>
     <script src="offline_apps/sepia-toggle.js"></script>
-    <button class="button" onclick="toggleGrey()">⚫ Modo P&B Negativo</button>
     <script src="offline_apps/grey-toggle.js"></script>
-    <button class="button" onclick="toggleHUD()">🕶️ Alternar Modo HUD/Holográfico</button>
     <script src="offline_apps/hud-toggle.js"></script>
-    <button class="button" onclick="toggleComic()">💥 Modo Quadrinho/Mangá</button>
     <script src="offline_apps/comic-toggle.js"></script>
-    <button onclick="alternarMenuCentro()" class="button">Alternar Menu: Centro/Esquerda</button>
-	<button class="button" onclick="toggleGradeMode()">⊞ Modo Grade</button>
-	</details>
+    <script src="offline_apps/gamepad.js"></script>
 	<hr>
     <strong>📢 Público:</strong>
     <a href="#" onclick="openApp({url:'public/privacidade.html', title:'Privacidade'})">🔏 Privacidade</a>
@@ -1945,6 +2124,56 @@
     }
   });
 
+  // ── Esc: fecha popover/menu aberto, senão minimiza a janela ativa ──
+  // ── Alt+Tab / Alt+Shift+Tab: cicla o foco entre as janelas abertas ──
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      const wallpaperPop = document.getElementById('wallpaperPopover');
+      const calendarPop  = document.getElementById('calendarPopover');
+      const viewDropdown = document.getElementById('viewMenuDropdown');
+      const menu          = document.getElementById('startMenu');
+
+      if (viewDropdown && viewDropdown.classList.contains('show')) {
+        e.preventDefault();
+        toggleViewMenu(e);
+        return;
+      }
+      if (wallpaperPop && wallpaperPop.classList.contains('show')) {
+        e.preventDefault();
+        toggleWallpaperPopover(e);
+        return;
+      }
+      if (calendarPop && calendarPop.classList.contains('show')) {
+        e.preventDefault();
+        toggleCalendar(e);
+        return;
+      }
+      if (menu && menu.classList.contains('show')) {
+        e.preventDefault();
+        toggleMenu();
+        return;
+      }
+      const wins = [...document.querySelectorAll('.window')]
+        .filter(w => w.style.display !== 'none');
+      if (wins.length) {
+        const ativa = wins.reduce((a, b) =>
+          parseInt(a.style.zIndex) > parseInt(b.style.zIndex) ? a : b);
+        e.preventDefault();
+        minimizeWindow(ativa.id);
+      }
+      return;
+    }
+
+    if (e.altKey && e.key === 'Tab') {
+      const wins = [...document.querySelectorAll('.window')];
+      if (wins.length < 2) return;
+      e.preventDefault();
+      wins.sort((a, b) => parseInt(a.style.zIndex) - parseInt(b.style.zIndex));
+      const proximo = e.shiftKey ? wins[wins.length - 2] : wins[0];
+      focusWindow(proximo.id);
+    }
+  });
+
   // ── Menu Iniciar ──
   function toggleMenu() {
     const menu = document.getElementById('startMenu');
@@ -1977,6 +2206,20 @@
     root.style.height = (100 / scale) + 'dvh';
   }
 
+  // ── Acessibilidade por teclado: ícones de atalho (.shortcut / .shortcut-taskbar) ──
+  // Dá foco via Tab e aciona o onclick existente com Enter ou Espaço.
+  function tornarFocavel(el) {
+    if (el.hasAttribute('tabindex')) return; // evita duplicar listener
+    el.setAttribute('tabindex', '0');
+    el.setAttribute('role', 'button');
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        el.click();
+      }
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     // Zoom
     const savedZoom = localStorage.getItem('desktopZoom') || 100;
@@ -1985,6 +2228,10 @@
     document.getElementById('zoomSlider').addEventListener('input', function() {
       setGlobalZoom(this.value);
     });
+
+    // Navegação por teclado nos ícones (área de trabalho + taskbar)
+    document.querySelectorAll('.shortcut, .shortcut-taskbar')
+      .forEach(tornarFocavel);
 
     // Pesquisa no menu
     const searchInputEl = document.getElementById('searchInput');
@@ -2063,6 +2310,7 @@
     d.title = name;
     d.onclick = () => openApp({ url, title: name });
     d.innerHTML = `<span>🔗 ${name}</span>`;
+    tornarFocavel(d);
     desktop.appendChild(d);
 
     const lnk = document.createElement('a');
@@ -2162,7 +2410,50 @@
 
 
   <script>
-    function alternarFundo() { document.body.classList.toggle('fundo-imagem'); }
+    // ── Menu "Visualização" (barra superior) ──
+    let viewMenuVisivel = false;
+
+    function toggleViewMenu(e) {
+      e.stopPropagation();
+      viewMenuVisivel = !viewMenuVisivel;
+      document.getElementById('viewMenu').classList.toggle('open', viewMenuVisivel);
+      document.getElementById('viewMenuDropdown').classList.toggle('show', viewMenuVisivel);
+    }
+
+    // ── Seletor de Plano de Fundo ──
+    let wallpaperVisivel = false;
+
+    function toggleWallpaperPopover(e) {
+      e.stopPropagation();
+      wallpaperVisivel = !wallpaperVisivel;
+      const pop = document.getElementById('wallpaperPopover');
+      if (wallpaperVisivel) {
+        atualizarSelecaoWallpaper();
+        pop.classList.add('show');
+      } else {
+        pop.classList.remove('show');
+      }
+    }
+
+    function selecionarFundo(arquivo) {
+      document.body.style.setProperty('--wallpaper-url', `url("images/${arquivo}")`);
+      document.body.classList.add('fundo-imagem');
+      atualizarSelecaoWallpaper(arquivo);
+    }
+
+    function desativarFundoImagem() {
+      document.body.classList.remove('fundo-imagem');
+      document.body.style.removeProperty('--wallpaper-url');
+      atualizarSelecaoWallpaper();
+    }
+
+    function atualizarSelecaoWallpaper(arquivoSelecionado) {
+      const ativo = document.body.classList.contains('fundo-imagem');
+      document.querySelectorAll('#wp-grid .wp-thumb').forEach(el => {
+        el.classList.toggle('selected', ativo && el.dataset.file === arquivoSelecionado);
+      });
+      document.querySelector('#wp-grid .wp-none').classList.toggle('selected', !ativo);
+    }
 	
 	  // ── Relógio ──
   (function relogio() {
@@ -2253,6 +2544,23 @@
     if (calVisivel && !document.getElementById('calendarPopover').contains(e.target)) {
       calVisivel = false;
       document.getElementById('calendarPopover').classList.remove('show');
+    }
+  });
+
+  // Fecha seletor de plano de fundo ao clicar fora
+  document.addEventListener('click', function(e) {
+    if (wallpaperVisivel && !document.getElementById('wallpaperPopover').contains(e.target)) {
+      wallpaperVisivel = false;
+      document.getElementById('wallpaperPopover').classList.remove('show');
+    }
+  });
+
+  // Fecha menu "Visualização" ao clicar fora
+  document.addEventListener('click', function(e) {
+    if (viewMenuVisivel && !document.getElementById('viewMenu').contains(e.target)) {
+      viewMenuVisivel = false;
+      document.getElementById('viewMenu').classList.remove('open');
+      document.getElementById('viewMenuDropdown').classList.remove('show');
     }
   });
   
