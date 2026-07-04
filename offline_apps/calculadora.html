@@ -31,12 +31,37 @@ head a {
     color: white;
 }
 
-body {
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: transparent;
+}
+
+/* .stage ocupa toda a viewport (tela cheia no mobile) ou todo o iframe
+   do webdesktop, e centraliza a calculadora dentro dele. */
+.stage {
+    box-sizing: border-box;
+    width: 100vw;
+    height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* A calculadora mantém seu layout original em pixels; quem se adapta
+   ao espaço disponível (tela cheia ou iframe pequeno/grande) é o
+   transform: scale() aplicado via JS, preservando o alinhamento. */
+.calculator {
     width: 226px;
-    margin: 8% 20%;
     padding-bottom: 12px;
     background-color: #d9e4f1;
     border: solid 1px gray;
+    box-sizing: border-box;
+    transform-origin: center center;
+    flex: none;
 }
 
 .menu {
@@ -157,6 +182,8 @@ button:hover {
 </head>
 
 <body>
+<div class="stage">
+<div class="calculator">
   <div class="menu">&nbsp;&nbsp;&nbsp;&nbsp;</div>
   <div class="display">
     <div class="outer-div">
@@ -208,9 +235,48 @@ button:hover {
       <button class="btn-tall" value="=">=</button>
     </div>
   </div>
+</div>
+</div>
   <!--<script src="script.js"></script>-->
   <script>
+  function fitCalculator() {
+    const stage = document.querySelector(".stage");
+    const calc = document.querySelector(".calculator");
+    if (!stage || !calc) return;
+
+    // Mede o tamanho natural (sem escala) da calculadora.
+    calc.style.transform = "none";
+    const naturalWidth = calc.offsetWidth;
+    const naturalHeight = calc.offsetHeight;
+
+    const availableWidth = stage.clientWidth;
+    const availableHeight = stage.clientHeight;
+
+    const scaleX = availableWidth / naturalWidth;
+    const scaleY = availableHeight / naturalHeight;
+
+    // Usa a menor escala para caber por inteiro, mantendo a proporção.
+    // O teto (2.5) evita que a calculadora fique gigante em telas/iframes
+    // muito largos; no mobile em tela cheia ela cresce naturalmente.
+    const scale = Math.min(scaleX, scaleY, 2.5);
+
+    calc.style.transform = `scale(${scale})`;
+  }
+
+  window.addEventListener("resize", fitCalculator);
+  window.addEventListener("orientationchange", fitCalculator);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", fitCalculator);
+  }
+  // Reagir a mudanças de tamanho do próprio documento (útil quando o
+  // iframe do webdesktop é redimensionado pelo usuário).
+  if (window.ResizeObserver) {
+    new ResizeObserver(fitCalculator).observe(document.querySelector(".stage") || document.body);
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
+    fitCalculator();
+
     let numKeyReset = false;
     let lgQueue = "0";
     let smQueue = "";
