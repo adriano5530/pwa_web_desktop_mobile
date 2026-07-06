@@ -63,18 +63,34 @@
         let dataChannel;
         let role = null; // 'receiver' | 'controller'
 
-        // Espera o ICE gathering terminar para garantir que a SDP embutida
-        // no QR/texto já contenha todos os candidates (senão a conexão pode falhar).
-        function waitForIceGathering(pc) {
+        // Servidor STUN público: ajuda o navegador a descobrir o endereço
+        // público mais rápido. Sem isso, em algumas redes o ICE gathering
+        // pode nunca chegar a "complete".
+        const rtcConfig = {
+            iceServers: [
+                { urls: "stun:stun.l.google.com:19302" }
+            ]
+        };
+
+        // Espera o ICE gathering terminar (com timeout de segurança) para
+        // garantir que a SDP embutida no QR/texto já contenha os candidates
+        // disponíveis. Se não completar em tempo hábil, segue com o que tiver
+        // (fallback), já que o STUN normalmente resolve o candidato principal rápido.
+        function waitForIceGathering(pc, timeoutMs = 5000) {
             if (pc.iceGatheringState === "complete") return Promise.resolve();
             return new Promise((resolve) => {
+                let done = false;
+                function finish() {
+                    if (done) return;
+                    done = true;
+                    pc.removeEventListener("icegatheringstatechange", check);
+                    resolve();
+                }
                 function check() {
-                    if (pc.iceGatheringState === "complete") {
-                        pc.removeEventListener("icegatheringstatechange", check);
-                        resolve();
-                    }
+                    if (pc.iceGatheringState === "complete") finish();
                 }
                 pc.addEventListener("icegatheringstatechange", check);
+                setTimeout(finish, timeoutMs);
             });
         }
 
@@ -98,7 +114,7 @@
             document.getElementById("controllerStep1").classList.remove("visible");
             document.getElementById("controllerStep2").classList.remove("visible");
 
-            peerConnection = new RTCPeerConnection();
+            peerConnection = new RTCPeerConnection(rtcConfig);
             peerConnection.ondatachannel = (event) => {
                 dataChannel = event.channel;
                 setupDataChannelReceive(dataChannel);
@@ -132,7 +148,7 @@
             document.getElementById("receiverStep2").classList.remove("visible");
             document.getElementById("qrcode").innerHTML = "";
 
-            peerConnection = new RTCPeerConnection();
+            peerConnection = new RTCPeerConnection(rtcConfig);
             dataChannel = peerConnection.createDataChannel("keyboard");
             dataChannel.onopen = () => setStatus("Conectado! Digite no campo abaixo.");
 
