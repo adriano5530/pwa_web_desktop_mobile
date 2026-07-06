@@ -39,7 +39,7 @@
     </div>
 
     <!-- Controlador: cola a oferta, gera a resposta -->
-    <div id="controllerStep1" class="step visible">
+    <div id="controllerStep1" class="step">
         <label>Cole aqui a OFERTA do Receptor (ou escaneie o QR):</label>
         <textarea id="offerInput" rows="4"></textarea>
         <button onclick="openScanner('offerInput')">Escanear QR da oferta</button>
@@ -134,6 +134,10 @@
         }
 
         async function applyAnswer() {
+            if (!peerConnection || role !== "receiver") {
+                setStatus("Clique em 'Iniciar como Receptor' antes de colar/escanear a resposta.");
+                return;
+            }
             try {
                 const answer = JSON.parse(document.getElementById("answerInput").value);
                 await peerConnection.setRemoteDescription(answer);
@@ -165,6 +169,10 @@
         }
 
         async function acceptOffer() {
+            if (!peerConnection || role !== "controller") {
+                setStatus("Clique em 'Iniciar como Controlador' antes de colar/escanear a oferta.");
+                return;
+            }
             try {
                 const offer = JSON.parse(document.getElementById("offerInput").value);
                 await peerConnection.setRemoteDescription(offer);
