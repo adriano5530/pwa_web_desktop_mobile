@@ -138,6 +138,10 @@
                 setStatus("Clique em 'Iniciar como Receptor' antes de colar/escanear a resposta.");
                 return;
             }
+            if (peerConnection.signalingState === "stable") {
+                setStatus("Conexão já concluída anteriormente.");
+                return;
+            }
             try {
                 const answer = JSON.parse(document.getElementById("answerInput").value);
                 await peerConnection.setRemoteDescription(answer);
@@ -171,6 +175,10 @@
         async function acceptOffer() {
             if (!peerConnection || role !== "controller") {
                 setStatus("Clique em 'Iniciar como Controlador' antes de colar/escanear a oferta.");
+                return;
+            }
+            if (peerConnection.currentRemoteDescription) {
+                setStatus("Oferta já processada anteriormente. Aguarde a conexão ou reinicie.");
                 return;
             }
             try {
