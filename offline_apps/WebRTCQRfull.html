@@ -63,12 +63,23 @@
         let dataChannel;
         let role = null; // 'receiver' | 'controller'
 
-        // Servidor STUN público: ajuda o navegador a descobrir o endereço
-        // público mais rápido. Sem isso, em algumas redes o ICE gathering
-        // pode nunca chegar a "complete".
+        // STUN ajuda a descobrir o endereço público; TURN retransmite o
+        // tráfego quando a conexão direta P2P não é possível (NAT restritivo,
+        // redes de operadora, etc). Sem TURN, algumas redes nunca conseguem
+        // fechar a conexão mesmo com a sinalização correta.
         const rtcConfig = {
             iceServers: [
-                { urls: "stun:stun.l.google.com:19302" }
+                { urls: "stun:stun.l.google.com:19302" },
+                {
+                    urls: "turn:openrelay.metered.ca:80",
+                    username: "openrelayproject",
+                    credential: "openrelayproject"
+                },
+                {
+                    urls: "turn:openrelay.metered.ca:443",
+                    username: "openrelayproject",
+                    credential: "openrelayproject"
+                }
             ]
         };
 
@@ -76,7 +87,7 @@
         // garantir que a SDP embutida no QR/texto já contenha os candidates
         // disponíveis. Se não completar em tempo hábil, segue com o que tiver
         // (fallback), já que o STUN normalmente resolve o candidato principal rápido.
-        function waitForIceGathering(pc, timeoutMs = 5000) {
+        function waitForIceGathering(pc, timeoutMs = 8000) {
             if (pc.iceGatheringState === "complete") return Promise.resolve();
             return new Promise((resolve) => {
                 let done = false;
@@ -115,6 +126,16 @@
             document.getElementById("controllerStep2").classList.remove("visible");
 
             peerConnection = new RTCPeerConnection(rtcConfig);
+            peerConnection.oniceconnectionstatechange = () => {
+                console.log("Receptor ICE state:", peerConnection.iceConnectionState);
+                if (peerConnection.iceConnectionState === "failed" || peerConnection.iceConnectionState === "disconnected") {
+                    setStatus("Falha na conexão ICE (" + peerConnection.iceConnectionState + "). Provavelmente precisa de um servidor TURN nessa rede.");
+                } else if (peerConnection.iceConnectionState === "checking") {
+                    setStatus("Negociando rota de rede (ICE checking)...");
+                } else if (peerConnection.iceConnectionState === "connected") {
+                    setStatus("ICE conectado! Aguardando canal de dados...");
+                }
+            };
             peerConnection.ondatachannel = (event) => {
                 dataChannel = event.channel;
                 setupDataChannelReceive(dataChannel);
@@ -157,6 +178,16 @@
             document.getElementById("qrcode").innerHTML = "";
 
             peerConnection = new RTCPeerConnection(rtcConfig);
+            peerConnection.oniceconnectionstatechange = () => {
+                console.log("Controlador ICE state:", peerConnection.iceConnectionState);
+                if (peerConnection.iceConnectionState === "failed" || peerConnection.iceConnectionState === "disconnected") {
+                    setStatus("Falha na conexão ICE (" + peerConnection.iceConnectionState + "). Provavelmente precisa de um servidor TURN nessa rede.");
+                } else if (peerConnection.iceConnectionState === "checking") {
+                    setStatus("Negociando rota de rede (ICE checking)...");
+                } else if (peerConnection.iceConnectionState === "connected") {
+                    setStatus("ICE conectado! Aguardando canal de dados...");
+                }
+            };
             dataChannel = peerConnection.createDataChannel("keyboard");
             dataChannel.onopen = () => setStatus("Conectado! Digite no campo abaixo.");
 
