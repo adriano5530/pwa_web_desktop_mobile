@@ -1619,12 +1619,15 @@
       const titlebar = document.createElement('div');
       titlebar.className = 'titlebar';
       titlebar.innerHTML = `
-        <span class="window-title">${config.title}</span>
+        <span class="window-title"></span>
         <div class="window-controls">
           <span class="btn-minimize" title="Minimizar" onclick="minimizeWindow('${id}')">─</span>
           <span class="btn-maximize" title="Maximizar" onclick="maximizeWindow('${id}')">■</span>
           <span class="btn-close"    title="Fechar"    onclick="closeWindow('${id}')">✕</span>
         </div>`;
+      // Título inserido via textContent (nunca innerHTML) para não permitir
+      // que um título vindo de config (ex.: atalho importado) injete HTML/JS.
+      titlebar.querySelector('.window-title').textContent = config.title;
       titlebar.addEventListener('mousedown', e => dragMouseDown(e, win));
       titlebar.addEventListener('touchstart', e => dragMouseDown(e, win), { passive: false });
       titlebar.querySelectorAll('span').forEach(s => {
@@ -2084,7 +2087,9 @@
     d.className = 'shortcut';
     d.title = name;
     d.onclick = () => openApp({ url, title: name });
-    d.innerHTML = `<span>🔗 ${name}</span>`;
+    const span = document.createElement('span');
+    span.textContent = `🔗 ${name}`; // textContent: evita XSS via nome de atalho importado
+    d.appendChild(span);
     tornarFocavel(d);
     desktop.appendChild(d);
 
