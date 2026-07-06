@@ -1238,9 +1238,12 @@
   //  IMPORTAR FOTOS DA CÂMERA (compatibilidade com sistema atual)
   // ════════════════════════════════════════════════════════════
 
-  function importCameraPhotos() {
+  function importCameraPhotos(silent = false) {
     let fotos = JSON.parse(localStorage.getItem('cameraPhotos') || '[]');
-    if (!fotos.length) { toast('Não há fotos para importar.'); return; }
+    if (!fotos.length) {
+      if (!silent) toast('Não há fotos para importar.');
+      return;
+    }
     const dir = getCurrentDir();
     fotos.forEach(({ name, dataUrl }) => {
       const arr = dataUrl.split(',');
@@ -1254,8 +1257,34 @@
     });
     localStorage.removeItem('cameraPhotos');
     render();
-    toast(`✅ ${fotos.length} foto(s) importada(s)`);
+    toast(`✅ ${fotos.length} foto(s) importada(s) automaticamente`);
   }
+
+  // ════════════════════════════════════════════════════════════
+  //  AUTO-IMPORT: detecta fotos novas da câmera sem precisar clicar
+  // ════════════════════════════════════════════════════════════
+
+  // Dispara quando OUTRA aba/iframe (ex: camera.html) grava no localStorage.
+  // Só importa automaticamente no modo virtual, pra não misturar com o disco real.
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'cameraPhotos' && e.newValue && mode === 'virtual') {
+      importCameraPhotos(true);
+    }
+  });
+
+  // Fallback por polling: cobre casos (ex: alguns WebViews Android) onde o
+  // evento 'storage' não dispara entre iframes de forma confiável.
+  let lastCameraPhotosSnapshot = localStorage.getItem('cameraPhotos') || '[]';
+  setInterval(() => {
+    const current = localStorage.getItem('cameraPhotos') || '[]';
+    if (current !== lastCameraPhotosSnapshot && current !== '[]' && mode === 'virtual') {
+      importCameraPhotos(true);
+    }
+    lastCameraPhotosSnapshot = localStorage.getItem('cameraPhotos') || '[]';
+  }, 2000);
+
+  // Também importa qualquer foto pendente assim que o gerenciador abre.
+  importCameraPhotos(true);
 
   // ════════════════════════════════════════════════════════════
   //  ATALHO DE TECLADO

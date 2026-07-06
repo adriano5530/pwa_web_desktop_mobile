@@ -200,8 +200,31 @@
       // Salvar de volta no localStorage
       localStorage.setItem("cameraPhotos", JSON.stringify(fotos));
 
-      alert("Foto salva no armazenamento local! Vá ao gerenciador de arquivos para importar.");
+      // O gerenciador de arquivos detecta essa mudança sozinho (evento "storage"
+      // + polling de segurança) e importa a foto automaticamente, sem precisar
+      // clicar em nada lá.
+      showToast("📷 Foto salva! Será importada automaticamente no gerenciador de arquivos.");
     };
+
+    function showToast(msg) {
+      let el = document.getElementById("cameraToast");
+      if (!el) {
+        el = document.createElement("div");
+        el.id = "cameraToast";
+        el.style.cssText = `
+          position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%);
+          background: rgba(20,20,20,0.9); color: #fff; padding: 10px 18px;
+          border-radius: 8px; font-size: 14px; z-index: 9999;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.4); text-shadow: none;
+          transition: opacity 0.3s; opacity: 0;
+        `;
+        document.body.appendChild(el);
+      }
+      el.textContent = msg;
+      el.style.opacity = "1";
+      clearTimeout(el._timeout);
+      el._timeout = setTimeout(() => { el.style.opacity = "0"; }, 2600);
+    }
 
     window.addEventListener("DOMContentLoaded", setupCamera);
   </script>
