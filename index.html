@@ -12,8 +12,199 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Apresentação do Desktop Web">
   <meta name="google-site-verification" content="abc123XYZ">
+  <meta name="description" content="Web Desktop do Ecossistema Nano_Tech: um ambiente de trabalho completo, gratuito e instalável, que roda inteiramente no navegador. Editor de notas e código, documentos, planilhas, slides, leitor de PDF/Markdown e media player, tudo offline e com seus dados salvos localmente.">
+  <meta name="keywords" content="web desktop, PWA, ambiente offline, editor de notas, editor de código, planilhas online, leitor de pdf, media player, glassmorphism, produtividade">
+  <meta name="author" content="Nano_Tech">
 
-  <script>
+  <title>Ecossistema Nano_Tech - Tecnologia e Produtividade</title>
+  <style>
+     * {
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: #f9f9f9;
+      color: #333;
+      padding: 1rem;
+    }
+    
+    header h1 {
+      font-size: 2rem;
+      color: #007bff;
+    }
+    
+      .app-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1.5rem;
+    }
+    .app-card {
+      background: white;
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      text-align: center;
+      transition: transform 0.2s;
+    }
+    .app-card:hover {
+      transform: scale(1.02);
+    }
+    .app-card h3 {
+      font-size: 1.1rem;
+      margin-bottom: 0.25rem;
+    }
+    .app-card p {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 0.75rem;
+    }
+    .app-card a {
+      background: #28a745;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    h2 {
+      margin-top: 2.5rem;
+      margin-bottom: 0.75rem;
+      color: #222;
+    }
+    p {
+      line-height: 1.6;
+      margin-bottom: 0.75rem;
+    }
+    .tech-box {
+      background: #eef6ff;
+      border-left: 4px solid #007bff;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1.5rem 0;
+    }
+    .tech-box ul {
+      margin: 0.5rem 0 0 1.25rem;
+    }
+    .tech-box li {
+      margin-bottom: 0.4rem;
+      line-height: 1.5;
+    }
+    .faq-item {
+      background: white;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 0.75rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+    .faq-item h3 {
+      color: #007bff;
+      margin-bottom: 0.4rem;
+      font-size: 1.05rem;
+    }
+    footer {
+      max-width: 900px;
+      margin: 3rem auto 1rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #ddd;
+      font-size: 0.85rem;
+      color: #777;
+      text-align: center;
+    }
+    footer a {
+      color: #007bff;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <main>
+  <h1>Sobre o Web Desktop do Ecossistema Nano_Tech</h1>
+  <p>O <strong>Web Desktop</strong> é uma plataforma experimental de computação baseada em nuvem que emula a interface de um sistema operacional moderno diretamente no navegador. Desenvolvido com HTML5 puro, CSS3 (focado em Glassmorphism) e JavaScript assíncrono, o projeto foca em dar uma interface
+  de desktop a celulares de entrada de uma forma fácil.</p>
+
+  <p>A ideia nasceu de uma necessidade simples: nem todo mundo tem acesso a um computador tradicional, mas quase todo mundo tem um smartphone. O Web Desktop transforma esse celular em um ambiente de trabalho completo — com janelas arrastáveis e redimensionáveis, menu iniciar, barra de tarefas, atalhos de teclado e até suporte a controle via gamepad — sem exigir instalação de programas pesados ou conexão constante com a internet. Tudo roda a partir de arquivos HTML únicos e autossuficientes, o que facilita tanto o uso offline quanto a manutenção do projeto.</p>
+
+  <div class="tech-box">
+    <strong>Destaques Técnicos:</strong>
+    <ul>
+      <li><strong>Arquitetura PWA:</strong> Funciona offline e pode ser instalado em dispositivos móveis e desktops, como um aplicativo nativo.</li>
+      <li><strong>Privacidade Local:</strong> Os documentos e configurações são salvos via LocalStorage, sem tráfego de dados sensíveis para servidores.</li>
+      <li><strong>Interface Fluida:</strong> Renderização de janelas com desfoque de fundo (backdrop-filter) para alto desempenho visual.</li>
+      <li><strong>Temas Visuais:</strong> Múltiplos temas de aparência (comic, sépia, preto e branco, HUD), pensados para diferentes contextos de uso e conforto visual.</li>
+      <li><strong>Acessibilidade:</strong> Navegação completa por teclado, atalhos (Alt+Tab, Escape) e elementos com foco acessível.</li>
+    </ul>
+  </div>
+
+<p><em>Acesse aqui: <a href="webdesktopmobile.html" target="_blank">webdesktopmobile</a></em></p>
+ <p><em>Ou com layout alternativo <a href="alternativewebdesktop.html" target="_blank">alternativewebdesktop</a></em></p>
+<p><em>Ou ainda, um lançador mobile minimalista <a href="offline_apps/lancadorminimalista/lancadorminimalista.html" target="_blank">lancadorminimalista</a></em></p>
+
+  <h2>Ecossistema de Aplicativos</h2>
+  <p>Integramos ferramentas essenciais para fluxos de trabalho acadêmicos e profissionais, que inclusive podem ser acessadas de forma independente, fora do ambiente do desktop:</p>
+  <section class="app-grid">
+    <div class="app-card">
+      <h3>📄 Bloco de Notas</h3>
+      <p>Editor de notas rápidas e código-fonte, com realce de sintaxe e blocos de trechos prontos para HTML, CSS, JS, Python, Java, C, C++, C# e Rust. Inclui também um modo de editor semântico para organização de texto estruturado.</p>
+      <a href="offline_apps/bloco-notas-offline-editor.html" target="_blank">Abrir</a>
+    </div>
+    <div class="app-card">
+      <h3>📄 Documentos</h3>
+      <p>Editor de textos com formatação dinâmica, pensado para redação de trabalhos, relatórios e documentos do dia a dia, sem depender de serviços externos.</p>
+      <a href="offline_apps/documentos/documentos.html" target="_blank">Abrir</a>
+    </div>
+    <div class="app-card">
+      <h3>📊 Planilhas</h3>
+      <p>Gestão de dados e cálculos complexos, com suporte a colaboração via EtherCalc e também planilhas totalmente locais para quem prefere trabalhar offline.</p>
+      <a href="offline_apps/planilhas/planilhas.html" target="_blank">Abrir</a>
+    </div>
+    <div class="app-card">
+      <h3>📽️ Slides</h3>
+      <p>Criação e edição de apresentações de slides diretamente no navegador, com interface simples e exportação para uso posterior.</p>
+      <a href="offline_apps/slides/slides.html" target="_blank">Abrir</a>
+    </div>
+    <div class="app-card">
+      <h3>📖 Leitor</h3>
+      <p>Leitura de documentos em PDF e Markdown, com uma interface pensada para conforto de leitura prolongada em telas menores.</p>
+      <a href="offline_apps/multileitor/multileitor.html">Abrir</a>
+    </div>
+    <div class="app-card">
+      <h3>🎞️ Media Player</h3>
+      <p>Reprodutor multimídia integrado para áudio e vídeo, com suporte a listas de reprodução e controles adaptados para uso em tela cheia dentro do desktop.</p>
+      <a href="offline_apps/player.html">Abrir</a>
+    </div>
+  </section>
+
+  <h2>Perguntas Frequentes</h2>
+  <div class="faq-item">
+    <h3>Preciso instalar algum programa para usar?</h3>
+    <p>Não. Todo o Web Desktop roda diretamente no navegador. Você pode, opcionalmente, instalá-lo como um aplicativo (PWA) para ter acesso mais rápido e uso offline, mas isso não é obrigatório.</p>
+  </div>
+  <div class="faq-item">
+    <h3>Meus arquivos são enviados para algum servidor?</h3>
+    <p>Não. As notas, documentos e configurações ficam salvos localmente no seu próprio dispositivo, usando armazenamento local do navegador. Isso mantém seus dados privados e disponíveis mesmo sem internet.</p>
+  </div>
+  <div class="faq-item">
+    <h3>Funciona em qualquer celular?</h3>
+    <p>O projeto foi pensado especialmente para celulares de entrada, com foco em desempenho leve. Ele funciona em qualquer navegador moderno, tanto em Android quanto em desktop.</p>
+  </div>
+  <div class="faq-item">
+    <h3>É gratuito?</h3>
+    <p>Sim, o Web Desktop e todos os aplicativos do ecossistema são gratuitos e de uso livre.</p>
+  </div>
+
+  </main>
+
+  <footer>
+    <p>Ecossistema Nano_Tech &copy; 2026 — Projeto experimental de desktop web.</p>
+  </footer>
+
+<script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('DOMContentLoaded', function () {
         navigator.serviceWorker.register('service-worker.js')
@@ -25,46 +216,7 @@
           });
       });
     }
-  </script>
-
-  <title>Sobre o Web Desktop - Tecnologia e Produtividade</title>
-  <style>
-    body { font-family: 'Segoe UI', sans-serif; line-height: 1.6; margin: 40px auto; background: #fff; color: #333; max-width: 850px; padding: 0 20px; }
-    h1 { color: #1e1e1e; font-size: 2.2em; }
-    .tech-box { background: #f9f9f9; border-left: 5px solid #1e1e1e; padding: 20px; margin: 20px 0; border-radius: 4px; }
-    .app-list { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-    .app-item { background: #eee; padding: 10px; border-radius: 8px; font-size: 0.9em; }
-  </style>
-</head>
-<body>
-  <h1>Sobre o Web Desktop</h1>
-  <p>O <strong>Web Desktop</strong> é uma plataforma experimental de computação baseada em nuvem que emula a interface de um sistema operacional moderno diretamente no navegador. Desenvolvido com HTML5 puro, CSS3 (focado em Glassmorphism) e JavaScript assíncrono, o projeto foca em dar uma interface
-  de desktop a celulares de entrada de uma forma fácil.</p>
-
-  <div class="tech-box">
-    <strong>Destaques Técnicos:</strong>
-    <ul>
-      <li><strong>Arquitetura PWA:</strong> Funciona offline e pode ser instalado em dispositivos móveis e desktops.</li>
-      <li><strong>Privacidade Local:</strong> Os documentos e configurações são salvos via LocalStorage, sem tráfego de dados sensíveis para servidores.</li>
-      <li><strong>Interface Fluida:</strong> Renderização de janelas com desfoque de fundo (backdrop-filter) para alto desempenho visual.</li>
-    </ul>
-  </div>
-
-<p><em>Acesse aqui: <a href="webdesktopmobile.html" target="_blank">webdesktopmobile</a></em></p>
- <p><em>Ou com layout alternativo <a href="alternativewebdesktop.html" target="_blank">alternativewebdesktop</a></em></p>
-<p><em>Ou ainda, um lançador mobile minimalista <a href="offline_apps/lancadorminimalista/lancadorminimalista.html" target="_blank">lancadorminimalista</a></em></p>
-
-  <h2>Ecossistema de Aplicativos</h2>
-  <p>Integramos ferramentas essenciais para fluxos de trabalho acadêmicos e profissionais, que inclusive podem ser acessadas de forma independente:</p>
-  <div class="app-list">
-    <div class="app-item"><strong><a href="offline_apps/bloco-notas-offline-editor.html" target="_blank">📄 Bloco de notas:</a></strong> Edição de Notas rápidas e códigos.</div>
-    <div class="app-item"><strong><a href="offline_apps/documentos/documentos.html" target="_blank">📄 Documentos:</a></strong> Edição de textos e documentos com formatação dinâmica.</div>
-    <div class="app-item"><strong><a href="offline_apps/planilhas/planilhas.html" target="_blank">📊 Planilhas:</a></strong> Gestão de dados e cálculos complexos via EtherCalc e planilhas locais.</div>
-    <div class="app-item"><strong><a href="offline_apps/slides/slides.html" target="_blank">📽️ Slides:</a></strong> Edição de apresentações de slides.</div>
-    <div class="app-item"><strong><a href="offline_apps/multileitor/multileitor.html">📖 Leitor:</a></strong> Leitura de documentos pdf e markdown.</div>
-    <div class="app-item"><strong><a href="offline_apps/player.html">🎞️ Media Player:</a></strong> Reprodutor multimídia integrado para áudio e vídeo.</div>
-  </div>
-
+</script>
  
 </body>
 </html>
