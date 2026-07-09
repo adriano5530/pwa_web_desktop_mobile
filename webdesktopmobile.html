@@ -295,6 +295,7 @@
       white-space: nowrap;
       transition: all 0.2s ease;
       flex-shrink: 0;
+      margin-right: 4px;
     }
 
     .start-button:hover {
@@ -321,14 +322,17 @@
       margin-right: 8px;
     }
 
-    /* Atalhos fixos da taskbar */
+   
+   /* Atalhos fixos da taskbar — agora ícones grandes sem rótulo de texto,
+       igual aos apps fixados na Dock real do macOS. */
     .taskbar-shortcuts {
       display: flex;
       align-items: center;
-      gap: 2px;
+      gap: 4px;
       flex-shrink: 0;
-      padding-right: 8px;
-      border-right: 1px solid rgba(255,255,255,0.15);
+      padding-right: 10px;
+      margin-right: 4px;
+      border-right: 1px solid rgba(0,0,0,0.12);
     }
 
     .shortcut-taskbar {
@@ -337,12 +341,21 @@
       color: white;
       display: flex;
       align-items: center;
-      padding: 0 8px;
-      height: 36px;
-      border-radius: 8px;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
       white-space: nowrap;
-      transition: background 0.15s;
+      font-size: 24px;
+      transition: transform 0.15s ease;
+      background: rgba(255,255,255,0.12);
     }
+
+    /* Esconde o rótulo de texto: a Dock real do macOS só mostra o ícone,
+       sem legenda — mantemos o <span> no DOM (não removo do HTML/JS) só
+       que visualmente oculto, igual fizemos com os emojis dos atalhos. */
+    .shortcut-taskbar span { font-size: 0; }
+    .shortcut-taskbar span::first-letter { font-size: 24px; }
 
     .shortcut-taskbar:hover { background: rgba(255,255,255,0.1); }
 	
@@ -1404,7 +1417,7 @@
         <span>📄 Bloco de Notas</span>
       </div> 
       <div class="shortcut-taskbar" onclick="openApp({url:'offline_apps/calculadora.html', title: 'Calc 🖩', width: 300, height: 400 })">
-        <span>🖩 Calculadora</span>
+        <span>🧮 Calculadora</span>
       </div>
     </div>
     <!-- Janelas abertas aparecem aqui dinamicamente (do kernel2) -->
@@ -1500,7 +1513,7 @@
     <a href="#" onclick="openApp({url:'offline_apps/recortaimagem.html', title:'Recortador Offline de Imagem 🖼️'})">🖼️ Recortador Offline de Imagem</a>
     <a href="#" onclick="openApp({url:'offline_apps/desenho.html', title:'Desenho 🖌️'})">🖌️ Desenho</a>
     <a href="#" data-id="diario"   onclick="openApp({url:'offline_apps/diario/diario.html', title:'Diário 📓'})">📓 Diário</a>
-    <a href="#" onclick="openApp({url:'offline_apps/calculadora.html', title: 'Calc 🖩', width: 300, height: 400 })">🖩 Calculadora</a>
+    <a href="#" onclick="openApp({url:'offline_apps/calculadora.html', title: 'Calc 🖩', width: 300, height: 400 })">🧮 Calculadora</a>
     <a href="#" onclick="openApp({url:'offline_apps/youtube-wrapper.html', title:'Youtube 📺'})">📺 Youtube</a>
     <a href="#" data-id="iptv"     onclick="openApp({url:'offline_apps/iptv.html', title:'IPTV 📺'})">📺 IPTV</a>
     <a href="#" data-id="terminal" onclick="openApp({url:'offline_apps/terminal.html', title:'Terminal 👨🏽‍💻'})">👨🏽‍💻 Terminal</a>
