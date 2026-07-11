@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<!-- saved from url=(0084)https://rawgit.com/mar10/arcade-js/master/src/demos/asteroids/jsAsteroids-icade.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	
+	<title>jsAsteroids - iCade version</title>
+
+	<style>
+		div.arcadePopup {
+			font-family: "Lucida Console", Monaco, monospace;
+		}
+		div.arcadePopup p,
+		div.arcadePopup ul {
+			margin: 6px 0;
+		}
+		div.arcadePopup a {
+			color: white;
+		}
+		div.arcadePopup h2 {
+			text-align: center;
+			margin: 6px 0;
+		}
+	</style>
+
+	<script src="./jsicadelibs/jquery.js"></script>
+	<script src="./jsicadelibs/lina.js"></script>
+	<script src="./jsicadelibs/arcade.js"></script>
+	<script src="./jsicadelibs/arcade-controls.js"></script>
+	<script src="./jsicadelibs/jsAsteroids.js"></script>
+
+	<script type="text/javascript">
+
+	$(function(){
+		if(window.navigator && window.navigator.standalone ){
+			alert("The iCade version does not work as iPhones/iPad standalone app, " +
+				"because keyboard events are required.");
+		}
+
+		var msg = "<h2>Game Over</h2>";
+		// msg += "<p>Hit <kbd>Fire</kbd> to start.</p>";
+		msg += "<hr>";
+		msg += "<p>Controls:</p>";
+		msg += "<p><ul>";
+		msg += "<li><kbd>Stick Left/Right</kbd>: Turn ship</li>";
+		msg += "<li><kbd>Black Left Bottom</kbd>: Thrust</li>";
+		msg += "<li><kbd>Black Right Bottom</kbd>: Fire</li>";
+		msg += "<li><kbd>Red Bottom</kbd>: Hyperspace</li>";
+		msg += "<li><kbd>White Top</kbd>: Insert coin.</p>";
+		msg += "</ul></p>";
+		msg += "<hr>";
+		msg += "<p style='text-align: center; font-size: 80%;'>";
+		msg += "Asteroids.js - iCade Version.<br>";
+		msg += "Copyright &copy; 2011 Martin Wendt. Made with <a href='https://github.com/mar10/arcade-js/' target='_blank'>ArcadeJS</a>.";
+		msg += "</p>";
+
+		var game = new AsteroidsGame("#gameCanvas", {
+				icadeControls: true,
+				fullscreenMode: true,
+				gameOverMsg: msg,
+				debug: {
+					showFps: true,
+					logToCanvas: false
+				}
+			});
+	});
+	</script>
+</head>
+
+<body>
+	<canvas id="gameCanvas" class="arcade-js" width="1024" style="background-color: black; position: absolute; top: 0px; left: 0px;" height="649">This game requires HTML 5 support.</canvas>
+
+
+<div id="AudioJS-sounds"><audio preload="auto" autobuffer="true"><source src="fire.mp3"><source src="fire.oga"><source src="fire.wav"></audio><audio preload="auto" autobuffer="true"><source src="damage.mp3"><source src="damage.oga"></audio></div><div class="arcadePopup" style="position: absolute; left: 308.18px; top: 213.5px; padding: 10px; border: 1px solid white; z-index: 1000; color: white; background-color: transparent; border-radius: 5px; box-shadow: rgb(191, 191, 191) 3px 3px 10px;"><h2>Game Over</h2><hr><p>Controls:</p><p></p><ul><li><kbd>Stick Left/Right</kbd>: Turn ship</li><li><kbd>Black Left Bottom</kbd>: Thrust</li><li><kbd>Black Right Bottom</kbd>: Fire</li><li><kbd>Red Bottom</kbd>: Hyperspace</li><li><kbd>White Top</kbd>: Insert coin.<p></p></li></ul><p></p><hr><p style="text-align: center; font-size: 80%;">Asteroids.js - iCade Version.<br>Copyright © 2011 Martin Wendt. Made with <a href="https://github.com/mar10/arcade-js/" target="_blank">ArcadeJS</a>.</p></div></body></html>
