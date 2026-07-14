@@ -224,14 +224,14 @@
 
     /* ===== Modo Sépia ===== */
     #appWrapper.modo-sepia {
-      background: #2b211a;
-      color: #e3bfa1;
+      color: #d9c2a3;
     }
     body.cam-ativa #appWrapper.modo-sepia {
       filter: sepia(60%) saturate(160%) hue-rotate(-10deg);
     }
     body:not(.cam-ativa) #appWrapper.modo-sepia {
       filter: sepia(100%) saturate(180%) hue-rotate(-10deg) contrast(1.1) brightness(0.9);
+      background: #2b211a;
     }
     #appWrapper.modo-sepia a { color: #d9c2a3; }
     #appWrapper.modo-sepia a:active { background-color: #3a2c20; }
