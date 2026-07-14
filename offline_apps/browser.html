@@ -64,7 +64,7 @@
     /* Iframe fica transparente quando câmera ativa */
     body.cam-ativa #browser-frame {
       background: transparent;
-      opacity: 0.92;
+      opacity: 0.8;
     }
 
     /* ===== Abas ===== */
@@ -208,7 +208,7 @@
       <button onclick="go()">Ir</button>
       <button onclick="novaAba()">+</button>
       <button onclick="abrirExterno()" title="Abrir em nova aba real">🔗</button>
-      <button id="btn-cam" onclick="toggleCamera()" title="Modo transparente">📷</button>
+      <button id="btn-cam" onclick="toggleCamera()" title="Modo transparente">🪟</button>
     </div>
 
     <!-- Barra da câmera (aparece ao ativar) -->
@@ -328,6 +328,10 @@
           if (iframe.contentWindow.location.href === "about:blank") throw new Error();
         } catch (e) {
           console.warn("Possível bloqueio de iframe ou cross-origin.");
+          // 4. Fallback para o Servidor Proxy (apenas se o direto falhar ou parecer vazio)
+      // Você pode comentar a linha abaixo até que seu servidor esteja pronto
+      // const proxyUrl = "https://proxy-server-0muc.onrender.com/proxy?url=" + encodeURIComponent(url);
+      // iframe.src = proxyUrl;
         }
       }, 1500);
     }

@@ -8,7 +8,7 @@
   <link rel="apple-touch-icon" href="icon-192.png" />
   <meta name="theme-color" content="#111" />
   <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
-  <title>Lançador Minimalista e Transparente</title>
+  <title>Lançador Minimalista com Transparencia</title>
   <style>
     @font-face {
       font-family: 'PixelLCD';
@@ -160,7 +160,7 @@
       flex-direction: column;
       gap: 8px;
       width: 100%;
-      max-width: 360px;
+      max-width: 340px;
       margin-bottom: 10px;
       padding: 10px;
       border: 1px dashed #666;
@@ -224,7 +224,8 @@
 
     /* ===== Modo Sépia ===== */
     #appWrapper.modo-sepia {
-      color: #d9c2a3;
+      background: #2b211a;
+      color: #e3bfa1;
     }
     body.cam-ativa #appWrapper.modo-sepia {
       filter: sepia(60%) saturate(160%) hue-rotate(-10deg);
@@ -307,10 +308,8 @@
       <button onclick="alternarFormulario()">➕ Adicionar atalho</button>
       <button id="alternarModo">▦ Modo Grade</button>
       <button id="alternarSepia">🟤 Modo Sépia</button>
-    </div>
-
-    <div id="painelCamera">
-      <button id="alternarCamera">📷 Ativar modo transparente</button>
+       <div id="painelCamera">
+      <button id="alternarCamera">🪟 Ativar modo transparente</button>
       <div id="opcoesCamera" class="hidden">
         <button id="trocarCamera">🔄 Trocar câmera (frontal/traseira)</button>
         <label for="dimRange">Escurecer fundo para legibilidade</label>
@@ -324,6 +323,9 @@
       </div>
       <div id="avisoCamera">⚠️ O vídeo da câmera é só uma ajuda visual e tem atraso. Não confie nele para atravessar ruas ou evitar obstáculos — continue prestando atenção ao ambiente real.</div>
     </div>
+    </div>
+
+   
 
     <div id="status" style="margin-top: 10px; font-size: 1.2rem; opacity: 0.7;"></div>
 
