@@ -67,6 +67,7 @@
       min-height: 100%;
       filter: grayscale(100%) contrast(1.5);
       image-rendering: pixelated;
+      will-change: filter; /* evita bug de repaint (Chrome/WebView) ao trocar filter + colapsar altura junto */
     }
     body.cam-ativa #appWrapper {
       filter: none;
@@ -559,18 +560,30 @@
     links.forEach(link => {
       const href = link.getAttribute('href');
       let pressTimer;
+      let tocouMoveu = false;
       link.addEventListener('contextmenu', e => {
         e.preventDefault();
         localStorage.setItem('oculto_' + href, '1');
         aplicarConfiguracoesLocais();
       });
       link.addEventListener('touchstart', () => {
+        tocouMoveu = false;
         pressTimer = setTimeout(() => {
-          localStorage.setItem('oculto_' + href, '1');
-          aplicarConfiguracoesLocais();
+          if (!tocouMoveu) {
+            localStorage.setItem('oculto_' + href, '1');
+            aplicarConfiguracoesLocais();
+          }
         }, 800);
       });
+      // Cancela o "long press pra esconder" se o dedo mover (ex: rolando a tela)
+      // — sem isso, um scroll iniciado em cima de um link com duração > 800ms
+      // escondia o link acidentalmente, mesmo sem intenção de long-press.
+      link.addEventListener('touchmove', () => {
+        tocouMoveu = true;
+        clearTimeout(pressTimer);
+      });
       link.addEventListener('touchend', () => clearTimeout(pressTimer));
+      link.addEventListener('touchcancel', () => clearTimeout(pressTimer));
     });
 
     restoreBtn.addEventListener('click', () => {
@@ -727,6 +740,14 @@
       camBtn.textContent = '📷 Ativar modo transparente';
       localStorage.setItem('camAtiva', '0');
       if (mostrarAviso) mostrarToast('📷 Modo transparente desativado');
+
+      // Força um repaint no frame seguinte: corrige o bug em que o link
+      // "Browser" (logo após o painel da câmera) some visualmente porque
+      // o filter muda e a altura colapsa no mesmo frame (bug de compositing do WebView/Chrome)
+      requestAnimationFrame(() => {
+        appWrapper.style.transform = 'translateZ(0)';
+        requestAnimationFrame(() => { appWrapper.style.transform = ''; });
+      });
     }
 
     camBtn.addEventListener('click', () => {
