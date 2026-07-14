@@ -8,28 +8,73 @@
   <link rel="apple-touch-icon" href="icon-192.png" />
   <meta name="theme-color" content="#111" />
   <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
-  <title>Lancador Minimalista</title>
+  <title>Lançador Minimalista e Transparente</title>
   <style>
-        @font-face {
+    @font-face {
       font-family: 'PixelLCD';
       src: local('Courier New'), monospace;
     }
+    html, body {
+      height: 100%;
+    }
     body {
+      margin: 0;
       background: #111;
       color: #fff;
       font-family: 'PixelLCD', monospace;
       font-size: 1.8rem;
       line-height: 1.6;
       letter-spacing: 3px;
+      user-select: none;
+      overflow-x: hidden;
+    }
+
+    /* ===== Fundo de câmera (efeito "celular transparente") ===== */
+    #cameraBg {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+      background: #000;
+      display: none;
+      transform-origin: center center;
+      transform: scale(var(--cam-zoom, 1.0));
+      /* scale > 1 recorta o centro, simulando zoom óptico */
+    }
+    #cameraDim {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      background: rgba(0,0,0,var(--dim, 0.35));
+      pointer-events: none;
+      display: none;
+    }
+    body.cam-ativa #cameraBg,
+    body.cam-ativa #cameraDim {
+      display: block;
+    }
+
+    /* ===== Wrapper do conteúdo (recebe os filtros visuais antigos) ===== */
+    #appWrapper {
+      position: relative;
+      z-index: 2;
       display: flex;
       flex-direction: column;
       align-items: center;
       padding: 20px;
+      min-height: 100%;
       filter: grayscale(100%) contrast(1.5);
       image-rendering: pixelated;
-      user-select: none;
     }
+    body.cam-ativa #appWrapper {
+      filter: none;
+      image-rendering: auto;
+    }
+
     #hora, #data, #usuario { margin: 10px 0; }
+    #hora, #data { text-shadow: 0 1px 4px rgba(0,0,0,0.8); }
     a {
       display: block;
       color: #fff;
@@ -102,29 +147,56 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.4s;
+      z-index: 20;
     }
     #toast.show {
       opacity: 1;
       pointer-events: auto;
     }
 
-    /* ===== Modo Grade ===== */
-    body.modo-grade {
-      background: #292929;
+    /* ===== Painel de controle da câmera ===== */
+    #painelCamera {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+      max-width: 360px;
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px dashed #666;
+      border-radius: 10px;
     }
-    body.modo-grade section,
-    body.modo-grade #personalizados {
+    #painelCamera label {
+      font-size: 1.1rem;
+      opacity: 0.8;
+    }
+    #painelCamera input[type="range"] {
+      width: 100%;
+      border: none;
+      padding: 0;
+    }
+    #avisoCamera {
+      font-size: 1rem;
+      opacity: 0.75;
+      line-height: 1.4;
+      max-width: 340px;
+      text-align: center;
+    }
+
+    /* ===== Modo Grade ===== */
+    #appWrapper.modo-grade section,
+    #appWrapper.modo-grade #personalizados {
       max-width: 600px;
       width: 100%;
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
       gap: 12px;
     }
-    body.modo-grade h2 {
+    #appWrapper.modo-grade h2 {
       grid-column: 1 / -1;
       text-align: center;
     }
-    body.modo-grade a {
+    #appWrapper.modo-grade a {
       background: #3a3a3a;
       border-radius: 8px;
       padding: 16px 8px;
@@ -141,157 +213,202 @@
       border: none;
       transition: background 0.2s, transform 0.1s;
     }
-    body.modo-grade a:hover {
+    #appWrapper.modo-grade a:hover {
       background: #505050;
       text-decoration: none;
     }
-    body.modo-grade a:active {
+    #appWrapper.modo-grade a:active {
       transform: scale(0.97);
       background: #505050;
     }
 
     /* ===== Modo Sépia ===== */
-    body.modo-sepia {
-      background: #2b211a;
+    #appWrapper.modo-sepia {
       color: #d9c2a3;
+    }
+    body.cam-ativa #appWrapper.modo-sepia {
+      filter: sepia(60%) saturate(160%) hue-rotate(-10deg);
+    }
+    body:not(.cam-ativa) #appWrapper.modo-sepia {
       filter: sepia(100%) saturate(180%) hue-rotate(-10deg) contrast(1.1) brightness(0.9);
     }
-    body.modo-sepia a {
-      color: #d9c2a3;
-    }
-    body.modo-sepia a:active {
-      background-color: #3a2c20;
-    }
-    body.modo-sepia h2 {
-      border-bottom-color: #5a4632;
-    }
-    body.modo-sepia button,
-    body.modo-sepia input,
-    body.modo-sepia select {
+    #appWrapper.modo-sepia a { color: #d9c2a3; }
+    #appWrapper.modo-sepia a:active { background-color: #3a2c20; }
+    #appWrapper.modo-sepia h2 { border-bottom-color: #5a4632; }
+    #appWrapper.modo-sepia button,
+    #appWrapper.modo-sepia input,
+    #appWrapper.modo-sepia select {
       border-color: #6b5640;
       color: #d9c2a3;
     }
-    body.modo-sepia button:hover {
-      background-color: #3a2c20;
-    }
-    body.modo-sepia #toast {
+    #appWrapper.modo-sepia button:hover { background-color: #3a2c20; }
+    #appWrapper.modo-sepia #toast {
       background: #3a2c20;
       border-color: #6b5640;
       color: #d9c2a3;
     }
-    body.modo-sepia.modo-grade {
-      background: #2b211a;
-    }
-    body.modo-sepia.modo-grade a {
+    #appWrapper.modo-sepia.modo-grade a {
       background: #3a2c20;
       color: #d9c2a3;
     }
-    body.modo-sepia.modo-grade a:hover,
-    body.modo-sepia.modo-grade a:active {
+    #appWrapper.modo-sepia.modo-grade a:hover,
+    #appWrapper.modo-sepia.modo-grade a:active {
       background: #4a3a2a;
+    }
+
+    /* ===== Vidro (glassmorphism) quando a câmera está ativa ===== */
+    body.cam-ativa section,
+    body.cam-ativa #personalizados,
+    body.cam-ativa #menuContainer,
+    body.cam-ativa #painelCamera,
+    body.cam-ativa form {
+      background: rgba(20,20,20,0.45);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border-radius: 12px;
+      padding: 10px 14px;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    body.cam-ativa #menuToggle,
+    body.cam-ativa button {
+      background: rgba(20,20,20,0.45);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.25);
+    }
+    body.cam-ativa a {
+      text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+    }
+    body.cam-ativa #appWrapper.modo-grade a {
+      background: rgba(58,58,58,0.55);
     }
   </style>
 </head>
 <body>
-  <div id="hora">--:--</div>
-  <div id="data">--/--/--</div>
-  
-<div id="usuario" style="opacity: 0.5;"></div>
 
-  <button id="menuToggle">☰ Menu</button>
-  <div id="menuContainer">
-    <button id="share" class="hidden">🔗 Compartilhar esta página</button>
-    <button id="restaurar">🔄 Mostrar todos os atalhos</button>
-    <button id="exportar">📤 Exportar configurações</button>
-    <input id="importar" type="file" accept=".json" style="display:none" />
-    <button onclick="document.getElementById('importar').click()">📥 Importar configurações</button>
-    <button onclick="salvarNoGunDB()">☁️ Sincronizar com a nuvem</button>
-    <button onclick="alternarFormulario()">➕ Adicionar atalho</button>
-    <button id="alternarModo">▦ Modo Grade</button>
-    <button id="alternarSepia">🟤 Modo Sépia</button>
-  </div>
+  <video id="cameraBg" autoplay playsinline muted></video>
+  <div id="cameraDim"></div>
 
-  <div id="status" style="margin-top: 10px; font-size: 1.2rem; opacity: 0.7;"></div>
-  
-  <form id="formAtalho" class="hidden" onsubmit="return adicionarAtalho()">
-    <input type="text" id="nomeAtalho" placeholder="Nome do atalho" required />
-    <input type="url" id="urlAtalho" placeholder="URL do atalho" required />
-    <select id="plataformaAtalho" required>
-      <option value="android ios">Android e iOS</option>
-      <option value="android">Somente Android</option>
-      <option value="ios">Somente iOS</option>
-    </select>
-    <button type="submit">Salvar</button>
-  </form>
-  
-   <section id="personalizados">
-    <h2>Atalhos Personalizados</h2>
-    <!-- Conteúdo inserido via JS -->
-  </section>
+  <div id="appWrapper">
 
-<section>
-    <h2>Internos</h2>
-<a href="../browser.html">🌍 Browser</a>
-<a href="../filemanager.html">📁 Arquivos</a>
-<a href="../bloco-notas-offline-editor.html">📝 Bloco de Notas</a>
-<a href="../calculadora.html">🧮 Calculadora</a>
-<a href="../camera.html">📷 Camera</a>
-<a href="../openmaps.html">🗺️ Open Maps</a>
-<a href="../googlemaps.html">🧭 Google Maps</a>
-<a href="../youtube-wrapper.html">📺 Youtube</a>
-<a href="../player.html">🎵 Player</a>
-<a href="../gravador.html">🎙️ Gravador</a>
-<a href="../motof3.html">📞 Motofone F3</a>
-<a href="../relogio.html">⏰ Relógio</a>
-</section>
+    <div id="hora">--:--</div>
+    <div id="data">--/--/--</div>
 
-<section>
-    <h2>Comunicação</h2>
-    <a href="whatsapp://send?text=Olá" data-plataforma="android ios">📲 WhatsApp</a>
-    <a href="facetime://" data-plataforma="ios">📞 FaceTime</a>
-    <a href="mailto:" data-plataforma="android ios">✉️ Mail</a>
-    <a href="sms://" data-plataforma="android ios">💬 Mensagens</a>
-    <a href="tel:+5511999999999" data-plataforma="android ios">📞 Ligar</a>
-    <a href="tg://resolve?domain=SeuUsuario" data-plataforma="android ios">💬 Telegram</a>
-    <a href="skype:echo123?call" data-plataforma="android ios">📞 Skype</a>
-    <a href="sgnl://signal.me/#p/+55119999" data-plataforma="android ios">🔒 Signal</a>
-  </section>
+    <div id="usuario" style="opacity: 0.5;"></div>
 
-  <section>
-    <h2>Mapas</h2>
-    <a href="maps://" data-plataforma="ios">🗺️ Apple Maps</a>
-    <a href="comgooglemaps://" data-plataforma="ios">🗺️ Google Maps (iOS)</a>
-    <a href="geo:0,0?q=" data-plataforma="android">🗺️ Google Maps (Android)</a>
-    <a href="waze://" data-plataforma="android ios">🧭 Waze</a>
-  </section>
+    <button id="menuToggle">☰ Menu</button>
+    <div id="menuContainer">
+      <button id="share" class="hidden">🔗 Compartilhar esta página</button>
+      <button id="restaurar">🔄 Mostrar todos os atalhos</button>
+      <button id="exportar">📤 Exportar configurações</button>
+      <input id="importar" type="file" accept=".json" style="display:none" />
+      <button onclick="document.getElementById('importar').click()">📥 Importar configurações</button>
+      <button onclick="salvarNoGunDB()">☁️ Sincronizar com a nuvem</button>
+      <button onclick="alternarFormulario()">➕ Adicionar atalho</button>
+      <button id="alternarModo">▦ Modo Grade</button>
+      <button id="alternarSepia">🟤 Modo Sépia</button>
+    </div>
 
-  <section>
-    <h2>Mídia</h2>
-    <a href="music://" data-plataforma="ios">🎵 Apple Music</a>
-    <a href="spotify://" data-plataforma="android ios">🎵 Spotify</a>
-    <a href="youtube://" data-plataforma="android ios">📺 YouTube</a>
-    <a href="podcast://" data-plataforma="ios">🎙️ Podcasts</a>
-    <a href="photos-redirect://" data-plataforma="ios">🖼️ Galeria</a>
-  </section>
+    <div id="painelCamera">
+      <button id="alternarCamera">📷 Ativar modo transparente</button>
+      <div id="opcoesCamera" class="hidden">
+        <button id="trocarCamera">🔄 Trocar câmera (frontal/traseira)</button>
+        <label for="dimRange">Escurecer fundo para legibilidade</label>
+        <input type="range" id="dimRange" min="0" max="0.8" step="0.05" value="0.35" />
+        <label for="zoomRange">🔍 Zoom (corrige escala vs ambiente)</label>
+        <input type="range" id="zoomRange" min="1.0" max="3.0" step="0.05" value="1.0" />
+        <div id="zoomLabel" style="font-size:1rem;opacity:0.7;text-align:center;">Zoom: 1.0×</div>
+        <div id="zoomDica" style="font-size:0.85rem;opacity:0.55;line-height:1.4;">
+          Objetos próximos sempre terão mais desvio (paralaxe físico da câmera). Para objetos a &gt;1m o ajuste de zoom já equilibra bem a escala.
+        </div>
+      </div>
+      <div id="avisoCamera">⚠️ O vídeo da câmera é só uma ajuda visual e tem atraso. Não confie nele para atravessar ruas ou evitar obstáculos — continue prestando atenção ao ambiente real.</div>
+    </div>
 
-  <section>
-    <h2>Navegação</h2>
-    <a href="http://" data-plataforma="android ios">🌐 Safari/Browser</a>
-    <a href="googlechrome://example.com" data-plataforma="android ios">🌍 Chrome</a>
-    <a href="brave://" data-plataforma="android">🦁 Brave</a>
-    <a href="google://" data-plataforma="ios">🔎 Google (iOS)</a>
-  </section>
+    <div id="status" style="margin-top: 10px; font-size: 1.2rem; opacity: 0.7;"></div>
 
-  <section>
-    <h2>Utilitários</h2>
-    <a href="App-Prefs:" data-plataforma="ios">⚙️ Ajustes (iOS)</a>
-    <a href="calshow://" data-plataforma="ios">🗓️ Calendário</a>
-    <a href="mobilenotes://" data-plataforma="ios">📝 Notas</a>
-    <a href="clock-alarm://" data-plataforma="ios">⏰ Relógio</a>
-    <a href="camera://" data-plataforma="ios">📷 Câmera</a>
-    <a href="calculator://" data-plataforma="ios">🧮 Calculadora</a>
-  </section>
+    <form id="formAtalho" class="hidden" onsubmit="return adicionarAtalho()">
+      <input type="text" id="nomeAtalho" placeholder="Nome do atalho" required />
+      <input type="url" id="urlAtalho" placeholder="URL do atalho" required />
+      <select id="plataformaAtalho" required>
+        <option value="android ios">Android e iOS</option>
+        <option value="android">Somente Android</option>
+        <option value="ios">Somente iOS</option>
+      </select>
+      <button type="submit">Salvar</button>
+    </form>
 
+    <section id="personalizados">
+      <h2>Atalhos Personalizados</h2>
+      <!-- Conteúdo inserido via JS -->
+    </section>
+
+    <section>
+      <h2>Internos</h2>
+      <a href="../browser.html">🌍 Browser</a>
+      <a href="../filemanager.html">📁 Arquivos</a>
+      <a href="../bloco-notas-offline-editor.html">📝 Bloco de Notas</a>
+      <a href="../calculadora.html">🧮 Calculadora</a>
+      <a href="../camera.html">📷 Camera</a>
+      <a href="../openmaps.html">🗺️ Open Maps</a>
+      <a href="../googlemaps.html">🧭 Google Maps</a>
+      <a href="../youtube-wrapper.html">📺 Youtube</a>
+      <a href="../player.html">🎵 Player</a>
+      <a href="../gravador.html">🎙️ Gravador</a>
+      <a href="../motof3.html">📞 Motofone F3</a>
+      <a href="../relogio.html">⏰ Relógio</a>
+    </section>
+
+    <section>
+      <h2>Comunicação</h2>
+      <a href="whatsapp://send?text=Olá" data-plataforma="android ios">📲 WhatsApp</a>
+      <a href="facetime://" data-plataforma="ios">📞 FaceTime</a>
+      <a href="mailto:" data-plataforma="android ios">✉️ Mail</a>
+      <a href="sms://" data-plataforma="android ios">💬 Mensagens</a>
+      <a href="tel:+5511999999999" data-plataforma="android ios">📞 Ligar</a>
+      <a href="tg://resolve?domain=SeuUsuario" data-plataforma="android ios">💬 Telegram</a>
+      <a href="skype:echo123?call" data-plataforma="android ios">📞 Skype</a>
+      <a href="sgnl://signal.me/#p/+55119999" data-plataforma="android ios">🔒 Signal</a>
+    </section>
+
+    <section>
+      <h2>Mapas</h2>
+      <a href="maps://" data-plataforma="ios">🗺️ Apple Maps</a>
+      <a href="comgooglemaps://" data-plataforma="ios">🗺️ Google Maps (iOS)</a>
+      <a href="geo:0,0?q=" data-plataforma="android">🗺️ Google Maps (Android)</a>
+      <a href="waze://" data-plataforma="android ios">🧭 Waze</a>
+    </section>
+
+    <section>
+      <h2>Mídia</h2>
+      <a href="music://" data-plataforma="ios">🎵 Apple Music</a>
+      <a href="spotify://" data-plataforma="android ios">🎵 Spotify</a>
+      <a href="youtube://" data-plataforma="android ios">📺 YouTube</a>
+      <a href="podcast://" data-plataforma="ios">🎙️ Podcasts</a>
+      <a href="photos-redirect://" data-plataforma="ios">🖼️ Galeria</a>
+    </section>
+
+    <section>
+      <h2>Navegação</h2>
+      <a href="http://" data-plataforma="android ios">🌐 Safari/Browser</a>
+      <a href="googlechrome://example.com" data-plataforma="android ios">🌍 Chrome</a>
+      <a href="brave://" data-plataforma="android">🦁 Brave</a>
+      <a href="google://" data-plataforma="ios">🔎 Google (iOS)</a>
+    </section>
+
+    <section>
+      <h2>Utilitários</h2>
+      <a href="App-Prefs:" data-plataforma="ios">⚙️ Ajustes (iOS)</a>
+      <a href="calshow://" data-plataforma="ios">🗓️ Calendário</a>
+      <a href="mobilenotes://" data-plataforma="ios">📝 Notas</a>
+      <a href="clock-alarm://" data-plataforma="ios">⏰ Relógio</a>
+      <a href="camera://" data-plataforma="ios">📷 Câmera</a>
+      <a href="calculator://" data-plataforma="ios">🧮 Calculadora</a>
+    </section>
+
+  </div><!-- /appWrapper -->
+
+  <div id="toast"></div>
 
   <script>
     document.getElementById('menuToggle').addEventListener('click', () => {
@@ -299,15 +416,17 @@
       menu.classList.toggle('visible');
     });
 
+    const appWrapper = document.getElementById('appWrapper');
+
     // ===== Modo Grade =====
     const modoBtn = document.getElementById('alternarModo');
     function aplicarModoSalvo() {
       const modo = localStorage.getItem('modoVisual') || 'lista';
       if (modo === 'grade') {
-        document.body.classList.add('modo-grade');
+        appWrapper.classList.add('modo-grade');
         modoBtn.textContent = '☰ Modo Lista';
       } else {
-        document.body.classList.remove('modo-grade');
+        appWrapper.classList.remove('modo-grade');
         modoBtn.textContent = '▦ Modo Grade';
       }
     }
@@ -322,7 +441,7 @@
     const sepiaBtn = document.getElementById('alternarSepia');
     function aplicarSepiaSalvo() {
       const ativo = localStorage.getItem('modoSepia') === '1';
-      document.body.classList.toggle('modo-sepia', ativo);
+      appWrapper.classList.toggle('modo-sepia', ativo);
       sepiaBtn.textContent = ativo ? '⬛ Modo Padrão' : '🟤 Modo Sépia';
     }
     sepiaBtn.addEventListener('click', () => {
@@ -332,7 +451,7 @@
     });
     aplicarSepiaSalvo();
 
-     const gun = Gun('https://gun-manhattan.herokuapp.com/gun');
+    const gun = Gun('https://gun-manhattan.herokuapp.com/gun');
     const userID = localStorage.getItem('userID') || prompt("Informe seu ID para sincronizar:");
     if (userID) localStorage.setItem('userID', userID);
     const configRef = gun.get('lancador').get(userID);
@@ -361,21 +480,21 @@
     }
     setInterval(atualizarRelogio, 1000);
     atualizarRelogio();
-    
+
     function mostrarToast(msg, tempo = 2000) {
       toast.textContent = msg;
       toast.classList.add('show');
       setTimeout(() => toast.classList.remove('show'), tempo);
     }
-    
-     function detectarPlataforma() {
+
+    function detectarPlataforma() {
       const ua = navigator.userAgent;
       if (/Android/i.test(ua)) return 'android';
       if (/iPhone|iPad|iPod/i.test(ua)) return 'ios';
       return 'web';
     }
 
-   function aplicarCompatibilidadePorPlataforma() {
+    function aplicarCompatibilidadePorPlataforma() {
       const plataforma = detectarPlataforma();
       document.querySelectorAll('a[data-plataforma]').forEach(link => {
         const plataformas = link.dataset.plataforma.split(' ');
@@ -396,7 +515,7 @@
       });
     }
 
-  function alternarFormulario() {
+    function alternarFormulario() {
       document.getElementById('formAtalho').classList.toggle('hidden');
     }
 
@@ -416,7 +535,7 @@
       return false;
     }
 
-   function renderizarAtalhosPersonalizados() {
+    function renderizarAtalhosPersonalizados() {
       const plataformaAtual = detectarPlataforma();
       const lista = JSON.parse(localStorage.getItem('custom_atalhos') || '[]');
       personalizados.innerHTML = '<h2>Atalhos Personalizados</h2>';
@@ -453,30 +572,29 @@
     });
 
     restoreBtn.addEventListener('click', () => {
-  // Limpa localStorage dos atalhos ocultos
-  const chavesParaRemover = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const chave = localStorage.key(i);
-    if (chave.startsWith('oculto_')) {
-      chavesParaRemover.push(chave);
-    }
-  }
-  chavesParaRemover.forEach(k => localStorage.removeItem(k));
+      const chavesParaRemover = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const chave = localStorage.key(i);
+        if (chave.startsWith('oculto_')) {
+          chavesParaRemover.push(chave);
+        }
+      }
+      chavesParaRemover.forEach(k => localStorage.removeItem(k));
 
-  aplicarConfiguracoesLocais();
-  salvarNoGunDB();
-  mostrarToast('🔄 Atalhos restaurados');
-});
+      aplicarConfiguracoesLocais();
+      salvarNoGunDB();
+      mostrarToast('🔄 Atalhos restaurados');
+    });
 
 
     if (navigator.share) {
       shareBtn.classList.remove('hidden');
       shareBtn.addEventListener('click', () => {
-        navigator.share({ title: 'Lançador Minimalista', url: window.location.href });
+        navigator.share({ title: 'Lançador Transparente', url: window.location.href });
       });
     }
 
-     document.getElementById('exportar').addEventListener('click', () => {
+    document.getElementById('exportar').addEventListener('click', () => {
       const dados = {};
       for (let i = 0; i < localStorage.length; i++) {
         const chave = localStorage.key(i);
@@ -487,7 +605,7 @@
       const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'configuracoes-lancador.html';
+      a.download = 'configuracoes-lancador.json';
       a.click();
       mostrarToast('📤 Configurações exportadas');
     });
@@ -515,10 +633,10 @@
       reader.readAsText(file);
     });
 
-    
+
     if (userID) localStorage.setItem('userID', userID);
-    
-     function salvarNoGunDB() {
+
+    function salvarNoGunDB() {
       const dados = {};
       for (let i = 0; i < localStorage.length; i++) {
         const chave = localStorage.key(i);
@@ -544,20 +662,166 @@
       statusDiv.textContent = '✅ Configurações sincronizadas';
     });
 
-    
-    
-  </script>
-  
-  <script>
-  
-  /* Registro especificio pra pwa interno em pasta de outro */    
-    if ('serviceWorker' in navigator) {
-       navigator.serviceWorker.register('service-worker.js', { scope: './' });
+    // ===================================================
+    // ===== Modo Transparente (fundo de câmera) ========
+    // ===================================================
+    const camBtn = document.getElementById('alternarCamera');
+    const trocarCamBtn = document.getElementById('trocarCamera');
+    const opcoesCamera = document.getElementById('opcoesCamera');
+    const dimRange = document.getElementById('dimRange');
+    const videoBg = document.getElementById('cameraBg');
+
+    let streamAtual = null;
+    let facingAtual = localStorage.getItem('facingCamera') || 'environment'; // traseira por padrão (ver a rua à frente)
+
+    // Restaura intensidade do escurecimento salva
+    const dimSalvo = localStorage.getItem('dimCamera');
+    if (dimSalvo !== null) {
+      dimRange.value = dimSalvo;
+      document.documentElement.style.setProperty('--dim', dimSalvo);
     }
 
-  
+    async function iniciarCamera() {
+      pararCamera(); // garante que não há stream duplicada
+      try {
+        streamAtual = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: facingAtual } },
+          audio: false
+        });
+        videoBg.srcObject = streamAtual;
+        document.body.classList.add('cam-ativa');
+        opcoesCamera.classList.remove('hidden');
+        camBtn.textContent = '🚫 Desativar modo transparente';
+        localStorage.setItem('camAtiva', '1');
+        mostrarToast('📷 Modo transparente ativado');
+        // Reaplicar zoom após stream estar ativa
+        // (pequeno delay para o track estar pronto)
+        setTimeout(() => aplicarZoom(parseFloat(zoomRange.value), false), 400);
+      } catch (erro) {
+        console.error(erro);
+        localStorage.setItem('camAtiva', '0');
+        if (erro.name === 'NotAllowedError') {
+          mostrarToast('❌ Permissão da câmera negada', 3000);
+        } else if (erro.name === 'NotFoundError') {
+          mostrarToast('❌ Nenhuma câmera encontrada', 3000);
+        } else {
+          mostrarToast('❌ Não foi possível acessar a câmera', 3000);
+        }
+      }
+    }
+
+    function pararCamera() {
+      if (streamAtual) {
+        streamAtual.getTracks().forEach(t => t.stop());
+        streamAtual = null;
+      }
+      videoBg.srcObject = null;
+    }
+
+    function desativarCamera(mostrarAviso = true) {
+      pararCamera();
+      document.body.classList.remove('cam-ativa');
+      opcoesCamera.classList.add('hidden');
+      camBtn.textContent = '📷 Ativar modo transparente';
+      localStorage.setItem('camAtiva', '0');
+      if (mostrarAviso) mostrarToast('📷 Modo transparente desativado');
+    }
+
+    camBtn.addEventListener('click', () => {
+      if (document.body.classList.contains('cam-ativa')) {
+        desativarCamera();
+      } else {
+        iniciarCamera();
+      }
+    });
+
+    trocarCamBtn.addEventListener('click', () => {
+      facingAtual = facingAtual === 'environment' ? 'user' : 'environment';
+      localStorage.setItem('facingCamera', facingAtual);
+      mostrarToast(facingAtual === 'environment' ? '📷 Câmera traseira' : '🤳 Câmera frontal');
+      if (document.body.classList.contains('cam-ativa')) {
+        iniciarCamera();
+      }
+    });
+
+    dimRange.addEventListener('input', () => {
+      document.documentElement.style.setProperty('--dim', dimRange.value);
+      localStorage.setItem('dimCamera', dimRange.value);
+    });
+
+    // ===== Zoom da câmera =====
+    const zoomRange = document.getElementById('zoomRange');
+    const zoomLabel = document.getElementById('zoomLabel');
+
+    // Restaura zoom salvo
+    const zoomSalvo = parseFloat(localStorage.getItem('zoomCamera') || '1.0');
+    zoomRange.value = zoomSalvo;
+    aplicarZoom(zoomSalvo, false);
+
+    zoomRange.addEventListener('input', () => {
+      const v = parseFloat(zoomRange.value);
+      aplicarZoom(v, true);
+    });
+
+    async function aplicarZoom(valor, salvar) {
+      zoomLabel.textContent = 'Zoom: ' + valor.toFixed(2) + '×';
+      if (salvar) localStorage.setItem('zoomCamera', valor);
+
+      // Tenta zoom nativo da câmera (Android Chrome suporta bem)
+      let zoomNativoAplicado = false;
+      if (streamAtual) {
+        const track = streamAtual.getVideoTracks()[0];
+        if (track) {
+          const caps = track.getCapabilities ? track.getCapabilities() : {};
+          if (caps.zoom) {
+            const minZ = caps.zoom.min ?? 1;
+            const maxZ = caps.zoom.max ?? 1;
+            // Mapeia o valor do slider para o range suportado pela câmera
+            const zNativo = minZ + (valor - 1) / (zoomRange.max - 1) * (maxZ - minZ);
+            try {
+              await track.applyConstraints({ advanced: [{ zoom: Math.min(zNativo, maxZ) }] });
+              zoomNativoAplicado = true;
+              // Com zoom nativo aplicado, reseta o scale CSS para não duplicar
+              document.documentElement.style.setProperty('--cam-zoom', '1');
+            } catch (e) {
+              console.warn('Zoom nativo falhou, usando CSS scale:', e);
+            }
+          }
+        }
+      }
+
+      // Fallback: scale CSS no elemento <video>
+      // (funciona em todos os browsers; recorta o centro do frame)
+      if (!zoomNativoAplicado) {
+        document.documentElement.style.setProperty('--cam-zoom', valor);
+      }
+    }
+
+    // Economiza bateria/dados: pausa a câmera se o app for para segundo plano
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        if (streamAtual) pararCamera();
+      } else if (localStorage.getItem('camAtiva') === '1') {
+        iniciarCamera();
+      }
+    });
+
+    // Não reativamos a câmera automaticamente ao carregar a página:
+    // o navegador exige um gesto do usuário para o pedido de permissão
+    // funcionar de forma confiável, então deixamos o botão visível
+    // indicando o último estado.
+    if (localStorage.getItem('camAtiva') === '1') {
+      camBtn.textContent = '📷 Toque para reativar modo transparente';
+    }
+
   </script>
-  
+
+  <script>
+    /* Registro específico pra pwa interno em pasta de outro */
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js', { scope: './' });
+    }
+  </script>
+
 </body>
 </html>
-

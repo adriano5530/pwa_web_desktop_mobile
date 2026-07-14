@@ -9,21 +9,72 @@
   <meta name="apple-mobile-web-app-title" content="Browser">
   <title>Navegador Simulado</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
+
     body {
       margin: 0;
       font-family: system-ui, sans-serif;
       background-color: #1e1e1e;
       color: #ccc;
     }
+
+    /* ===== Câmera de fundo ===== */
+    #cameraBg {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+      background: #000;
+      display: none;
+      transform-origin: center center;
+      transform: scale(var(--cam-zoom, 1));
+    }
+    #cameraDim {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      background: rgba(0,0,0,var(--dim, 0.35));
+      pointer-events: none;
+      display: none;
+    }
+    body.cam-ativa #cameraBg,
+    body.cam-ativa #cameraDim { display: block; }
+
+    /* ===== Layout principal (sobre a câmera) ===== */
+    #shell {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* Glassmorphism nas barras quando câmera ativa */
+    body.cam-ativa #tabs,
+    body.cam-ativa #controls,
+    body.cam-ativa #cam-bar {
+      background: rgba(30,30,30,0.55) !important;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-color: rgba(255,255,255,0.12) !important;
+    }
+
+    /* Iframe fica transparente quando câmera ativa */
+    body.cam-ativa #browser-frame {
+      background: transparent;
+      opacity: 0.92;
+    }
+
+    /* ===== Abas ===== */
     #tabs {
       display: flex;
       background: #2a2a2a;
       padding: 0 4px;
       overflow-x: auto;
       border-bottom: 1px solid #444;
+      flex-shrink: 0;
     }
     .tab {
       display: flex;
@@ -42,14 +93,14 @@
       color: white;
       box-shadow: inset 0 -2px 0 #4285f4;
     }
-    .tab:hover {
-      background: #444;
-    }
+    .tab:hover { background: #444; }
     .tab span {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
+
+    /* ===== Barra de controles ===== */
     #controls {
       display: flex;
       align-items: center;
@@ -57,6 +108,7 @@
       padding: 8px;
       background: #2b2b2b;
       border-bottom: 1px solid #444;
+      flex-shrink: 0;
     }
     #controls input {
       flex: 1;
@@ -75,40 +127,112 @@
       border-radius: 6px;
       cursor: pointer;
       transition: background 0.2s;
+      white-space: nowrap;
     }
-    #controls button:hover {
-      background: #444;
-      color: white;
+    #controls button:hover { background: #444; color: white; }
+
+    /* ===== Barra da câmera (colapsável) ===== */
+    #cam-bar {
+      background: #252525;
+      border-bottom: 1px solid #444;
+      flex-shrink: 0;
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.3s ease;
     }
+    #cam-bar.aberta { max-height: 120px; }
+    #cam-bar-inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+    }
+    #cam-bar label { font-size: 0.8rem; color: #aaa; white-space: nowrap; }
+    #cam-bar input[type="range"] { flex: 1; min-width: 80px; max-width: 120px; }
+    #cam-bar button {
+      background: #333;
+      color: #ccc;
+      border: 1px solid #555;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    #cam-bar button:hover { background: #444; color: white; }
+    #zoom-val { font-size: 0.8rem; color: #888; min-width: 34px; }
+
+    /* ===== Iframe ===== */
     #browser-frame {
+      flex: 1;
       width: 100%;
-      height: calc(100vh - 112px); /* altura das abas + controles */
       border: none;
+      display: block;
     }
+
+    /* ===== Aviso ===== */
+    #aviso-cam {
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(30,30,30,0.85);
+      color: #ffcc00;
+      font-size: 0.72rem;
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,200,0,0.4);
+      z-index: 20;
+      pointer-events: none;
+      display: none;
+      text-align: center;
+      max-width: 90vw;
+    }
+    body.cam-ativa #aviso-cam { display: block; }
   </style>
 </head>
 <body>
 
-  <div id="tabs"></div>
+  <!-- Plano de fundo câmera -->
+  <video id="cameraBg" autoplay playsinline muted></video>
+  <div id="cameraDim"></div>
 
-  <div id="controls">
-    <button onclick="voltar()">⬅</button>
-    <button onclick="avancar()">➡</button>
-    <input type="text" id="url-bar" placeholder="Digite a URL...">
-    <button onclick="go()">Ir</button>
-    <button onclick="novaAba()">+ Aba</button>
-    <button onclick="abrirExterno()" title="Abrir em nova aba real">🔗</button>
-<script>
-function abrirExterno() {
-  const url = document.getElementById("url-bar").value;
-  window.open(url, '_blank');
-}
-</script>
-  </div>
+  <div id="shell">
 
-  <iframe id="browser-frame"></iframe>
+    <div id="tabs"></div>
+
+    <div id="controls">
+      <button onclick="voltar()">⬅</button>
+      <button onclick="avancar()">➡</button>
+      <input type="text" id="url-bar" placeholder="Digite a URL...">
+      <button onclick="go()">Ir</button>
+      <button onclick="novaAba()">+</button>
+      <button onclick="abrirExterno()" title="Abrir em nova aba real">🔗</button>
+      <button id="btn-cam" onclick="toggleCamera()" title="Modo transparente">📷</button>
+    </div>
+
+    <!-- Barra da câmera (aparece ao ativar) -->
+    <div id="cam-bar">
+      <div id="cam-bar-inner">
+        <button onclick="trocarCamera()">🔄 Câmera</button>
+        <label>Dim</label>
+        <input type="range" id="dimRange" min="0" max="0.8" step="0.05" value="0.35">
+        <label>Zoom</label>
+        <input type="range" id="zoomRange" min="1" max="3" step="0.05" value="1">
+        <span id="zoom-val">1.0×</span>
+      </div>
+    </div>
+
+    <iframe id="browser-frame" allow="camera; microphone; geolocation"></iframe>
+
+  </div><!-- /shell -->
+
+  <div id="aviso-cam">⚠️ Câmera tem atraso — não substitui atenção ao ambiente real</div>
 
   <script>
+    /* ============================================================
+       ABAS
+    ============================================================ */
     let abas = [];
     let abaAtiva = -1;
 
@@ -140,10 +264,7 @@ function abrirExterno() {
         closeBtn.innerText = " ❌";
         closeBtn.style.marginLeft = "8px";
         closeBtn.style.cursor = "pointer";
-        closeBtn.onclick = (e) => {
-          e.stopPropagation();
-          fecharAba(i);
-        };
+        closeBtn.onclick = (e) => { e.stopPropagation(); fecharAba(i); };
 
         tab.appendChild(title);
         tab.appendChild(closeBtn);
@@ -158,89 +279,176 @@ function abrirExterno() {
         novaAba();
       } else {
         abaAtiva = Math.max(0, abaAtiva);
-        const aba = abas[abaAtiva];
-        carregarPagina(aba.url, false);
+        carregarPagina(abas[abaAtiva].url, false);
       }
       atualizarAbas();
     }
 
     function go() {
-      const urlInput = document.getElementById("url-bar").value;
-      const url = urlInput.startsWith("http") ? urlInput : "https://" + urlInput;
-      if (abaAtiva >= 0) {
-        carregarPagina(url, true);
+      const v = document.getElementById("url-bar").value.trim();
+      const url = v.startsWith("http") ? v : "https://" + v;
+      if (abaAtiva >= 0) { carregarPagina(url, true); atualizarAbas(); }
+    }
+
+    function voltar() {
+      if (abaAtiva < 0) return;
+      const aba = abas[abaAtiva];
+      if (aba.indice > 0) {
+        aba.indice--;
+        aba.url = aba.historico[aba.indice];
+        carregarPagina(aba.url, false);
         atualizarAbas();
       }
     }
 
-    function voltar() {
-      if (abaAtiva >= 0) {
-        const aba = abas[abaAtiva];
-        if (aba.indice > 0) {
-          aba.indice--;
-          aba.url = aba.historico[aba.indice];
-          carregarPagina(aba.url, false);
-          atualizarAbas();
-        }
-      }
-    }
-
     function avancar() {
-      if (abaAtiva >= 0) {
+      if (abaAtiva < 0) return;
+      const aba = abas[abaAtiva];
+      if (aba.indice < aba.historico.length - 1) {
+        aba.indice++;
+        aba.url = aba.historico[aba.indice];
+        carregarPagina(aba.url, false);
+        atualizarAbas();
+      }
+    }
+
+    function carregarPagina(url, registrar = true) {
+      const iframe = document.getElementById("browser-frame");
+      iframe.src = url;
+      document.getElementById("url-bar").value = url;
+      if (registrar && abaAtiva >= 0) {
         const aba = abas[abaAtiva];
-        if (aba.indice < aba.historico.length - 1) {
-          aba.indice++;
-          aba.url = aba.historico[aba.indice];
-          carregarPagina(aba.url, false);
-          atualizarAbas();
+        aba.historico = aba.historico.slice(0, aba.indice + 1);
+        aba.historico.push(url);
+        aba.indice++;
+        aba.url = url;
+      }
+      setTimeout(() => {
+        try {
+          if (iframe.contentWindow.location.href === "about:blank") throw new Error();
+        } catch (e) {
+          console.warn("Possível bloqueio de iframe ou cross-origin.");
+        }
+      }, 1500);
+    }
+
+    function abrirExterno() {
+      window.open(document.getElementById("url-bar").value, '_blank');
+    }
+
+    /* ============================================================
+       CÂMERA TRANSPARENTE
+    ============================================================ */
+    let streamAtual = null;
+    let facingAtual = localStorage.getItem('browser_facing') || 'environment';
+
+    const videoBg  = document.getElementById('cameraBg');
+    const dimRange  = document.getElementById('dimRange');
+    const zoomRange = document.getElementById('zoomRange');
+    const zoomVal   = document.getElementById('zoom-val');
+    const camBar    = document.getElementById('cam-bar');
+    const btnCam    = document.getElementById('btn-cam');
+
+    // Restaura valores salvos
+    dimRange.value  = localStorage.getItem('browser_dim')  ?? 0.35;
+    zoomRange.value = localStorage.getItem('browser_zoom') ?? 1.0;
+    document.documentElement.style.setProperty('--dim',      dimRange.value);
+    document.documentElement.style.setProperty('--cam-zoom', zoomRange.value);
+    zoomVal.textContent = parseFloat(zoomRange.value).toFixed(2) + '×';
+
+    async function toggleCamera() {
+      if (document.body.classList.contains('cam-ativa')) {
+        desativarCamera();
+      } else {
+        await iniciarCamera();
+      }
+    }
+
+    async function iniciarCamera() {
+      pararStream();
+      try {
+        streamAtual = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: facingAtual } },
+          audio: false
+        });
+        videoBg.srcObject = streamAtual;
+        document.body.classList.add('cam-ativa');
+        camBar.classList.add('aberta');
+        btnCam.style.color = '#4af';
+        localStorage.setItem('browser_cam', '1');
+        // Reaplicar zoom após track estabilizar
+        setTimeout(() => aplicarZoom(parseFloat(zoomRange.value), false), 400);
+      } catch (err) {
+        const msg = err.name === 'NotAllowedError' ? 'Permissão negada'
+                  : err.name === 'NotFoundError'   ? 'Câmera não encontrada'
+                  : 'Câmera indisponível';
+        alert('📷 ' + msg);
+        localStorage.setItem('browser_cam', '0');
+      }
+    }
+
+    function desativarCamera() {
+      pararStream();
+      document.body.classList.remove('cam-ativa');
+      camBar.classList.remove('aberta');
+      btnCam.style.color = '';
+      localStorage.setItem('browser_cam', '0');
+    }
+
+    function pararStream() {
+      if (streamAtual) { streamAtual.getTracks().forEach(t => t.stop()); streamAtual = null; }
+      videoBg.srcObject = null;
+    }
+
+    function trocarCamera() {
+      facingAtual = facingAtual === 'environment' ? 'user' : 'environment';
+      localStorage.setItem('browser_facing', facingAtual);
+      if (document.body.classList.contains('cam-ativa')) iniciarCamera();
+    }
+
+    dimRange.addEventListener('input', () => {
+      document.documentElement.style.setProperty('--dim', dimRange.value);
+      localStorage.setItem('browser_dim', dimRange.value);
+    });
+
+    zoomRange.addEventListener('input', () => {
+      aplicarZoom(parseFloat(zoomRange.value), true);
+    });
+
+    async function aplicarZoom(valor, salvar) {
+      zoomVal.textContent = valor.toFixed(2) + '×';
+      if (salvar) localStorage.setItem('browser_zoom', valor);
+
+      let nativo = false;
+      if (streamAtual) {
+        const track = streamAtual.getVideoTracks()[0];
+        if (track) {
+          const caps = track.getCapabilities ? track.getCapabilities() : {};
+          if (caps.zoom) {
+            const min = caps.zoom.min ?? 1, max = caps.zoom.max ?? 1;
+            const zN = min + (valor - 1) / (zoomRange.max - 1) * (max - min);
+            try {
+              await track.applyConstraints({ advanced: [{ zoom: Math.min(zN, max) }] });
+              nativo = true;
+              document.documentElement.style.setProperty('--cam-zoom', '1');
+            } catch(e) { /* fallback CSS */ }
+          }
         }
       }
+      if (!nativo) document.documentElement.style.setProperty('--cam-zoom', valor);
     }
 
- function carregarPagina(url, registrar = true) {
-  const iframe = document.getElementById("browser-frame");
-  const urlBar = document.getElementById("url-bar");
+    // Pausa câmera em segundo plano
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { pararStream(); }
+      else if (localStorage.getItem('browser_cam') === '1') iniciarCamera();
+    });
 
-  // 1. Tenta o carregamento direto primeiro
-  iframe.src = url;
-  urlBar.value = url;
-  console.log("Tentando conexão direta: " + url);
-
-  // 2. Registra no histórico se necessário
-  if (registrar && abaAtiva >= 0) {
-    const aba = abas[abaAtiva];
-    aba.historico = aba.historico.slice(0, aba.indice + 1);
-    aba.historico.push(url);
-    aba.indice++;
-    aba.url = url;
-  }
-
-  // 3. Verificação de Bloqueio (Lógica Client-side)
-  // Aguardamos 1.5s para ver se o site bloqueou o iframe
-  setTimeout(() => {
-    try {
-      // Se conseguirmos acessar o conteúdo, o site permitiu (mesma origem ou sem bloqueio)
-      if (iframe.contentWindow.location.href === "about:blank") {
-        throw new Error("Página em branco");
-      }
-    } catch (e) {
-      /* Se cair aqui (Erro de Cross-Origin), significa que o site carregou 
-         OU que ele bloqueou via cabeçalho (X-Frame-Options).
-         Como não podemos ler o erro real, verificamos se o iframe parece "vazio"
-      */
-      console.warn("Possível bloqueio detectado ou restrição de segurança. Tentando Proxy...");
-      
-      // 4. Fallback para o Servidor Proxy (apenas se o direto falhar ou parecer vazio)
-      // Você pode comentar a linha abaixo até que seu servidor esteja pronto
-      // const proxyUrl = "https://proxy-server-0muc.onrender.com/proxy?url=" + encodeURIComponent(url);
-      // iframe.src = proxyUrl;
-    }
-  }, 1500);
-}
-
+    /* ============================================================
+       INIT
+    ============================================================ */
     novaAba("https://google.com/?igu=1");
   </script>
 
 </body>
 </html>
-
