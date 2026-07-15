@@ -194,7 +194,17 @@
   }
 
   function geocodificar(local) {
-    return fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(local)}`)
+    let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(local)}`;
+
+    // Se já temos a localização do usuário, priorizamos resultados próximos
+    // (sem excluir os demais, graças ao bounded=0) usando uma caixa de ~55km ao redor dele.
+    if (minhaLat !== null && minhaLon !== null) {
+      const delta = 0.5; // graus (~55km), ajustável se quiser um raio maior/menor
+      const viewbox = `${minhaLon - delta},${minhaLat + delta},${minhaLon + delta},${minhaLat - delta}`;
+      url += `&viewbox=${viewbox}&bounded=0`;
+    }
+
+    return fetch(url)
       .then(res => res.json())
       .then(data => {
         if (data.length === 0) return null;
