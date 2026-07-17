@@ -102,13 +102,15 @@
       position: absolute;
       width: 400px;
       height: 550px;
+      box-sizing: border-box;
+      padding: 6px;
       background: var(--glass-bg);
       backdrop-filter: blur(30px) saturate(180%);
       -webkit-backdrop-filter: blur(30px) saturate(180%);
       border: 1px solid var(--glass-border);
-      border-top: 1px solid rgba(255, 255, 255, 0.4);
-      border-left: 1px solid rgba(255, 255, 255, 0.25);
-      border-radius: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.55);
+      border-left: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 12px;
       display: flex;
 	  resize: both;
       flex-direction: column;
@@ -116,17 +118,20 @@
       z-index: 10;
       animation: openApp 0.3s cubic-bezier(0.17, 0.67, 0.83, 0.67);
       /*box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 10px rgba(255,255,255,0.1);*/
-      box-shadow: 0 15px 35px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.4);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.55);
     }
 
     /* Estado ativa: destaque visual do kernel2 */
     .window.ativa {
-      box-shadow: 0 15px 45px rgba(0,0,0,0.7), inset 0 0 10px rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.4);
+      box-shadow: 0 15px 45px rgba(0,0,0,0.7), inset 0 0 10px rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.5);
       user-select: none;
     }
 
-    /* Reflexo de luz (do index) */
+    /* Reflexo de luz (do index) — moldura e titlebar fundidas: o brilho
+       corre por cima de toda a janela sem costura, do topo (onde a
+       titlebar "mora") até o corpo. Reforçado pra simular luz batendo
+       no vidro com mais intensidade. */
     .window::before {
       content: "";
       position: absolute;
@@ -136,19 +141,46 @@
 	  height: 100%;
       background: linear-gradient(
 	  135deg,
-        rgba(255,255,255,0.12) 0%,
-        rgba(255,255,255,0.03) 40%,
-        transparent 100%
+        rgba(255,255,255,0.22) 0%,
+        rgba(255,255,255,0.08) 25%,
+        rgba(255,255,255,0.02) 45%,
+        transparent 70%
 		);
       pointer-events: none;
       z-index: 0;
     }
 
+    /* Faixa de brilho diagonal (glare) — reflexo estreito e mais intenso
+       cruzando o vidro, típico de luz direta batendo na superfície.
+       Sutil o bastante pra não atrapalhar a leitura do conteúdo. */
+    .window::after {
+      content: "";
+      position: absolute;
+      top: -20%;
+      left: -60%;
+      width: 55%;
+      height: 160%;
+      background: linear-gradient(
+        75deg,
+        transparent 0%,
+        rgba(255,255,255,0.10) 45%,
+        rgba(255,255,255,0.18) 50%,
+        rgba(255,255,255,0.10) 55%,
+        transparent 100%
+      );
+      pointer-events: none;
+      z-index: 0;
+    }
+
     /* ── Titlebar ── */
+    /* Fundida ao chassi: sem background/blur/borda próprios — a titlebar
+       é só uma faixa de layout dentro do mesmo vidro contínuo do .window
+       (que já fornece blur, cor e o brilho de ::before/::after). A
+       separação do corpo vem de uma linha quase invisível, não de um
+       bloco de cor diferente colado por cima. */
     .titlebar {
       height: 35px;
-      background: rgba(0,0,0,0.2);
-      backdrop-filter: blur(5px);
+      background: transparent;
       padding: 0 12px;
       cursor: move;
       color: white;
@@ -157,8 +189,9 @@
       align-items: center;
       font-size: 14px;
       font-weight: 500;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
       flex-shrink: 0;
+      position: relative;
+      z-index: 1;
     }
 
     /* Botões macOS style (do kernel2) */
@@ -187,11 +220,31 @@
     .btn-minimize { background: #9c7522; }
     .btn-maximize { background: #27c93f; }
 
-    /* Conteúdo da janela */
+    /* Conteúdo da janela — agora inset dentro da moldura (padding do
+       .window), com cantos e sombra interna próprios pra ler como um
+       "vidro encaixado" no chassi, não um retângulo colado na borda. */
     .window-content {
       flex: 1;
       position: relative;
       overflow: hidden;
+      border-radius: 7px;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.18);
+    }
+
+    /* Pena de transição: como o conteúdo real (iframe de um app) costuma
+       ter fundo opaco próprio, essa faixa esmaece a borda superior do
+       conteúdo pra evitar uma quina dura contra o vidro da titlebar,
+       mesmo quando o app carregado não é translúcido. */
+    .window-content::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 16px;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.14), transparent);
+      pointer-events: none;
+      z-index: 2;
     }
 
     iframe {
