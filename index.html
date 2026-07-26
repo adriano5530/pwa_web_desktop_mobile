@@ -120,6 +120,94 @@
       color: #007bff;
       text-decoration: none;
     }
+    .support-box {
+      background: linear-gradient(135deg, #eef6ff, #f5faff);
+      border: 1px solid #d7e9ff;
+      border-radius: 14px;
+      padding: 1.5rem;
+      margin: 2.5rem 0;
+      text-align: center;
+    }
+    .support-box h2 {
+      margin-top: 0;
+      color: #222;
+    }
+    .support-box p {
+      max-width: 600px;
+      margin: 0 auto 1.25rem;
+      color: #555;
+    }
+    .support-options {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+    .support-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.6rem 1.1rem;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 0.92rem;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .support-btn:hover {
+      transform: translateY(-2px);
+    }
+    .support-btn.pix {
+      background: #32bcad;
+      color: white;
+    }
+    .support-btn.kofi {
+      background: #ff5e5b;
+      color: white;
+    }
+    .support-btn.bmc {
+      background: #ffdd00;
+      color: #333;
+    }
+    .support-note {
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      color: #888;
+    }
+    .pix-copy-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: white;
+      border: 1px dashed #32bcad;
+      border-radius: 10px;
+      padding: 0.5rem 0.5rem 0.5rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.85rem;
+      color: #333;
+    }
+    .pix-copy-box code {
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+    .pix-copy-btn {
+      background: #32bcad;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.4rem 0.8rem;
+      font-weight: bold;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .pix-copy-btn:hover {
+      background: #279c8f;
+    }
+    .pix-copy-btn.copied {
+      background: #28a745;
+    }
   </style>
   <meta name="description" content="Web Desktop OS (Ecossistema Nano_Tech) é um ambiente de desktop completo que roda direto no navegador, como PWA, sem instalação pesada — ideal para celulares Android de entrada. Inclui um editor de texto, planilha, calculadora, gerenciador de arquivos, câmera, mapas, player, IPTV e dezenas de outros apps offline em HTML.">
   <meta name="keywords" content="web desktop, PWA, desktop online, sistema operacional web, apps offline, android entrada, nano tech">
@@ -127,6 +215,14 @@
   <!-- Script do Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4818539305804157"
      crossorigin="anonymous"></script>
+
+  <!-- PropellerAds: verificação do site -->
+  <!-- Cole aqui a meta tag de verificação que o PropellerAds fornecer, algo como: -->
+  <!-- <meta name="propeller" content="SEU_CODIGO_DE_VERIFICACAO"> -->
+
+  <!-- PropellerAds: script do anúncio -->
+  <!-- Depois da aprovação, cole aqui o script gerado no painel (Zone ID), algo como: -->
+  <!-- <script data-cfasync="false" async type="text/javascript" src="//SEU_ZONE_ID.propellerads.com/tag.min.js"></script> -->
 </head>
 <body>
   <main>
@@ -216,6 +312,25 @@
   </details>
   </div>
 
+  <div class="support-box">
+    <h2>💙 Apoie o Projeto</h2>
+    <p>O Ecossistema Nano_Tech é desenvolvido de forma independente, gratuita e sem intenção de lucro. Se as ferramentas te ajudaram de alguma forma, considere apoiar o projeto — isso ajuda a manter o desenvolvimento ativo e novos apps chegando.</p>
+
+    <div>
+      <div class="pix-copy-box">
+        <span>🔑 Pix:</span>
+        <code id="pix-key">SUA_CHAVE_PIX_AQUI</code>
+        <button class="pix-copy-btn" id="pix-copy-btn" onclick="copiarPix()">Copiar</button>
+      </div>
+    </div>
+
+    <div class="support-options">
+      <a class="support-btn kofi" href="https://ko-fi.com/SEU_USUARIO" target="_blank" rel="noopener">☕ Ko-fi</a>
+      <a class="support-btn bmc" href="https://www.buymeacoffee.com/SEU_USUARIO" target="_blank" rel="noopener">🍩 Buy Me a Coffee</a>
+    </div>
+    <p class="support-note">Nenhum apoio é obrigatório — todos os apps continuam 100% gratuitos e offline.</p>
+  </div>
+
   </main>
 
   <footer>
@@ -223,6 +338,22 @@
   </footer>
 
 <script>
+    function copiarPix() {
+      const chave = document.getElementById('pix-key').textContent;
+      const btn = document.getElementById('pix-copy-btn');
+      navigator.clipboard.writeText(chave).then(function () {
+        const textoOriginal = btn.textContent;
+        btn.textContent = 'Copiado!';
+        btn.classList.add('copied');
+        setTimeout(function () {
+          btn.textContent = textoOriginal;
+          btn.classList.remove('copied');
+        }, 2000);
+      }).catch(function () {
+        alert('Não foi possível copiar automaticamente. Chave Pix: ' + chave);
+      });
+    }
+
     if ('serviceWorker' in navigator) {
       window.addEventListener('DOMContentLoaded', function () {
         navigator.serviceWorker.register('service-worker.js')
