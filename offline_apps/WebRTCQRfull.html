@@ -6,18 +6,21 @@
     <title>Teclado Remoto WebRTC</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
     <style>
         body { font-family: sans-serif; max-width: 480px; margin: 20px auto; padding: 0 12px; }
-        textarea, input[type="text"] { width: 100%; box-sizing: border-box; margin: 6px 0; }
+        textarea, input[type="text"] { width: 100%; box-sizing: border-box; margin: 6px 0; font-family: monospace; font-size: 0.8em; }
         button { margin: 4px 4px 4px 0; padding: 8px 12px; }
-        #qrcode { margin: 10px 0; }
-        #status { font-weight: bold; }
+        .qrbox { margin: 10px 0; display: flex; justify-content: center; }
+        #status { font-weight: bold; min-height: 1.4em; }
         .step { display: none; border-top: 1px solid #ccc; padding-top: 10px; margin-top: 10px; }
         .step.visible { display: block; }
         label { display: block; font-size: 0.85em; color: #555; margin-top: 8px; }
         #scannerBox { display: none; margin: 10px 0; border: 1px solid #ccc; padding: 8px; }
         #scannerBox.visible { display: block; }
         #scannerRegion { width: 100%; max-width: 320px; }
+        .row { display: flex; gap: 6px; align-items: center; }
+        .row textarea { flex: 1; }
     </style>
 </head>
 <body>
@@ -26,28 +29,45 @@
     <button onclick="startReceiver()">Iniciar como Receptor</button>
     <button onclick="startController()">Iniciar como Controlador</button>
     <button onclick="connectBluetooth()">Testar Bluetooth (só bateria, não é teclado)</button>
+    <button onclick="location.reload()">Reiniciar</button>
 
     <p id="status">Status: Aguardando...</p>
-    <div id="qrcode"></div>
+    <p id="debugInfo" style="font-size:0.75em; color:#666;"></p>
 
-    <!-- Receptor: mostra a oferta, depois recebe a resposta -->
+    <!-- Receptor passo 1: mostra a oferta -->
+    <div id="receiverStep1" class="step">
+        <label>Sua OFERTA (mostre este QR ao Controlador, ou copie o texto):</label>
+        <div class="qrbox" id="qrcodeOffer"></div>
+        <div class="row">
+            <textarea id="offerOutput" rows="3" readonly></textarea>
+            <button onclick="copyField('offerOutput')">Copiar</button>
+        </div>
+    </div>
+
+    <!-- Receptor passo 2: recebe a resposta -->
     <div id="receiverStep2" class="step">
         <label>Cole aqui a RESPOSTA gerada pelo Controlador (ou escaneie):</label>
-        <textarea id="answerInput" rows="4"></textarea>
+        <textarea id="answerInput" rows="3"></textarea>
         <button onclick="openScanner('answerInput')">Escanear QR da resposta</button>
         <button onclick="applyAnswer()">Concluir conexão</button>
     </div>
 
-    <!-- Controlador: cola a oferta, gera a resposta -->
+    <!-- Controlador passo 1: cola a oferta -->
     <div id="controllerStep1" class="step">
         <label>Cole aqui a OFERTA do Receptor (ou escaneie o QR):</label>
-        <textarea id="offerInput" rows="4"></textarea>
+        <textarea id="offerInput" rows="3"></textarea>
         <button onclick="openScanner('offerInput')">Escanear QR da oferta</button>
         <button onclick="acceptOffer()">Gerar resposta</button>
     </div>
+
+    <!-- Controlador passo 2: mostra a resposta -->
     <div id="controllerStep2" class="step">
-        <label>Envie esta RESPOSTA de volta ao Receptor:</label>
-        <textarea id="answerOutput" rows="4" readonly></textarea>
+        <label>Sua RESPOSTA (mostre este QR ao Receptor, ou copie o texto):</label>
+        <div class="qrbox" id="qrcodeAnswer"></div>
+        <div class="row">
+            <textarea id="answerOutput" rows="3" readonly></textarea>
+            <button onclick="copyField('answerOutput')">Copiar</button>
+        </div>
     </div>
 
     <div id="scannerBox">
@@ -55,6 +75,7 @@
         <button onclick="closeScanner()">Cancelar leitura</button>
     </div>
 
+    <label>Texto recebido:</label>
     <textarea id="receiverArea" rows="5" placeholder="Texto recebido..." readonly></textarea>
     <input type="text" id="textInput" placeholder="Digite aqui..." style="display:none;">
 
@@ -67,6 +88,11 @@
         // tráfego quando a conexão direta P2P não é possível (NAT restritivo,
         // redes de operadora, etc). Sem TURN, algumas redes nunca conseguem
         // fechar a conexão mesmo com a sinalização correta.
+        // Redes de operadora (dados móveis) costumam bloquear ou limitar UDP.
+        // Sem uma variante TURN sobre TCP/TLS (porta 443), a conexão trava
+        // silenciosamente em "checking" para sempre nesses casos. Por isso
+        // incluímos turn:...443?transport=tcp e turns:...443?transport=tcp
+        // além das variantes UDP originais.
         const rtcConfig = {
             iceServers: [
                 { urls: "stun:stun.l.google.com:19302" },
@@ -79,14 +105,20 @@
                     urls: "turn:openrelay.metered.ca:443",
                     username: "openrelayproject",
                     credential: "openrelayproject"
+                },
+                {
+                    urls: "turn:openrelay.metered.ca:443?transport=tcp",
+                    username: "openrelayproject",
+                    credential: "openrelayproject"
+                },
+                {
+                    urls: "turns:openrelay.metered.ca:443?transport=tcp",
+                    username: "openrelayproject",
+                    credential: "openrelayproject"
                 }
             ]
         };
 
-        // Espera o ICE gathering terminar (com timeout de segurança) para
-        // garantir que a SDP embutida no QR/texto já contenha os candidates
-        // disponíveis. Se não completar em tempo hábil, segue com o que tiver
-        // (fallback), já que o STUN normalmente resolve o candidato principal rápido.
         function waitForIceGathering(pc, timeoutMs = 8000) {
             if (pc.iceGatheringState === "complete") return Promise.resolve();
             return new Promise((resolve) => {
@@ -109,33 +141,111 @@
             document.getElementById("status").innerText = "Status: " + msg;
         }
 
+        // Conta quantos candidatos de cada tipo (host = rede local, srflx =
+        // via STUN, relay = via TURN) acabaram na SDP final. Se só houver
+        // "host", os dois aparelhos precisam estar na mesma rede local pra
+        // conectar. Se não houver nenhum "relay", o TURN não respondeu — a
+        // rede provavelmente está bloqueando o tráfego até ele.
+        function debugCandidates(sdp) {
+            const host = (sdp.match(/ typ host/g) || []).length;
+            const srflx = (sdp.match(/ typ srflx/g) || []).length;
+            const relay = (sdp.match(/ typ relay/g) || []).length;
+            const el = document.getElementById("debugInfo");
+            el.innerText = `Candidatos coletados — host: ${host}, srflx (STUN): ${srflx}, relay (TURN): ${relay}`;
+            if (relay === 0) {
+                el.innerText += " ⚠️ Nenhum candidato TURN — se os aparelhos estiverem em redes diferentes, a conexão provavelmente vai falhar.";
+            }
+        }
+
         function showStep(id) {
             document.getElementById(id).classList.add("visible");
+        }
+        function hideStep(id) {
+            document.getElementById(id).classList.remove("visible");
+        }
+
+        function copyField(id) {
+            const el = document.getElementById(id);
+            el.select();
+            navigator.clipboard?.writeText(el.value).catch(() => document.execCommand("copy"));
+        }
+
+        // A SDP completa (com candidatos ICE de TURN incluídos) costuma passar
+        // de 1-2KB em JSON puro, o que gera um QR denso demais para a câmera
+        // ler com confiança. Comprimimos antes de gerar o QR; ao aplicar,
+        // tentamos JSON.parse direto (texto colado sem compressão também
+        // funciona) e só então tentamos descomprimir.
+        function encodeSignal(obj) {
+            return LZString.compressToEncodedURIComponent(JSON.stringify(obj));
+        }
+        function parseSignal(raw) {
+            raw = raw.trim();
+            try {
+                return JSON.parse(raw);
+            } catch (e) {
+                const decompressed = LZString.decompressFromEncodedURIComponent(raw);
+                if (!decompressed) throw new Error("dado inválido ou incompleto");
+                return JSON.parse(decompressed);
+            }
+        }
+
+        function renderQR(containerId, text) {
+            const el = document.getElementById(containerId);
+            el.innerHTML = "";
+            new QRCode(el, {
+                text: text,
+                width: 260,
+                height: 260,
+                correctLevel: QRCode.CorrectLevel.L // menor redundância = mais capacidade de dados
+            });
         }
 
         function setupDataChannelReceive(channel) {
             channel.onmessage = (e) => {
-                document.getElementById("receiverArea").value += e.data;
+                const area = document.getElementById("receiverArea");
+                if (e.data === "\b") {
+                    area.value = area.value.slice(0, -1);
+                } else {
+                    area.value += e.data;
+                }
             };
             channel.onopen = () => setStatus("Conectado! Recebendo dados.");
         }
 
-        async function startReceiver() {
-            role = "receiver";
-            document.getElementById("controllerStep1").classList.remove("visible");
-            document.getElementById("controllerStep2").classList.remove("visible");
-
-            peerConnection = new RTCPeerConnection(rtcConfig);
-            peerConnection.oniceconnectionstatechange = () => {
-                console.log("Receptor ICE state:", peerConnection.iceConnectionState);
-                if (peerConnection.iceConnectionState === "failed" || peerConnection.iceConnectionState === "disconnected") {
-                    setStatus("Falha na conexão ICE (" + peerConnection.iceConnectionState + "). Provavelmente precisa de um servidor TURN nessa rede.");
-                } else if (peerConnection.iceConnectionState === "checking") {
+        function attachIceLogging(pc, label) {
+            pc.oniceconnectionstatechange = () => {
+                console.log(label + " ICE state:", pc.iceConnectionState);
+                if (pc.iceConnectionState === "failed" || pc.iceConnectionState === "disconnected") {
+                    setStatus("Falha na conexão ICE (" + pc.iceConnectionState + "). Provavelmente precisa de um servidor TURN nessa rede.");
+                } else if (pc.iceConnectionState === "checking") {
                     setStatus("Negociando rota de rede (ICE checking)...");
-                } else if (peerConnection.iceConnectionState === "connected") {
+                } else if (pc.iceConnectionState === "connected") {
                     setStatus("ICE conectado! Aguardando canal de dados...");
                 }
             };
+            // Dispara quando um servidor STUN/TURN especifico falha em
+            // responder — muito mais direto que ficar só olhando o estado
+            // geral do ICE pra saber qual servidor está com problema.
+            pc.onicecandidateerror = (e) => {
+                console.warn(label + " candidato ICE com erro:", e.errorCode, e.errorText, e.url);
+                const el = document.getElementById("debugInfo");
+                el.innerText += ` | Erro em ${e.url}: ${e.errorCode} ${e.errorText || ""}`;
+            };
+            pc.onconnectionstatechange = () => {
+                console.log(label + " connectionState:", pc.connectionState);
+                if (pc.connectionState === "failed") {
+                    setStatus("Conexão falhou (connectionState=failed). Tente novamente ou troque de rede (ex: Wi-Fi em vez de dados móveis).");
+                }
+            };
+        }
+
+        async function startReceiver() {
+            role = "receiver";
+            hideStep("controllerStep1");
+            hideStep("controllerStep2");
+
+            peerConnection = new RTCPeerConnection(rtcConfig);
+            attachIceLogging(peerConnection, "Receptor");
             peerConnection.ondatachannel = (event) => {
                 dataChannel = event.channel;
                 setupDataChannelReceive(dataChannel);
@@ -147,11 +257,13 @@
             await waitForIceGathering(peerConnection);
 
             const offerStr = JSON.stringify(peerConnection.localDescription);
-            document.getElementById("qrcode").innerHTML = "";
-            new QRCode(document.getElementById("qrcode"), offerStr);
+            document.getElementById("offerOutput").value = offerStr;
+            renderQR("qrcodeOffer", encodeSignal(peerConnection.localDescription));
+            debugCandidates(peerConnection.localDescription.sdp);
 
+            showStep("receiverStep1");
             showStep("receiverStep2");
-            setStatus("Oferta pronta! Escaneie o QR no Controlador, depois cole a resposta dele abaixo.");
+            setStatus("Oferta pronta! Mostre o QR ao Controlador, depois cole/escaneie a resposta dele abaixo.");
         }
 
         async function applyAnswer() {
@@ -164,7 +276,7 @@
                 return;
             }
             try {
-                const answer = JSON.parse(document.getElementById("answerInput").value);
+                const answer = parseSignal(document.getElementById("answerInput").value);
                 await peerConnection.setRemoteDescription(answer);
                 setStatus("Resposta aplicada. Conectando...");
             } catch (err) {
@@ -174,33 +286,39 @@
 
         async function startController() {
             role = "controller";
-            document.getElementById("receiverStep2").classList.remove("visible");
-            document.getElementById("qrcode").innerHTML = "";
+            hideStep("receiverStep1");
+            hideStep("receiverStep2");
 
             peerConnection = new RTCPeerConnection(rtcConfig);
-            peerConnection.oniceconnectionstatechange = () => {
-                console.log("Controlador ICE state:", peerConnection.iceConnectionState);
-                if (peerConnection.iceConnectionState === "failed" || peerConnection.iceConnectionState === "disconnected") {
-                    setStatus("Falha na conexão ICE (" + peerConnection.iceConnectionState + "). Provavelmente precisa de um servidor TURN nessa rede.");
-                } else if (peerConnection.iceConnectionState === "checking") {
-                    setStatus("Negociando rota de rede (ICE checking)...");
-                } else if (peerConnection.iceConnectionState === "connected") {
-                    setStatus("ICE conectado! Aguardando canal de dados...");
-                }
-            };
+            attachIceLogging(peerConnection, "Controlador");
             dataChannel = peerConnection.createDataChannel("keyboard");
             dataChannel.onopen = () => setStatus("Conectado! Digite no campo abaixo.");
 
-            document.getElementById("textInput").style.display = "block";
-            document.getElementById("textInput").addEventListener("input", (e) => {
-                const char = e.target.value.slice(-1);
-                if (dataChannel.readyState === "open") {
-                    dataChannel.send(char);
+            const textInput = document.getElementById("textInput");
+            textInput.style.display = "block";
+            textInput.value = "";
+
+            // Usamos inputType em vez de só pegar o último caractere: assim
+            // backspace, enter e colar texto são detectados corretamente
+            // mesmo em teclados virtuais Android, que nem sempre disparam
+            // keydown de forma confiável.
+            textInput.addEventListener("input", (e) => {
+                if (!dataChannel || dataChannel.readyState !== "open") return;
+                const it = e.inputType || "";
+                if (it.startsWith("delete")) {
+                    dataChannel.send("\b");
+                } else if (it === "insertLineBreak") {
+                    dataChannel.send("\n");
+                } else if (e.data) {
+                    dataChannel.send(e.data);
+                } else if (it === "insertFromPaste") {
+                    // fallback: alguns navegadores não preenchem e.data no paste
+                    dataChannel.send(e.target.value.slice(-1));
                 }
             });
 
             showStep("controllerStep1");
-            setStatus("Cole a oferta do Receptor abaixo.");
+            setStatus("Cole ou escaneie a oferta do Receptor abaixo.");
         }
 
         async function acceptOffer() {
@@ -213,7 +331,7 @@
                 return;
             }
             try {
-                const offer = JSON.parse(document.getElementById("offerInput").value);
+                const offer = parseSignal(document.getElementById("offerInput").value);
                 await peerConnection.setRemoteDescription(offer);
 
                 const answer = await peerConnection.createAnswer();
@@ -222,8 +340,10 @@
                 await waitForIceGathering(peerConnection);
 
                 document.getElementById("answerOutput").value = JSON.stringify(peerConnection.localDescription);
+                renderQR("qrcodeAnswer", encodeSignal(peerConnection.localDescription));
+                debugCandidates(peerConnection.localDescription.sdp);
                 showStep("controllerStep2");
-                setStatus("Resposta pronta! Copie e envie de volta ao Receptor.");
+                setStatus("Resposta pronta! Mostre este QR ao Receptor (ou envie o texto).");
             } catch (err) {
                 setStatus("Erro ao processar oferta: " + err);
             }
