@@ -741,100 +741,6 @@
     }
     .calendar-popover.show { display: block; }
 
-    /* ── Paleta de comandos (Ctrl+K) ── */
-    .command-palette-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.35);
-      z-index: 300000;
-      display: none;
-      align-items: flex-start;
-      justify-content: center;
-      padding-top: 12vh;
-    }
-    .command-palette-overlay.show { display: flex; }
-    .command-palette {
-      width: min(480px, 92vw);
-      max-height: 60vh;
-      background: rgba(20,20,20,0.85);
-      backdrop-filter: blur(20px) saturate(160%);
-      -webkit-backdrop-filter: blur(20px) saturate(160%);
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 14px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      animation: openApp 0.15s ease;
-    }
-    .command-palette input {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 14px 16px;
-      font-size: 16px;
-      background: transparent;
-      border: none;
-      color: #fff;
-      outline: none;
-    }
-    .command-palette input::placeholder { color: rgba(255,255,255,0.4); }
-    .command-palette-input-row {
-      display: flex;
-      align-items: center;
-      border-bottom: 1px solid rgba(255,255,255,0.12);
-    }
-    .command-palette-input-row input { flex: 1; min-width: 0; }
-    .command-palette-mic {
-      background: transparent;
-      border: none;
-      color: #eee;
-      font-size: 17px;
-      padding: 10px 14px;
-      cursor: pointer;
-      line-height: 1;
-      flex-shrink: 0;
-    }
-    .command-palette-mic:hover { background: rgba(255,255,255,0.08); }
-    .command-palette-mic.listening {
-      color: #ff5c5c;
-      animation: cpPulse 1s ease-in-out infinite;
-    }
-    @keyframes cpPulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.35; }
-    }
-    .command-palette-results {
-      overflow-y: auto;
-      padding: 6px;
-    }
-    .command-palette-item {
-      padding: 10px 12px;
-      border-radius: 8px;
-      color: #eee;
-      cursor: pointer;
-      font-size: 14px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .command-palette-item.active,
-    .command-palette-item:hover {
-      background: rgba(255,255,255,0.12);
-    }
-    .command-palette-empty {
-      padding: 16px;
-      text-align: center;
-      color: rgba(255,255,255,0.4);
-      font-size: 13px;
-    }
-    .command-palette-hint {
-      padding: 8px 12px;
-      border-top: 1px solid rgba(255,255,255,0.1);
-      color: rgba(255,255,255,0.35);
-      font-size: 11px;
-      text-align: center;
-    }
-
     /* ── Seletor de Plano de Fundo (Wallpapers) ── */
     .wallpaper-popover {
       position: fixed;
@@ -1554,7 +1460,6 @@
   <!-- Barra de tarefas -->
   <div class="taskbar">
     <button class="start-button" onclick="toggleMenu()">   ☰   </button>
-    <button class="start-button" onclick="abrirCommandPalette()" title="Busca rápida (Ctrl+K)">🔎</button>
     <div class="taskbar-shortcuts">
       <div class="shortcut-taskbar" onclick="openApp({url:'offline_apps/browser.html', title:'Browser 🌎'})">
         <span>🌎 Browser</span>
@@ -1580,21 +1485,6 @@
       <div id="clock-time">00:00</div>
       <div id="clock-date">seg, 1 jan</div>
     </div>
-</div>
-
-<!-- Paleta de comandos (Ctrl+K) -->
-<div class="command-palette-overlay" id="commandPaletteOverlay"
-     onclick="if (event.target === this) fecharCommandPalette()">
-  <div class="command-palette">
-    <div class="command-palette-input-row">
-      <input type="text" id="commandPaletteInput"
-             placeholder="Buscar app ou comando..."
-             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-      <button type="button" class="command-palette-mic" id="commandPaletteMic" title="Falar (voz)">🎤</button>
-    </div>
-    <div class="command-palette-results" id="commandPaletteResults"></div>
-    <div class="command-palette-hint">↑↓ navegar · Enter abrir · Esc fechar · 🎤 falar</div>
-  </div>
 </div>
 
 <!-- Popover Calendário -->
@@ -2095,11 +1985,6 @@
       const calendarPop  = document.getElementById('calendarPopover');
       const menu          = document.getElementById('startMenu');
 
-      if (typeof paletteAberta === 'function' && paletteAberta()) {
-        e.preventDefault();
-        fecharCommandPalette();
-        return;
-      }
       if (wallpaperPop && wallpaperPop.classList.contains('show')) {
         e.preventDefault();
         toggleWallpaperPopover(e);
@@ -2596,184 +2481,6 @@
     }
     localStorage.setItem('gradeMode', gradeModeAtivo ? '1' : '0');
   }
-
-  // ═══════════════════════════════════════════════════════════════
-  //  PALETA DE COMANDOS (Ctrl+K) — Camada 1 do assistente
-  // ═══════════════════════════════════════════════════════════════
-  const cpOverlay = document.getElementById('commandPaletteOverlay');
-  const cpInput   = document.getElementById('commandPaletteInput');
-  const cpResults = document.getElementById('commandPaletteResults');
-
-  let cpComandos    = [];
-  let cpFiltrados   = [];
-  let cpIndiceAtivo = -1;
-
-  // Ações do sistema que não são apps (comandos fixos).
-  // Para toggleWallpaperPopover/toggleCalendar, que só chamam
-  // e.stopPropagation(), um objeto fake com esse método basta.
-  function comandosDoSistema() {
-    const semEvento = { stopPropagation() {} };
-    return [
-      { label: '🔲 Alternar modo grade',            run: () => toggleGradeMode() },
-      { label: '🖼️ Trocar papel de parede',          run: () => toggleWallpaperPopover(semEvento) },
-      { label: '📅 Abrir calendário',                 run: () => toggleCalendar(semEvento) },
-      { label: '➖ Minimizar todas as janelas',       run: () => document.querySelectorAll('.window').forEach(w => minimizeWindow(w.id)) },
-      { label: '✖️ Fechar todas as janelas',          run: () => document.querySelectorAll('.window').forEach(w => closeWindow(w.id)) },
-    ];
-  }
-
-  // Monta o índice varrendo os lançadores de app já existentes no DOM
-  // (menu, área de trabalho, taskbar) — assim a paleta nunca fica
-  // desatualizada quando um app novo (ou atalho custom) é adicionado.
-  function construirIndiceComandos() {
-    const vistos = new Map(); // label normalizado -> comando (evita duplicar o mesmo app)
-
-    document.querySelectorAll('#menuScroll > a, .shortcut, .shortcut-taskbar').forEach(el => {
-      const label = el.textContent.trim().replace(/\s+/g, ' ');
-      if (!label) return;
-      const chave = label.toLowerCase();
-      if (vistos.has(chave)) return; // já visto (ex.: mesmo app na área de trabalho e no menu)
-      vistos.set(chave, { label, run: () => el.click() });
-    });
-
-    cpComandos = [...comandosDoSistema(), ...vistos.values()];
-  }
-
-  function renderResultadosPalette() {
-    cpResults.innerHTML = '';
-    if (!cpFiltrados.length) {
-      const vazio = document.createElement('div');
-      vazio.className = 'command-palette-empty';
-      vazio.textContent = 'Nada encontrado.';
-      cpResults.appendChild(vazio);
-      return;
-    }
-    cpFiltrados.forEach((cmd, i) => {
-      const item = document.createElement('div');
-      item.className = 'command-palette-item' + (i === cpIndiceAtivo ? ' active' : '');
-      item.textContent = cmd.label; // textContent: mesmo padrão anti-XSS usado no resto do arquivo
-      item.addEventListener('mousedown', e => e.preventDefault()); // não perder foco do input antes do click
-      item.addEventListener('click', () => executarComando(cmd));
-      cpResults.appendChild(item);
-    });
-    const ativo = cpResults.querySelector('.command-palette-item.active');
-    if (ativo) ativo.scrollIntoView({ block: 'nearest' });
-  }
-
-  function filtrarPalette() {
-    const termo = cpInput.value.trim().toLowerCase();
-    cpFiltrados = termo ? cpComandos.filter(c => c.label.toLowerCase().includes(termo)) : cpComandos;
-    cpIndiceAtivo = cpFiltrados.length ? 0 : -1;
-    renderResultadosPalette();
-  }
-
-  function executarComando(cmd) {
-    fecharCommandPalette();
-    // Pequeno delay pra deixar a paleta fechar antes de rodar a ação,
-    // evita flash visual de sobreposição no mobile.
-    setTimeout(() => cmd.run(), 30);
-  }
-
-  function abrirCommandPalette() {
-    construirIndiceComandos();
-    cpInput.value = '';
-    filtrarPalette();
-    cpOverlay.classList.add('show');
-    setTimeout(() => cpInput.focus(), 0);
-  }
-
-  function fecharCommandPalette() {
-    cpOverlay.classList.remove('show');
-    pararEscuta();
-  }
-
-  function paletteAberta() {
-    return cpOverlay.classList.contains('show');
-  }
-
-  // ── Camada 2: entrada por voz (Web Speech API) ──
-  // Aviso honesto: no Chrome/Android o reconhecimento de fala normalmente
-  // roda via serviço de nuvem do Google, não 100% on-device — diferente do
-  // resto do Nano_Tech. É opt-in (só ativa se o usuário tocar no 🎤).
-  const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const cpMicBtn = document.getElementById('commandPaletteMic');
-  let cpReconhecimento = null;
-  let cpOuvindo = false;
-
-  if (!SpeechRecognitionCtor) {
-    if (cpMicBtn) cpMicBtn.style.display = 'none'; // esconde se o navegador não suporta
-  } else {
-    cpMicBtn.addEventListener('click', () => {
-      cpOuvindo ? pararEscuta() : iniciarEscuta();
-    });
-  }
-
-  function iniciarEscuta() {
-    if (!SpeechRecognitionCtor) return;
-    cpReconhecimento = new SpeechRecognitionCtor();
-    cpReconhecimento.lang = 'pt-BR';
-    cpReconhecimento.interimResults = true;
-    cpReconhecimento.maxAlternatives = 1;
-    cpReconhecimento.continuous = false;
-
-    cpOuvindo = true;
-    cpMicBtn.classList.add('listening');
-    cpInput.placeholder = 'Ouvindo...';
-
-    cpReconhecimento.onresult = ev => {
-      const transcript = [...ev.results].map(r => r[0].transcript).join('');
-      cpInput.value = transcript;
-      filtrarPalette();
-    };
-    cpReconhecimento.onerror = ev => {
-      console.warn('Erro no reconhecimento de voz:', ev.error);
-      if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
-        cpInput.placeholder = 'Permissão de microfone negada.';
-      }
-      pararEscuta();
-    };
-    cpReconhecimento.onend = () => pararEscuta();
-
-    try { cpReconhecimento.start(); } catch (e) { pararEscuta(); }
-  }
-
-  function pararEscuta() {
-    cpOuvindo = false;
-    if (cpMicBtn) cpMicBtn.classList.remove('listening');
-    cpInput.placeholder = 'Buscar app ou comando...';
-    if (cpReconhecimento) {
-      try { cpReconhecimento.stop(); } catch (e) {}
-    }
-  }
-
-  cpInput.addEventListener('input', filtrarPalette);
-
-  cpInput.addEventListener('keydown', e => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      if (cpFiltrados.length) {
-        cpIndiceAtivo = (cpIndiceAtivo + 1) % cpFiltrados.length;
-        renderResultadosPalette();
-      }
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      if (cpFiltrados.length) {
-        cpIndiceAtivo = (cpIndiceAtivo - 1 + cpFiltrados.length) % cpFiltrados.length;
-        renderResultadosPalette();
-      }
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (cpIndiceAtivo >= 0 && cpFiltrados[cpIndiceAtivo]) executarComando(cpFiltrados[cpIndiceAtivo]);
-    }
-  });
-
-  // Atalho global: Ctrl+K / Cmd+K abre/fecha a paleta
-  document.addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-      e.preventDefault();
-      paletteAberta() ? fecharCommandPalette() : abrirCommandPalette();
-    }
-  });
 </script>
 
   </div><!-- /zoomRoot -->
