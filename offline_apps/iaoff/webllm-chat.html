@@ -29,11 +29,22 @@
     const modelId = "TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC";
 
     async function init() {
+      // WebLLM depende de WebGPU. Sem isso, nem adianta tentar carregar o modelo.
+      if (!("gpu" in navigator)) {
+        output.textContent =
+          "❌ Este navegador/dispositivo não suporta WebGPU, então o WebLLM não funciona aqui.\n\n" +
+          "WebGPU exige Chrome/Edge relativamente recentes em desktop. Em Android, o suporte ainda é " +
+          "parcial e depende da versão do Chrome e do hardware — muitos aparelhos de entrada não têm suporte nenhum.";
+        return;
+      }
+
       try {
         output.textContent = "🔄 Carregando motor e modelo... (Isso pode demorar alguns minutos na primeira vez)";
-        
-        // Criando o motor (Engine) em vez de ChatModule
-        engine = await webllm.createMLCEngine(modelId, {
+
+        // Nome correto da função é "CreateMLCEngine" (C maiúsculo).
+        // "createMLCEngine" (minúsculo) não existe no pacote e retornava
+        // "webllm.createMLCEngine is not a function".
+        engine = await webllm.CreateMLCEngine(modelId, {
           initProgressCallback: (report) => {
             statusLog.textContent = report.text; // Mostra o progresso do download
           }
