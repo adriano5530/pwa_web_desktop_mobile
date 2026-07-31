@@ -734,7 +734,9 @@
       border: 1px solid rgba(255,255,255,0.15);
       border-radius: 12px;
       padding: 12px;
-      z-index: 200000;
+      z-index: 300001; /* acima da .command-palette-overlay (300000): esse popover
+                           pode ficar aberto simultaneamente com a paleta (comando
+                           "manterAberta"), então precisa vencer o empilhamento */
       display: none;
       box-shadow: 0 10px 40px rgba(0,0,0,0.5);
       animation: openApp 0.2s ease;
@@ -753,7 +755,7 @@
       border: 1px solid rgba(255,255,255,0.15);
       border-radius: 12px;
       padding: 12px;
-      z-index: 200000;
+      z-index: 300001; /* mesmo motivo do calendar-popover acima */
       display: none;
       box-shadow: 0 10px 40px rgba(0,0,0,0.5);
       animation: openApp 0.2s ease;
@@ -1736,7 +1738,7 @@
 	<button class="button" onclick="toggleGradeMode()">⊞ Modo Grade</button>
 	 <button class="button" onclick="toggleGamepad()">🎮 Ativar/Desativar Gamepad</button>
     <script src="offline_apps/gamepad.js"></script>
-    <button class="button" onclick="abrirCommandPalette()">🔎 Modo Deck</button>
+    <button class="button" onclick="abrirCommandPalette()">🔎 Deck</button>
 	</details>
 	<hr>
     <strong>📢 Público:</strong>
@@ -2659,12 +2661,14 @@
   // Ações do sistema que não são apps (comandos fixos).
   // Para toggleWallpaperPopover/toggleCalendar, que só chamam
   // e.stopPropagation(), um objeto fake com esse método basta.
+  // manterAberta: true → a paleta não fecha ao rodar (útil pra comandos
+  // de "preview"/toggle que o usuário costuma acionar em sequência).
   function comandosDoSistema() {
     const semEvento = { stopPropagation() {} };
     return [
-      { label: '🔲 Alternar modo grade',            run: () => toggleGradeMode() },
-      { label: '🖼️ Trocar papel de parede',          run: () => toggleWallpaperPopover(semEvento) },
-      { label: '📅 Abrir calendário',                 run: () => toggleCalendar(semEvento) },
+      { label: '🔲 Alternar modo grade',            run: () => toggleGradeMode(), manterAberta: true },
+      { label: '🖼️ Trocar papel de parede',          run: () => toggleWallpaperPopover(semEvento), manterAberta: true },
+      { label: '📅 Abrir calendário',                 run: () => toggleCalendar(semEvento), manterAberta: true },
       { label: '➖ Minimizar todas as janelas',       run: () => document.querySelectorAll('.window').forEach(w => minimizeWindow(w.id)) },
       { label: '✖️ Fechar todas as janelas',          run: () => document.querySelectorAll('.window').forEach(w => closeWindow(w.id)) },
     ];
@@ -2701,7 +2705,15 @@
       item.className = 'command-palette-item' + (i === cpIndiceAtivo ? ' active' : '');
       item.textContent = cmd.label; // textContent: mesmo padrão anti-XSS usado no resto do arquivo
       item.addEventListener('mousedown', e => e.preventDefault()); // não perder foco do input antes do click
-      item.addEventListener('click', () => executarComando(cmd));
+      item.addEventListener('click', e => {
+        // stopPropagation é essencial aqui: sem isso, o clique continua
+        // fazendo bubble até o document, onde os listeners de "fechar
+        // calendário/wallpaper ao clicar fora" (linhas ~2496 e ~2504)
+        // enxergam esse mesmo clique como "fora do popover" e fecham
+        // o que a gente acabou de abrir, no mesmo evento.
+        e.stopPropagation();
+        executarComando(cmd);
+      });
       cpResults.appendChild(item);
     });
     const ativo = cpResults.querySelector('.command-palette-item.active');
@@ -2716,6 +2728,13 @@
   }
 
   function executarComando(cmd) {
+    if (cmd.manterAberta) {
+      // Comandos de preview/toggle: roda a ação mas mantém a paleta aberta
+      // e o foco no input, pra dar pra encadear vários rapidamente.
+      cmd.run();
+      cpInput.focus();
+      return;
+    }
     fecharCommandPalette();
     // Pequeno delay pra deixar a paleta fechar antes de rodar a ação,
     // evita flash visual de sobreposição no mobile.
@@ -2723,7 +2742,12 @@
   }
 
   function abrirCommandPalette() {
-    toggleMenu();
+    // Fecha o menu ☰ só se ele já estiver aberto (ex.: veio do botão
+    // "🔎 Modo Deck" dentro das Configurações). Sem essa checagem, o
+    // Ctrl+K abriria o menu junto com a paleta, já que toggleMenu()
+    // sozinho apenas inverte o estado atual.
+    const menuAberto = document.getElementById('startMenu');
+    if (menuAberto && menuAberto.classList.contains('show')) toggleMenu();
     construirIndiceComandos();
     cpInput.value = '';
     filtrarPalette();
