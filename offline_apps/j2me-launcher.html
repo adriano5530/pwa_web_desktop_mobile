@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>J2ME Launcher — Nano_Tech</title>
+<style>
+  :root{
+    --glass-bg: rgba(90,60,30,0.35);
+    --glass-border: rgba(196,154,90,0.45);
+    --glass-blur: 6px;
+    --accent: #d9a441;
+    --accent-2: #a9682c;
+    --danger: #b8452f;
+    --text: #f2e1c1;
+    --text-dim: #b89b6e;
+    --bg1: #1c140c;
+    --bg2: #3a2716;
+    --pixel-shadow: #100b06;
+  }
+  *{box-sizing:border-box; image-rendering:pixelated;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    font-family:"Courier New", "Lucida Console", Consolas, monospace;
+    color:var(--text);
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.08) 0px, rgba(0,0,0,0.08) 1px, transparent 1px, transparent 3px),
+      radial-gradient(1200px 800px at 10% -10%, rgba(169,104,44,0.35), transparent 60%),
+      radial-gradient(1000px 700px at 110% 10%, rgba(217,164,65,0.22), transparent 55%),
+      linear-gradient(160deg, var(--bg1), var(--bg2));
+    background-attachment:fixed;
+    overflow:hidden;
+    -webkit-user-select:none; user-select:none;
+    letter-spacing:0.3px;
+  }
+  #app{ display:flex; flex-direction:column; height:100%; }
+
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 18px;
+    background:rgba(28,20,12,0.75);
+    border-bottom:3px solid var(--glass-border);
+    flex-shrink:0;
+  }
+  header h1{
+    font-size:15px; margin:0; font-weight:700;
+    text-transform:uppercase; letter-spacing:1px;
+    display:flex; align-items:center; gap:8px;
+  }
+  header h1 .dot{
+    width:8px; height:8px; border-radius:0;
+    background:var(--accent);
+    box-shadow:2px 2px 0 var(--pixel-shadow);
+  }
+  .btn{
+    border:2px solid var(--glass-border);
+    background:var(--glass-bg);
+    color:var(--text);
+    padding:9px 14px;
+    border-radius:2px;
+    font-size:12px;
+    text-transform:uppercase;
+    cursor:pointer;
+    box-shadow:3px 3px 0 var(--pixel-shadow);
+    transition:transform .08s steps(2), box-shadow .08s steps(2);
+    display:flex; align-items:center; gap:6px;
+  }
+  .btn:active{ transform:translate(3px,3px); box-shadow:0 0 0 var(--pixel-shadow); }
+  .btn.primary{
+    background:var(--accent-2);
+    border:2px solid var(--accent);
+    font-weight:700; color:#1c140c;
+  }
+  .btn.danger{ color:var(--danger); }
+
+  #settingsBar{
+    display:flex; gap:8px; align-items:center;
+    padding:10px 18px;
+    font-size:11.5px; color:var(--text-dim);
+    border-bottom:2px solid var(--glass-border);
+    background:rgba(20,14,8,0.5);
+    flex-shrink:0;
+    overflow-x:auto;
+    white-space:nowrap;
+  }
+  #settingsBar input[type=text]{
+    background:rgba(0,0,0,0.35);
+    border:2px solid var(--glass-border);
+    color:var(--text);
+    padding:6px 10px;
+    border-radius:2px;
+    font-size:12px;
+    font-family:inherit;
+    width:280px;
+    max-width:50vw;
+  }
+  #settingsBar label{ display:flex; align-items:center; gap:6px; flex-shrink:0; }
+
+  main{ flex:1; overflow-y:auto; padding:18px; }
+  #grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(96px,1fr));
+    gap:16px;
+  }
+  .cart{
+    background:var(--glass-bg);
+    border:2px solid var(--glass-border);
+    border-radius:2px;
+    padding:12px 8px 10px;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    cursor:pointer;
+    position:relative;
+    box-shadow:4px 4px 0 var(--pixel-shadow);
+    transition:transform .08s steps(2), box-shadow .08s steps(2);
+  }
+  .cart:active{ transform:translate(4px,4px); box-shadow:0 0 0 var(--pixel-shadow); }
+  .cart:hover{ border-color:var(--accent); }
+  .icon{
+    width:56px; height:56px; border-radius:0;
+    background:var(--accent-2);
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; font-weight:700; color:var(--text);
+    box-shadow:
+      inset 3px 3px 0 rgba(255,255,255,0.18),
+      inset -3px -3px 0 rgba(0,0,0,0.35),
+      3px 3px 0 var(--pixel-shadow);
+    border:2px solid var(--accent);
+  }
+  .cart .name{
+    font-size:11px; text-align:center; line-height:1.3;
+    max-width:88px; overflow:hidden; text-overflow:ellipsis;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    color:var(--text);
+    text-transform:uppercase; letter-spacing:0.4px;
+  }
+  .cart .remove{
+    position:absolute; top:-8px; right:-8px;
+    width:22px; height:22px; border-radius:0;
+    background:var(--danger); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; border:2px solid var(--bg1);
+    box-shadow:2px 2px 0 var(--pixel-shadow);
+    opacity:0; transition:opacity .12s ease;
+  }
+  .cart.editing .remove{ opacity:1; }
+
+  #empty{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    height:60%; text-align:center; color:var(--text-dim); gap:10px; padding:20px;
+    text-transform:uppercase; letter-spacing:0.5px; font-size:12px;
+  }
+  #empty .big{ font-size:40px; filter:sepia(1) saturate(2); }
+
+  /* Player overlay */
+  #playerOverlay{
+    position:fixed; inset:0; background:#000;
+    display:none; flex-direction:column; z-index:50;
+  }
+  #playerOverlay.open{ display:flex; }
+  #playerBar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 14px;
+    background:rgba(20,14,8,0.95);
+    border-bottom:2px solid var(--glass-border);
+    flex-shrink:0;
+  }
+  #playerBar .title{ font-size:13px; color:var(--text-dim); }
+  #playerFrameWrap{ position:relative; flex:1; min-height:0; }
+  #playerFrame{
+    position:absolute; inset:0;
+    width:100%; height:100%; border:none; background:#000; display:block;
+  }
+  #playerStatus{
+    position:absolute; left:0; right:0; top:12px; text-align:center;
+    font-size:12px; color:var(--text-dim); padding:6px; pointer-events:none;
+    z-index:2;
+  }
+
+  /* Add modal */
+  #addModal{
+    position:fixed; inset:0; background:rgba(0,0,0,0.55);
+    display:none; align-items:center; justify-content:center; z-index:60;
+    padding:20px;
+  }
+  #addModal.open{ display:flex; }
+  .modalCard{
+    background:linear-gradient(160deg, rgba(58,39,22,0.97), rgba(28,20,12,0.97));
+    border:2px solid var(--glass-border);
+    border-radius:2px; padding:20px; width:100%; max-width:360px;
+    box-shadow:5px 5px 0 var(--pixel-shadow);
+  }
+  .modalCard h3{
+    margin:0 0 12px; font-size:14px;
+    text-transform:uppercase; letter-spacing:1px; color:var(--accent);
+  }
+  .modalCard input[type=text]{
+    width:100%; padding:10px; border-radius:2px; margin-bottom:12px;
+    background:rgba(0,0,0,0.35); border:2px solid var(--glass-border); color:var(--text);
+    font-size:13px; font-family:inherit;
+  }
+  .modalCard .row{ display:flex; gap:8px; justify-content:flex-end; margin-top:10px; }
+  .fileDrop{
+    border:2px dashed var(--glass-border); border-radius:2px;
+    padding:22px 10px; text-align:center; font-size:12px; color:var(--text-dim);
+    margin-bottom:10px; cursor:pointer;
+    text-transform:uppercase; letter-spacing:0.4px;
+  }
+  .fileDrop.has-file{ border-color:var(--accent); border-style:solid; color:var(--text); }
+
+  ::-webkit-scrollbar{ width:8px; height:8px; }
+  ::-webkit-scrollbar-thumb{ background:var(--accent-2); border-radius:0; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1><span class="dot"></span> J2ME Launcher</h1>
+    <div style="display:flex; gap:8px;">
+      <button class="btn" id="editBtn">Editar</button>
+      <button class="btn primary" id="addBtn">+ Adicionar JAR</button>
+    </div>
+  </header>
+
+  <div id="settingsBar">
+    <label>URL do J2ME Player:
+      <input type="text" id="playerUrlInput" placeholder="https://seu-dominio/j2me-player/index.html" value="https://j2me-player.netlify.app/index.html">
+    </label>
+    <label><input type="checkbox" id="autoInjectToggle" checked> Tentar auto-injetar JAR (só funciona same-origin)</label>
+  </div>
+
+  <main>
+    <div id="empty">
+      <div class="big">📼</div>
+      <div><strong>Nenhum JAR na coleção ainda</strong></div>
+      <div>Toque em "+ Adicionar JAR" para importar seus jogos.</div>
+    </div>
+    <div id="grid"></div>
+  </main>
+</div>
+
+<!-- Player overlay -->
+<div id="playerOverlay">
+  <div id="playerBar">
+    <div class="title" id="playerTitle">Carregando...</div>
+    <button class="btn" id="closePlayerBtn">✕ Fechar</button>
+  </div>
+  <div id="playerFrameWrap">
+    <iframe id="playerFrame" allow="autoplay; fullscreen"></iframe>
+    <div id="playerStatus"></div>
+  </div>
+</div>
+
+<!-- Add modal -->
+<div id="addModal">
+  <div class="modalCard">
+    <h3>Adicionar JAR</h3>
+    <div class="fileDrop" id="fileDrop">Toque para escolher o arquivo .jar</div>
+    <input type="file" id="fileInput" accept=".jar" style="display:none">
+    <input type="text" id="nameInput" placeholder="Nome do jogo (opcional)">
+    <div class="row">
+      <button class="btn" id="cancelAddBtn">Cancelar</button>
+      <button class="btn primary" id="confirmAddBtn">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- IndexedDB layer ----------
+  const DB_NAME = "j2me_launcher_db";
+  const STORE = "jars";
+  let dbPromise = new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if(!db.objectStoreNames.contains(STORE)){
+        db.createObjectStore(STORE, { keyPath: "id" });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+
+  async function dbGetAll(){
+    const db = await dbPromise;
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, "readonly");
+      const store = tx.objectStore(STORE);
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async function dbPut(item){
+    const db = await dbPromise;
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, "readwrite");
+      tx.objectStore(STORE).put(item);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+  async function dbDelete(id){
+    const db = await dbPromise;
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, "readwrite");
+      tx.objectStore(STORE).delete(id);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  // ---------- State ----------
+  let games = [];
+  let editing = false;
+
+  const gridEl = document.getElementById("grid");
+  const emptyEl = document.getElementById("empty");
+  const addModal = document.getElementById("addModal");
+  const fileInput = document.getElementById("fileInput");
+  const fileDrop = document.getElementById("fileDrop");
+  const nameInput = document.getElementById("nameInput");
+  const playerOverlay = document.getElementById("playerOverlay");
+  const playerFrame = document.getElementById("playerFrame");
+  const playerTitle = document.getElementById("playerTitle");
+  const playerStatus = document.getElementById("playerStatus");
+  const playerUrlInput = document.getElementById("playerUrlInput");
+  const autoInjectToggle = document.getElementById("autoInjectToggle");
+
+  let pendingFile = null;
+
+  // Persist small settings in-memory only per session (avoid localStorage per artifact rules,
+  // but this is a standalone deliverable file so plain localStorage is fine there — kept minimal here).
+  try {
+    const savedUrl = localStorage.getItem("j2me_player_url");
+    if(savedUrl) playerUrlInput.value = savedUrl;
+  } catch(e){}
+  playerUrlInput.addEventListener("change", () => {
+    try { localStorage.setItem("j2me_player_url", playerUrlInput.value.trim()); } catch(e){}
+  });
+
+  function initials(name){
+    const clean = name.replace(/\.jar$/i,"").trim();
+    const parts = clean.split(/[\s_\-]+/).filter(Boolean);
+    if(parts.length === 0) return "J2";
+    if(parts.length === 1) return parts[0].slice(0,2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+
+  function render(){
+    gridEl.innerHTML = "";
+    emptyEl.style.display = games.length ? "none" : "flex";
+    games.forEach(g => {
+      const cart = document.createElement("div");
+      cart.className = "cart" + (editing ? " editing" : "");
+      cart.innerHTML = `
+        <div class="icon">${initials(g.name)}</div>
+        <div class="name">${escapeHtml(g.name)}</div>
+        ${editing ? '<div class="remove">✕</div>' : ''}
+      `;
+      cart.addEventListener("click", (e) => {
+        if(editing){
+          if(e.target.classList.contains("remove")){
+            removeGame(g.id);
+          }
+          return;
+        }
+        launchGame(g);
+      });
+      gridEl.appendChild(cart);
+    });
+  }
+
+  function escapeHtml(s){
+    const d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  async function removeGame(id){
+    if(!confirm("Remover este JAR da coleção?")) return;
+    await dbDelete(id);
+    games = games.filter(g => g.id !== id);
+    render();
+  }
+
+  async function loadGames(){
+    const rows = await dbGetAll();
+    games = rows.sort((a,b) => a.name.localeCompare(b.name));
+    render();
+  }
+
+  // ---------- Add JAR flow ----------
+  document.getElementById("addBtn").addEventListener("click", () => {
+    pendingFile = null;
+    nameInput.value = "";
+    fileDrop.textContent = "Toque para escolher o arquivo .jar";
+    fileDrop.classList.remove("has-file");
+    addModal.classList.add("open");
+  });
+  document.getElementById("cancelAddBtn").addEventListener("click", () => {
+    addModal.classList.remove("open");
+  });
+  fileDrop.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", () => {
+    const f = fileInput.files[0];
+    if(!f) return;
+    pendingFile = f;
+    fileDrop.textContent = "📦 " + f.name + " (" + Math.round(f.size/1024) + " KB)";
+    fileDrop.classList.add("has-file");
+    if(!nameInput.value) nameInput.value = f.name.replace(/\.jar$/i,"");
+  });
+  document.getElementById("confirmAddBtn").addEventListener("click", async () => {
+    if(!pendingFile){ alert("Escolha um arquivo .jar primeiro."); return; }
+    const id = "g_" + Date.now() + "_" + Math.random().toString(36).slice(2,8);
+    const name = (nameInput.value || pendingFile.name).trim();
+    await dbPut({ id, name, blob: pendingFile, fileName: pendingFile.name, addedAt: Date.now() });
+    addModal.classList.remove("open");
+    await loadGames();
+  });
+
+  // ---------- Edit mode ----------
+  document.getElementById("editBtn").addEventListener("click", () => {
+    editing = !editing;
+    document.getElementById("editBtn").textContent = editing ? "Concluído" : "Editar";
+    render();
+  });
+
+  // ---------- Launch flow ----------
+  function buildFile(g){
+    return new File([g.blob], g.fileName || (g.name + ".jar"), { type: "application/java-archive" });
+  }
+
+  async function launchGame(g){
+    const url = playerUrlInput.value.trim();
+    if(!url){
+      alert("Configure a URL do J2ME Player primeiro.");
+      return;
+    }
+    playerTitle.textContent = g.name;
+    playerStatus.textContent = "Carregando o emulador...";
+    playerOverlay.classList.add("open");
+    playerFrame.src = url;
+
+    const wantAuto = autoInjectToggle.checked;
+    if(!wantAuto){
+      playerStatus.textContent = 'Selecione "' + g.fileName + '" manualmente no seletor de arquivo do player.';
+      setTimeout(() => { playerStatus.textContent = ""; }, 6000);
+      return;
+    }
+
+    playerFrame.onload = () => {
+      // Give the player's own scripts a moment to initialize their DOM.
+      setTimeout(() => attemptAutoInject(g), 900);
+    };
+  }
+
+  function attemptAutoInject(g, attempt){
+    attempt = attempt || 1;
+    let doc;
+    try {
+      doc = playerFrame.contentDocument || playerFrame.contentWindow.document;
+    } catch(e){
+      // Cross-origin: can't reach into the iframe at all.
+      playerStatus.textContent = 'Origem diferente do player — selecione "' + g.fileName + '" manualmente.';
+      setTimeout(() => { playerStatus.textContent = ""; }, 7000);
+      return;
+    }
+
+    const input = doc.querySelector('input[type="file"]');
+    if(!input){
+      if(attempt < 8){
+        setTimeout(() => attemptAutoInject(g, attempt + 1), 500);
+      } else {
+        playerStatus.textContent = 'Não achei o seletor de arquivo — selecione "' + g.fileName + '" manualmente.';
+        setTimeout(() => { playerStatus.textContent = ""; }, 7000);
+      }
+      return;
+    }
+
+    try {
+      const dt = new DataTransfer();
+      dt.items.add(buildFile(g));
+      input.files = dt.files;
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      playerStatus.textContent = "";
+    } catch(e){
+      playerStatus.textContent = 'Injeção automática falhou — selecione "' + g.fileName + '" manualmente.';
+      setTimeout(() => { playerStatus.textContent = ""; }, 7000);
+    }
+  }
+
+  document.getElementById("closePlayerBtn").addEventListener("click", () => {
+    playerOverlay.classList.remove("open");
+    playerFrame.src = "about:blank";
+    playerFrame.onload = null;
+  });
+
+  loadGames();
+})();
+</script>
+</body>
+</html>
