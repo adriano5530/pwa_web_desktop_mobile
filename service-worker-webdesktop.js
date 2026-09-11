@@ -1,6 +1,6 @@
-const CACHE_NAME = 'pwa-wdm-cache-v1';
-const PRECACHE_URLS = [
- "./",
+const CACHE_NAME = 'rotina-acao';
+const ASSETS_PARA_CACHEAR = [
+  "./",
   "./webdesktopmobile.html",
   "./offline_apps/documentos/documentos.html",
   "./offline_apps/documentos/jsbib/tinymce.min.js",
@@ -30,54 +30,58 @@ const PRECACHE_URLS = [
   "./offline_apps/terminal.html"
 ];
 
-// Instala e faz o precache
+// Instalação do SW: pré-carrega os arquivos essenciais
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_URLS);
-    })
+      console.log('Service Worker: Armazenando assets estáticos no cache');
+      return cache.addAll(ASSETS_PARA_CACHEAR);
+    }).then(() => self.skipWaiting())
   );
-  self.skipWaiting(); // ativa imediatamente após instalação
 });
 
-// Ativa e limpa caches antigos
+// Ativação do SW: limpa caches antigos, se houver
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
+        cacheNames.map((cache) => {
+          if (cache !== CACHE_NAME) {
+            console.log('Service Worker: Apagando cache antigo', cache);
+            return caches.delete(cache);
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Estratégia: Stale-While-Revalidate
+// Intercepta requisições - navegação com fallback pro app shell, demais assets com stale-while-revalidate
 self.addEventListener('fetch', (event) => {
-  // Só lida com GET
-  if (event.request.method !== 'GET') return;
+  const { request } = event;
+  if (request.method !== 'GET' || !request.url.startsWith('http')) return;
+
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request).catch(() => caches.match('./webdesktopmobile.html', { ignoreSearch: true }))
+    );
+    return;
+  }
 
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request)
-        .then((networkResponse) => {
-          // Atualiza o cache
-          return caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, networkResponse.clone());
-            return networkResponse;
-          });
-        })
-        .catch(() => {
-          // Se offline e sem cache novo, volta ao que tinha
-          return cachedResponse || caches.match('/offline.html');
-        });
+    caches.open(CACHE_NAME).then(async (cache) => {
+      const cachedResponse = await cache.match(request, { ignoreSearch: true });
 
-      // Retorna o cache antigo imediatamente (se houver), enquanto atualiza em background
-      return cachedResponse || fetchPromise;
+      const networkFetch = fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+            cache.put(request, networkResponse.clone());
+          }
+          return networkResponse;
+        })
+        .catch(() => cachedResponse);
+
+      return cachedResponse || networkFetch;
     })
   );
 });
