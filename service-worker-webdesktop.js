@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rotina-acao';
+const CACHE_NAME = 'pwa-wdim-cache-v1';
 const ASSETS_PARA_CACHEAR = [
   "./",
   "./webdesktopmobile.html",
