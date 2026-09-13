@@ -1,4 +1,10 @@
 const CACHE_NAME = 'rotina-acao';
+// A parte principal e apps essenciais entram pré-cacheados na instalação. Todo o resto
+// (cada app dentro de offline_apps/, suas libs, imagens etc.) é cacheado
+// automaticamente em tempo de execução na primeira vez que for aberto
+// com internet — não precisa editar esta lista ao adicionar um app novo.
+// Único cuidado: um app não pré-cacheado só funciona offline DEPOIS de ter sido aberto
+// pelo menos uma vez estando online.
 const ASSETS_PARA_CACHEAR = [
   "./",
   "./webdesktopmobile.html",
@@ -63,7 +69,44 @@ self.addEventListener('fetch', (event) => {
 
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => caches.match('./webdesktopmobile.html', { ignoreSearch: true }))
+      (async () => {
+        const cache = await caches.open(CACHE_NAME);
+        try {
+          const networkResponse = await fetch(request);
+          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+            cache.put(request, networkResponse.clone());
+          }
+          return networkResponse;
+        } catch {
+          // Offline: tenta primeiro servir a própria página pedida (ex.: um
+          // app aberto num iframe, como documentos.html ou calculadora.html).
+          const cachedPage = await cache.match(request, { ignoreSearch: true });
+          if (cachedPage) return cachedPage;
+
+          // Só cai pra casca principal (webdesktopmobile.html) se a navegação
+          // pedida FOR a própria raiz do site — nunca pra um app específico
+          // que não esteja cacheado, senão o desktop abre aninhado dentro
+          // da janela do app.
+          const url = new URL(request.url);
+          const ehRaiz = url.pathname.endsWith('/') || url.pathname.endsWith('webdesktopmobile.html');
+          if (ehRaiz) {
+            const shell = await cache.match('./webdesktopmobile.html', { ignoreSearch: true });
+            if (shell) return shell;
+          }
+
+          // App específico ainda não salvo para uso offline: mostra aviso
+          // em vez de reaproveitar a casca do desktop.
+          return new Response(
+            `<!DOCTYPE html><html><body style="font-family:sans-serif;background:#1e1e1e;color:#eee;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center;padding:20px;box-sizing:border-box;">
+              <div>
+                <p style="font-size:40px;margin:0 0 10px;">📴</p>
+                <p>Este app ainda não foi salvo para uso offline.<br>Abra-o uma vez conectado à internet.</p>
+              </div>
+            </body></html>`,
+            { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+          );
+        }
+      })()
     );
     return;
   }
