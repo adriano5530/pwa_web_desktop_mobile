@@ -1,6 +1,6 @@
-const CACHE_NAME = 'pwa-wdim-cache-v1';
-const ASSETS_PARA_CACHEAR = [
-  "./",
+const CACHE_NAME = 'pwa-wdm-cache-v1';
+const PRECACHE_URLS = [
+ "./",
   "./webdesktopmobile.html",
   "./offline_apps/documentos/documentos.html",
   "./offline_apps/documentos/jsbib/tinymce.min.js",
@@ -30,58 +30,54 @@ const ASSETS_PARA_CACHEAR = [
   "./offline_apps/terminal.html"
 ];
 
-// Instalação do SW: pré-carrega os arquivos essenciais
+// Instala e faz o precache
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('Service Worker: Armazenando assets estáticos no cache');
-      return cache.addAll(ASSETS_PARA_CACHEAR);
-    }).then(() => self.skipWaiting())
+      return cache.addAll(PRECACHE_URLS);
+    })
   );
+  self.skipWaiting(); // ativa imediatamente após instalação
 });
 
-// Ativação do SW: limpa caches antigos, se houver
+// Ativa e limpa caches antigos
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            console.log('Service Worker: Apagando cache antigo', cache);
-            return caches.delete(cache);
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
           }
         })
       );
-    }).then(() => self.clients.claim())
+    })
   );
+  self.clients.claim();
 });
 
-// Intercepta requisições - navegação com fallback pro app shell, demais assets com stale-while-revalidate
+// Estratégia: Stale-While-Revalidate
 self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  if (request.method !== 'GET' || !request.url.startsWith('http')) return;
-
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request).catch(() => caches.match('./webdesktopmobile.html', { ignoreSearch: true }))
-    );
-    return;
-  }
+  // Só lida com GET
+  if (event.request.method !== 'GET') return;
 
   event.respondWith(
-    caches.open(CACHE_NAME).then(async (cache) => {
-      const cachedResponse = await cache.match(request, { ignoreSearch: true });
-
-      const networkFetch = fetch(request)
+    caches.match(event.request).then((cachedResponse) => {
+      const fetchPromise = fetch(event.request)
         .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-            cache.put(request, networkResponse.clone());
-          }
-          return networkResponse;
+          // Atualiza o cache
+          return caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, networkResponse.clone());
+            return networkResponse;
+          });
         })
-        .catch(() => cachedResponse);
+        .catch(() => {
+          // Se offline e sem cache novo, volta ao que tinha
+          return cachedResponse || caches.match('/offline.html');
+        });
 
-      return cachedResponse || networkFetch;
+      // Retorna o cache antigo imediatamente (se houver), enquanto atualiza em background
+      return cachedResponse || fetchPromise;
     })
   );
 });
