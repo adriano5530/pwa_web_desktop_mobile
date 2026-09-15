@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pwa-wdm-cache-v1';
+const CACHE_NAME = 'pwa-wdim-cache-v1';
 const PRECACHE_URLS = [
  "./",
   "./webdesktopmobile.html",
