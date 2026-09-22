@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Horários de Remédios</title>
+<meta name="theme-color" content="#7b828a">
+<meta name="description" content="Calculadora offline de horários de doses de medicamentos.">
+<link id="manifest-link" rel="manifest">
+<link id="icon-link" rel="icon">
+<link id="apple-icon-link" rel="apple-touch-icon">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Remédios">
+<style>
+  :root{
+    --metal-1:#eef1f3;
+    --metal-2:#c7cbd1;
+    --metal-3:#9199a3;
+    --metal-shadow:#5b6167;
+    --groove:#4a4f54;
+    --ink:#6d737a;
+    --ink-strong:#565c63;
+    --accent:#3a7ca5;
+    --accent-dark:#245973;
+    --accent-light:#7fc1e8;
+    --danger:#a5443a;
+    --danger-dark:#7e332b;
+    color-scheme: light;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    height:100%;
+    margin:0;
+  }
+
+  body{
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background:
+      linear-gradient(135deg, var(--metal-1), var(--metal-2) 45%, var(--metal-3) 100%);
+    color: var(--ink);
+    min-height:100%;
+    padding: env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0) 0;
+    position:relative;
+  }
+
+  /* textura de alumínio escovado */
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    background-image: repeating-linear-gradient(
+      115deg,
+      rgba(255,255,255,.35) 0px,
+      rgba(255,255,255,.35) 1px,
+      rgba(0,0,0,.03) 2px,
+      rgba(0,0,0,.03) 3px
+    );
+    mix-blend-mode: overlay;
+    opacity:.55;
+  }
+
+  main{
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 18px 16px 48px;
+    position:relative;
+  }
+
+  .engraved{
+    color: var(--ink);
+    text-shadow: 1px 1px 0 rgba(255,255,255,.7), -1px -1px 1px rgba(0,0,0,.3);
+  }
+
+  .engraved-strong{
+    color: var(--ink-strong);
+    text-shadow: 1px 1px 0 rgba(255,255,255,.8), -1px -1px 1px rgba(0,0,0,.38);
+  }
+
+  header.plate{
+    text-align:center;
+    padding: 22px 16px 20px;
+    margin-bottom: 18px;
+  }
+
+  header.plate h1{
+    margin:0;
+    font-size: 1.35rem;
+    letter-spacing: .3px;
+    font-weight: 700;
+  }
+
+  header.plate p{
+    margin: 6px 0 0;
+    font-size: .82rem;
+    font-weight: 500;
+  }
+
+  #storage-status{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    margin-top: 10px;
+    font-size: .72rem;
+    font-weight:600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: linear-gradient(160deg, var(--metal-1), var(--metal-3));
+    box-shadow: inset 1px 1px 2px rgba(255,255,255,.7), inset -1px -1px 2px rgba(0,0,0,.2);
+  }
+
+  #storage-status .dot{
+    width:7px; height:7px; border-radius:50%;
+    background: var(--metal-shadow);
+    box-shadow: 0 0 0 1px rgba(0,0,0,.2) inset;
+  }
+
+  #storage-status.on .dot{
+    background: var(--accent);
+    box-shadow: 0 0 5px var(--accent-light);
+  }
+
+  /* --- placas metálicas (cards) --- */
+  .plate{
+    position:relative;
+    background: linear-gradient(160deg, var(--metal-1), var(--metal-2) 55%, var(--metal-3));
+    border-radius: 16px;
+    box-shadow:
+      inset 1px 1px 2px rgba(255,255,255,.75),
+      inset -2px -2px 5px rgba(0,0,0,.25),
+      0 8px 16px rgba(0,0,0,.22);
+    padding: 18px;
+  }
+
+  .plate + .plate{ margin-top:16px; }
+
+  .rivet{
+    position:absolute;
+    width:8px; height:8px;
+    border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #fff, var(--metal-3) 55%, var(--metal-shadow) 100%);
+    box-shadow: 0 1px 2px rgba(0,0,0,.4);
+  }
+  .rivet.tl{ top:8px; left:8px; }
+  .rivet.tr{ top:8px; right:8px; }
+  .rivet.bl{ bottom:8px; left:8px; }
+  .rivet.br{ bottom:8px; right:8px; }
+
+  form.plate label{
+    display:block;
+    font-size: .74rem;
+    font-weight:700;
+    margin: 12px 0 5px;
+  }
+  form.plate label:first-of-type{ margin-top:2px; }
+
+  .field-row{ display:flex; gap:10px; }
+  .field-row > div{ flex:1; min-width:0; }
+
+  input[type="text"],
+  input[type="number"],
+  input[type="datetime-local"]{
+    width:100%;
+    border:none;
+    border-radius:8px;
+    padding: 10px 11px;
+    font-size: .95rem;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    color: var(--groove);
+    background: var(--metal-2);
+    box-shadow:
+      inset 2px 2px 5px rgba(0,0,0,.32),
+      inset -1px -1px 1px rgba(255,255,255,.6);
+    outline-offset: 2px;
+  }
+  input[type="text"]{ font-family: inherit; }
+
+  input:focus-visible{
+    outline: 2px solid var(--accent);
+  }
+
+  .btn{
+    appearance:none;
+    border:none;
+    border-radius:10px;
+    padding: 11px 16px;
+    font-size: .9rem;
+    font-weight:700;
+    font-family:inherit;
+    letter-spacing:.2px;
+    color: var(--ink-strong);
+    background: linear-gradient(160deg, var(--metal-1), var(--metal-2) 55%, var(--metal-3));
+    box-shadow:
+      inset 1px 1px 1px rgba(255,255,255,.8),
+      inset -1px -1px 2px rgba(0,0,0,.22),
+      0 3px 6px rgba(0,0,0,.22);
+    cursor:pointer;
+  }
+  .btn:active{
+    box-shadow:
+      inset 2px 2px 4px rgba(0,0,0,.35),
+      inset -1px -1px 1px rgba(255,255,255,.5);
+    transform: translateY(1px);
+  }
+
+  .btn-primary{
+    width:100%;
+    margin-top:16px;
+    color:#eef6fb;
+    background: linear-gradient(160deg, var(--accent-light), var(--accent) 55%, var(--accent-dark));
+    text-shadow: 0 1px 1px rgba(0,0,0,.35);
+  }
+
+  .btn-danger{
+    color:#fbe9e7;
+    background: linear-gradient(160deg, #d17064, var(--danger) 55%, var(--danger-dark));
+    text-shadow: 0 1px 1px rgba(0,0,0,.35);
+    padding: 6px 12px;
+    font-size: .74rem;
+  }
+
+  /* --- lista de medicamentos --- */
+  #lista{ margin-top:18px; }
+
+  .med-card header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+  }
+
+  .med-card h2{
+    margin:0;
+    font-size: 1.02rem;
+    font-weight:700;
+  }
+
+  .med-card .meta{
+    font-size: .72rem;
+    font-weight:600;
+    margin-top:3px;
+  }
+
+  .badge-concluido{
+    display:inline-block;
+    margin-top:6px;
+    font-size:.68rem;
+    font-weight:700;
+    padding:3px 8px;
+    border-radius:999px;
+    background: linear-gradient(160deg, var(--metal-1), var(--metal-3));
+    box-shadow: inset 1px 1px 2px rgba(255,255,255,.7), inset -1px -1px 2px rgba(0,0,0,.22);
+  }
+
+  .doses{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:14px;
+  }
+
+  .dose-chip{
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: .8rem;
+    font-weight:600;
+    padding: 6px 10px;
+    border-radius:8px;
+    background: var(--metal-2);
+    box-shadow:
+      inset 1px 1px 2px rgba(0,0,0,.28),
+      inset -1px -1px 1px rgba(255,255,255,.55);
+    color: var(--ink);
+    white-space:nowrap;
+  }
+
+  .dose-chip.passada{
+    color: var(--metal-shadow);
+    text-decoration: line-through;
+    opacity:.6;
+  }
+
+  .dose-chip.proxima{
+    color:#eef6fb;
+    background: linear-gradient(160deg, var(--accent-light), var(--accent) 55%, var(--accent-dark));
+    box-shadow:
+      inset 1px 1px 1px rgba(255,255,255,.6),
+      inset -1px -1px 2px rgba(0,0,0,.25),
+      0 0 9px rgba(58,124,165,.65);
+    text-shadow: 0 1px 1px rgba(0,0,0,.3);
+  }
+
+  #vazio{
+    text-align:center;
+    padding: 30px 14px;
+    font-size:.85rem;
+    font-weight:600;
+  }
+
+  .creditos{
+    text-align:center;
+    font-size:.68rem;
+    font-weight:600;
+    opacity:.65;
+    margin-top: 26px;
+  }
+
+  @media (prefers-reduced-motion: no-preference){
+    .med-card{ transition: box-shadow .2s ease; }
+  }
+</style>
+</head>
+<body>
+<main>
+
+  <header class="plate">
+    <div class="rivet tl"></div><div class="rivet tr"></div>
+    <div class="rivet bl"></div><div class="rivet br"></div>
+    <h1 class="engraved-strong">Horários de Remédios</h1>
+    <p class="engraved">Calcule e acompanhe os horários das doses</p>
+    <span id="storage-status"><span class="dot"></span><span id="storage-label">verificando armazenamento…</span></span>
+  </header>
+
+  <form class="plate" id="form-remedio">
+    <div class="rivet tl"></div><div class="rivet tr"></div>
+    <div class="rivet bl"></div><div class="rivet br"></div>
+
+    <label class="engraved" for="nome">Nome do remédio</label>
+    <input class="engraved" type="text" id="nome" placeholder="Ex.: Amoxicilina" required maxlength="60">
+
+    <label class="engraved" for="inicio">Primeira dose</label>
+    <input type="datetime-local" id="inicio" required>
+
+    <div class="field-row">
+      <div>
+        <label class="engraved" for="intervalo-h">Intervalo (horas)</label>
+        <input type="number" id="intervalo-h" min="0" max="72" step="1" value="8" required inputmode="numeric">
+      </div>
+      <div>
+        <label class="engraved" for="intervalo-m">+ minutos</label>
+        <input type="number" id="intervalo-m" min="0" max="59" step="1" value="0" inputmode="numeric">
+      </div>
+    </div>
+
+    <label class="engraved" for="doses">Quantidade de doses</label>
+    <input type="number" id="doses" min="1" max="60" step="1" value="4" required inputmode="numeric">
+
+    <button type="submit" class="btn btn-primary">Calcular e adicionar</button>
+  </form>
+
+  <div id="lista"></div>
+
+  <p class="creditos engraved">Ecossistema Nano_Tech · funciona offline</p>
+</main>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- ícone SVG embutido (alumínio + cápsula) ---------- */
+  function svgIcon(padScale){
+    padScale = padScale || 1;
+    var s = 46 * padScale;
+    return "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'>" +
+      "<defs><linearGradient id='m' x1='0' y1='0' x2='1' y2='1'>" +
+      "<stop offset='0' stop-color='%23eef1f3'/>" +
+      "<stop offset='.5' stop-color='%23c7cbd1'/>" +
+      "<stop offset='1' stop-color='%238f97a1'/></linearGradient></defs>" +
+      "<rect width='192' height='192' rx='36' fill='url(%23m)'/>" +
+      "<rect x='8' y='8' width='176' height='176' rx='30' fill='none' stroke='%235b6167' stroke-width='2' opacity='.4'/>" +
+      "<g transform='translate(96,96) rotate(-45)'>" +
+      "<rect x='-" + s + "' y='-18' width='" + (s*2) + "' height='36' rx='18' fill='%233a7ca5'/>" +
+      "<rect x='-" + s + "' y='-18' width='" + s + "' height='36' rx='18' fill='%23eef1f3'/>" +
+      "<line x1='0' y1='-18' x2='0' y2='18' stroke='%235b6167' stroke-width='2'/>" +
+      "</g></svg>";
+  }
+
+  var iconAny = "data:image/svg+xml," + svgIcon(1);
+  var iconMaskable = "data:image/svg+xml," + svgIcon(0.62); // mais respiro p/ zona segura maskable
+
+  document.getElementById("icon-link").href = iconAny;
+  document.getElementById("apple-icon-link").href = iconAny;
+
+  /* ---------- manifest inline (data URI) — escopo/instalação próprios ---------- */
+  var manifest = {
+    name: "Horários de Remédios",
+    short_name: "Remédios",
+    description: "Calculadora offline de horários de doses de medicamentos.",
+    start_url: "./remedios-horarios.html",
+    scope: "./",
+    id: "./remedios-horarios.html",
+    display: "standalone",
+    orientation: "portrait-primary",
+    background_color: "#9199a3",
+    theme_color: "#7b828a",
+    icons: [
+      { src: iconAny, sizes: "192x192", type: "image/svg+xml", purpose: "any" },
+      { src: iconAny, sizes: "512x512", type: "image/svg+xml", purpose: "any" },
+      { src: iconMaskable, sizes: "512x512", type: "image/svg+xml", purpose: "maskable" }
+    ]
+  };
+  document.getElementById("manifest-link").href =
+    "data:application/manifest+json," + encodeURIComponent(JSON.stringify(manifest));
+
+  /* ---------- service worker + persistência ---------- */
+  var statusEl = document.getElementById("storage-status");
+  var labelEl = document.getElementById("storage-label");
+
+  function setStatus(text, ok){
+    labelEl.textContent = text;
+    statusEl.classList.toggle("on", !!ok);
+  }
+
+  if ("serviceWorker" in navigator){
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("./sw-remedios.js", { scope: "./" })
+        .catch(function(){ /* segue funcionando sem SW se o registro falhar */ });
+    });
+  }
+
+  if (navigator.storage && navigator.storage.persist){
+    navigator.storage.persisted().then(function(already){
+      if (already){ setStatus("armazenamento protegido", true); return; }
+      navigator.storage.persist().then(function(granted){
+        setStatus(granted ? "armazenamento protegido" : "armazenamento não garantido", granted);
+      });
+    });
+  } else {
+    setStatus("persistência indisponível neste navegador", false);
+  }
+
+  /* ---------- dados ---------- */
+  var CHAVE = "nanotech_remedios_v1";
+
+  function carregar(){
+    try{
+      var raw = localStorage.getItem(CHAVE);
+      return raw ? JSON.parse(raw) : [];
+    }catch(e){ return []; }
+  }
+
+  function salvar(lista){
+    try{ localStorage.setItem(CHAVE, JSON.stringify(lista)); }catch(e){}
+  }
+
+  var medicamentos = carregar();
+
+  /* ---------- cálculo de horários ---------- */
+  function calcularDoses(med){
+    var inicio = new Date(med.inicioISO);
+    var passoMin = (med.intervaloH * 60) + med.intervaloM;
+    var lista = [];
+    for (var i = 0; i < med.doses; i++){
+      lista.push(new Date(inicio.getTime() + i * passoMin * 60000));
+    }
+    return lista;
+  }
+
+  function mesmodia(a, b){
+    return a.getFullYear() === b.getFullYear() &&
+           a.getMonth() === b.getMonth() &&
+           a.getDate() === b.getDate();
+  }
+
+  function formatarData(d){
+    var agora = new Date();
+    var amanha = new Date(agora); amanha.setDate(agora.getDate() + 1);
+    var hora = d.getHours().toString().padStart(2, "0") + ":" + d.getMinutes().toString().padStart(2, "0");
+    if (mesmodia(d, agora)) return "Hoje " + hora;
+    if (mesmodia(d, amanha)) return "Amanhã " + hora;
+    var dd = d.getDate().toString().padStart(2, "0");
+    var mm = (d.getMonth() + 1).toString().padStart(2, "0");
+    return dd + "/" + mm + " " + hora;
+  }
+
+  /* ---------- render ---------- */
+  var listaEl = document.getElementById("lista");
+
+  function render(){
+    listaEl.innerHTML = "";
+
+    if (medicamentos.length === 0){
+      var vazio = document.createElement("div");
+      vazio.className = "plate";
+      vazio.id = "vazio";
+      vazio.innerHTML = "<div class='rivet tl'></div><div class='rivet tr'></div>" +
+        "<div class='rivet bl'></div><div class='rivet br'></div>" +
+        "<p class='engraved'>Nenhum remédio cadastrado ainda.<br>Adicione o primeiro acima.</p>";
+      listaEl.appendChild(vazio);
+      return;
+    }
+
+    var agora = new Date();
+
+    medicamentos
+      .slice()
+      .sort(function(a, b){ return new Date(a.inicioISO) - new Date(b.inicioISO); })
+      .forEach(function(med){
+        var horarios = calcularDoses(med);
+        var proximaEncontrada = false;
+        var todasPassadas = horarios.every(function(d){ return d <= agora; });
+
+        var card = document.createElement("article");
+        card.className = "plate med-card";
+        card.innerHTML = "<div class='rivet tl'></div><div class='rivet tr'></div>" +
+          "<div class='rivet bl'></div><div class='rivet br'></div>";
+
+        var head = document.createElement("header");
+
+        var infoWrap = document.createElement("div");
+        var h2 = document.createElement("h2");
+        h2.className = "engraved-strong";
+        h2.textContent = med.nome;
+        var meta = document.createElement("div");
+        meta.className = "meta engraved";
+        var intervaloTxt = med.intervaloH + "h" + (med.intervaloM ? (med.intervaloM + "min") : "");
+        meta.textContent = "de " + intervaloTxt + " em " + intervaloTxt + " · " + med.doses + " doses";
+        infoWrap.appendChild(h2);
+        infoWrap.appendChild(meta);
+        if (todasPassadas){
+          var badge = document.createElement("span");
+          badge.className = "badge-concluido engraved";
+          badge.textContent = "tratamento concluído";
+          infoWrap.appendChild(badge);
+        }
+
+        var delBtn = document.createElement("button");
+        delBtn.className = "btn btn-danger";
+        delBtn.type = "button";
+        delBtn.textContent = "Remover";
+        delBtn.addEventListener("click", function(){
+          medicamentos = medicamentos.filter(function(m){ return m.id !== med.id; });
+          salvar(medicamentos);
+          render();
+        });
+
+        head.appendChild(infoWrap);
+        head.appendChild(delBtn);
+        card.appendChild(head);
+
+        var dosesWrap = document.createElement("div");
+        dosesWrap.className = "doses";
+        horarios.forEach(function(d){
+          var chip = document.createElement("span");
+          var passada = d <= agora;
+          var ehProxima = !passada && !proximaEncontrada;
+          if (ehProxima) proximaEncontrada = true;
+          chip.className = "dose-chip" + (passada ? " passada" : "") + (ehProxima ? " proxima" : "");
+          chip.textContent = formatarData(d);
+          dosesWrap.appendChild(chip);
+        });
+        card.appendChild(dosesWrap);
+
+        listaEl.appendChild(card);
+      });
+  }
+
+  /* ---------- formulário ---------- */
+  var form = document.getElementById("form-remedio");
+  var inicioInput = document.getElementById("inicio");
+
+  // valor padrão: agora, arredondado ao minuto, no fuso local
+  (function preencherAgora(){
+    var agora = new Date();
+    agora.setMinutes(agora.getMinutes() - agora.getTimezoneOffset());
+    inicioInput.value = agora.toISOString().slice(0, 16);
+  })();
+
+  form.addEventListener("submit", function(ev){
+    ev.preventDefault();
+
+    var nome = document.getElementById("nome").value.trim();
+    var inicioVal = inicioInput.value;
+    var intervaloH = parseInt(document.getElementById("intervalo-h").value, 10) || 0;
+    var intervaloM = parseInt(document.getElementById("intervalo-m").value, 10) || 0;
+    var doses = parseInt(document.getElementById("doses").value, 10) || 0;
+
+    if (!nome || !inicioVal || doses < 1 || (intervaloH === 0 && intervaloM === 0)){
+      return;
+    }
+
+    var med = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+      nome: nome,
+      inicioISO: new Date(inicioVal).toISOString(),
+      intervaloH: intervaloH,
+      intervaloM: intervaloM,
+      doses: doses
+    };
+
+    medicamentos.push(med);
+    salvar(medicamentos);
+    render();
+
+    form.reset();
+    document.getElementById("intervalo-h").value = 8;
+    document.getElementById("intervalo-m").value = 0;
+    document.getElementById("doses").value = 4;
+    (function preencherAgoraDeNovo(){
+      var agora = new Date();
+      agora.setMinutes(agora.getMinutes() - agora.getTimezoneOffset());
+      inicioInput.value = agora.toISOString().slice(0, 16);
+    })();
+  });
+
+  render();
+  setInterval(render, 30000); // atualiza "próxima dose" e rótulos de dia
+})();
+</script>
+</body>
+</html>
