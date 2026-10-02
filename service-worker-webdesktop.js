@@ -6,7 +6,11 @@ const CACHE_NAME = CACHE_PREFIX + VERSION;
 // Crítico: se qualquer um destes falhar, a instalação falha (o que é desejável)
 const SHELL = [
   './',
-  './webdesktopmobile.html',
+  './webdesktopmobile.html'  
+];
+
+// Opcionais: falha em um não derruba a instalação
+const APPS = [
   './offline_apps/documentos/documentos.html',
   './offline_apps/documentos/jsbib/tinymce.min.js',
   './offline_apps/documentos/jsbib/mammoth.browser.min.js',
@@ -21,10 +25,6 @@ const SHELL = [
   './offline_apps/calculadora.html',
   './offline_apps/filemanager.html',
   './offline_apps/camera.html'
-];
-
-// Opcionais: falha em um não derruba a instalação
-const APPS = [
   './offline_apps/iaoff/webllm-chat.html',
   './offline_apps/desenho.html',
   './offline_apps/rotina.html',
