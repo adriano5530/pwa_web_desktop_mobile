@@ -16,7 +16,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('DOMContentLoaded', function () {
-        navigator.serviceWorker.register('service-worker-webdesktop.js', { scope: '/webdesktopmobile.html' }).then(function (registration) {
+        navigator.serviceWorker.register('./service-worker-webdesktop.js').then(function (registration) {
             console.log('Service Worker registrado com sucesso:', registration.scope);
           }).catch(function (error) {
             console.log('Falha ao registrar o Service Worker:', error);
@@ -24,7 +24,6 @@
       });
     }
   </script>
-
   <title>Desktop Web</title>
   <style>
     /* ── Tokens globais (do kernel2) ── */
