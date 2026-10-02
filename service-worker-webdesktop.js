@@ -1,5 +1,5 @@
 // Aumente a VERSION sempre que quiser forçar a renovação do cache
-const VERSION = 'v3';
+const VERSION = 'v4';
 const CACHE_PREFIX = 'pwa-wdim-cache-';
 const CACHE_NAME = CACHE_PREFIX + VERSION;
 
