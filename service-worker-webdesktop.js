@@ -1,12 +1,12 @@
 // Aumente a VERSION sempre que quiser forçar a renovação do cache
-const VERSION = 'v4';
+const VERSION = 'v2';
 const CACHE_PREFIX = 'pwa-wdim-cache-';
 const CACHE_NAME = CACHE_PREFIX + VERSION;
 
 // Crítico: se qualquer um destes falhar, a instalação falha (o que é desejável)
 const SHELL = [
   './',
-  './webdesktopmobile.html'  
+  './webdesktopmobile.html'
 ];
 
 // Opcionais: falha em um não derruba a instalação
@@ -20,18 +20,19 @@ const APPS = [
   './offline_apps/planilhas/jslib/FileSaver.min.js',
   './offline_apps/planilhas/jslib/xlsx.full.min.js',
   './offline_apps/browser.html',
-  './offline_apps/bloco-notas-offline-editor.html',
-  './offline_apps/touchpad.js',
-  './offline_apps/calculadora.html',
-  './offline_apps/filemanager.html',
-  './offline_apps/camera.html'
   './offline_apps/iaoff/webllm-chat.html',
+  './offline_apps/bloco-notas-offline-editor.html',
+  './offline_apps/notastudoemum.html',
   './offline_apps/desenho.html',
+  './offline_apps/camera.html',
   './offline_apps/rotina.html',
   './offline_apps/diario/diario.html',
   './offline_apps/diario/crypto-js.min.js',
   './offline_apps/tarefas.html',
-  './offline_apps/youtube-wrapper.html', 
+  './offline_apps/touchpad.js',
+  './offline_apps/calculadora.html',
+  './offline_apps/youtube-wrapper.html',
+  './offline_apps/filemanager.html',
   './offline_apps/player.html',
   './offline_apps/porcentagem.html',
   './offline_apps/calcdata.html',
