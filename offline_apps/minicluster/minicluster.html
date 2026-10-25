@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cluster P2P PWA</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#007bff">
+    <!-- Importando a biblioteca PeerJS para comunicação P2P -->
+    <script src="https://unpkg.com"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; background: #f4f6f9; color: #333; max-width: 600px; margin: 0 auto; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h1, h2 { margin-top: 0; color: #111; }
+        button { background: #007bff; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; font-weight: bold; margin-bottom: 10px; }
+        button:disabled { background: #ccc; }
+        input { width: 100%; padding: 10px; box-sizing: border-box; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+        .status { font-weight: bold; padding: 8px; border-radius: 6px; background: #e9ecef; display: inline-block; margin-bottom: 15px; }
+        .log { background: #212529; color: #0df; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 13px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>Cluster P2P PWA</h1>
+        <p>Seu ID neste dispositivo: <span id="my-id" style="font-weight:bold; color:#007bff;">Conectando...</span></p>
+        <div class="status" id="connection-status">Modo: Aguardando Ação</div>
+    </div>
+
+    <!-- PAINEL DO LÍDER (MASTER) -->
+    <div class="card">
+        <h2>Painel do Líder</h2>
+        <p>Use este painel no dispositivo principal para gerenciar o cálculo.</p>
+        <button id="btn-start-calc" disabled onclick="iniciarProcessamentoDistribuido()">Iniciar Cálculo Distribuído</button>
+    </div>
+
+    <!-- PAINEL DO TRABALHADOR (WORKER) -->
+    <div class="card">
+        <h2>Painel do Trabalhador</h2>
+        <p>Insira o ID do Líder abaixo para se conectar e ajudar no processamento:</p>
+        <input type="text" id="leader-id-input" placeholder="Cole o ID do Líder aqui">
+        <button id="btn-connect-leader" onclick="conectarAoLider()">Conectar ao Líder e Ajudar</button>
+    </div>
+
+    <div class="card">
+        <h2>Console de Eventos</h2>
+        <div class="log" id="log-console">Iniciando aplicação...</div>
+    </div>
+
+    <script>
+        // Registrar o Service Worker do PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => log("PWA: Service Worker registrado com sucesso."))
+                .catch(err => log("PWA: Falha ao registrar Service worker: " + err));
+        }
+
+        let peer = new Peer(); // Cria um nó PeerJS gerando um ID único na nuvem pública deles
+        let conexoesTrabalhadores = [];
+        let conexaoComLider = null;
+        let computacaoLocalWorker = new Worker('worker.js'); // Instancia o Web Worker local para processamento em background
+
+        function log(msg) {
+            const consoleEl = document.getElementById('log-console');
+            consoleEl.innerText += `\n[${new Date().toLocaleTimeString()}] ${msg}`;
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        // Evento disparado quando o PeerJS conecta ao servidor de sinalização e ganha um ID
+        peer.on('open', (id) => {
+            document.getElementById('my-id').innerText = id;
+            log(`Conectado ao servidor P2P. Seu ID único é: ${id}`);
+        });
+
+        // --- CÓDIGO DO LÍDER ---
+        // Ouvir conexões de entrada de outros aparelhos (Trabalhadores)
+        peer.on('connection', (conn) => {
+            conexoesTrabalhadores.push(conn);
+            document.getElementById('connection-status').innerText = `Líder: ${conexoesTrabalhadores.length} nó(s) conectado(s)`;
+            document.getElementById('btn-start-calc').disabled = false;
+            log(`Nó trabalhador conectado: ${conn.peer}`);
+
+            // Ouvir respostas desse trabalhador específico
+            conn.on('data', (data) => {
+                if (data.tipo === 'RESULTADO') {
+                    log(`Sucesso! Trabalhador [${conn.peer}] terminou a parte dele. Primos encontrados: ${data.totalPrimos}`);
+                }
+            });
+        });
+
+        function iniciarProcessamentoDistribuido() {
+            if (conexoesTrabalhadores.length === 0) return;
+            log("Líder dividindo carga de trabalho pesada...");
+
+            // Definimos uma tarefa: Contar primos de 2 até 20.000.000
+            let totalEscopo = 20000000;
+            // Dividimos o escopo igualmente entre o número de trabalhadores conectados + 1 (este próprio aparelho)
+            let parcelas = conexoesTrabalhadores.length + 1;
+            let tamanhoGama = Math.floor(totalEscopo / parcelas);
+
+            // Passando a primeira fatia para um trabalhador conectado via P2P
+            conexoesTrabalhadores.forEach((conn, index) => {
+                let inicio = (index * tamanhoGama) + 2;
+                let fim = (index + 1) * tamanhoGama;
+                log(`Enviando lote (${inicio} até ${fim}) para o dispositivo ${conn.peer}...`);
+                conn.send({ tipo: 'CALCULAR', inicio: inicio, fim: fim });
+            });
+
+            // O próprio líder assume a última fatia para processar também!
+            let meuInicio = (conexoesTrabalhadores.length * tamanhoGama) + 2;
+            let meuFim = totalEscopo;
+            log(`Líder processando sua própria fatia localmente (${meuInicio} até ${meuFim})...`);
+            
+            computacaoLocalWorker.postMessage({ inicio: meuInicio, fim: meuFim });
+            computacaoLocalWorker.onmessage = function(e) {
+                log(`Líder terminou sua parte local. Primos encontrados: ${e.data}`);
+            };
+        }
+
+        // --- CÓDIGO DO TRABALHADOR ---
+        function conectarAoLider() {
+            let liderId = document.getElementById('leader-id-input').value.trim();
+            if (!liderId) return alert("Insira um ID válido!");
+
+            log(`Tentando conectar ao Líder: ${liderId}...`);
+            conexaoComLider = peer.connect(liderId);
+
+            conexaoComLider.on('open', () => {
+                document.getElementById('connection-status').innerText = "Modo: Trabalhador Ativo (Conectado)";
+                log("Conexão direta P2P com o Líder estabelecida com sucesso! Aguardando ordens...");
+            });
+
+            // Ouvir instruções de cálculo vindas do Líder
+            conexaoComLider.on('data', (data) => {
+                if (data.tipo === 'CALCULAR') {
+                    log(`Ordem recebida! Calculando números primos de ${data.inicio} até ${data.fim}...`);
+                    
+                    // Dispara o cálculo no Web Worker em segundo plano para não congelar o navegador do usuário
+                    computacaoLocalWorker.postMessage({ inicio: data.inicio, fim: data.fim });
+                    
+                    computacaoLocalWorker.onmessage = function(e) {
+                        log(`Cálculo finalizado localmente. Enviando resultado (${e.data}) de volta para o Líder.`);
+                        conexaoComLider.send({ tipo: 'RESULTADO', totalPrimos: e.data });
+                    };
+                }
+            });
+        }
+    </script>
+</body>
+</html>

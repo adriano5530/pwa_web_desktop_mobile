@@ -1,0 +1,17 @@
+{
+  "short_name": "ClusterP2P",
+  "name": "Cluster de Processamento P2P PWA",
+  "icons": [
+    {
+      "src": "https://flaticon.com",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "./minicluster.html",
+  "background_color": "#f4f6f9",
+  "theme_color": "#007bff",
+  "display": "standalone",
+  "orientation": "portrait"
+}
